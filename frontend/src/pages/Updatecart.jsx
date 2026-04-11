@@ -165,17 +165,19 @@ function Updatecart() {
               key={index}
               className="bg-white p-4 rounded-[5px] box-shadow relative flex sm:flex-nowrap gap-[20px] items-start"
             >
-              <Link to={`/products/${item.product_id?._id}`}>
-                <img
-                  src={
-                    item.variant_id?.images?.length > 0
-                      ? getImageUrl(item.variant_id.images[0])
-                      : getImageUrl(item.product_id?.images?.[0])
-                  }
-                  alt={item.product_id?.name}
-                  className="box-shadow object-cover p-[5px] h-[110px] sm:h-[109px] w-[75px] sm:w-[87px]"
-                />
-              </Link>
+              <div className="flex items-center gap-[10px] flex-shrink-0">
+                <Link to={`/products/${item.product_id?._id}`}>
+                  <img
+                    src={
+                      item.variant_id?.images?.length > 0
+                        ? getImageUrl(item.variant_id.images[0])
+                        : getImageUrl(item.product_id?.images?.[0])
+                    }
+                    alt={item.product_id?.name}
+                    className="box-shadow object-cover p-[5px] h-[110px] sm:h-[109px] w-[75px] sm:w-[87px]"
+                  />
+                </Link>
+              </div>
               <div className="flex flex-col flex-wrap">
                 <div className="mb-[8px] text-14 break">
                   {item.product_id?.name}

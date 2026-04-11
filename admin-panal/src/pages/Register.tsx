@@ -7,6 +7,7 @@ import { AppDispatch, RootState } from "../store";
 import { registerUser } from "@/features/auth/authThunk";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+// import { Toast } from "@radix-ui/react-toast";
 
 export default function Register() {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,6 +32,7 @@ export default function Register() {
     storeLogo: "",
     storeBanner: "",
     storeDescription: "",
+    storegstno: "",
 
     storeTheme: {
       primaryColor: "#000000",
@@ -65,21 +67,68 @@ export default function Register() {
     return allEmpty ? null : obj;
   };
 
+
+
+  const validateForm = () => {
+    if (!form.name.trim()) {
+      toast.error("Name is required");
+      return false;
+    }
+
+    if (!form.email.trim()) {
+      toast.error("Email is required");
+      return false;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(form.email)) {
+      toast.error("Invalid email format");
+      return false;
+    }
+
+    if (!form.password.trim()) {
+      toast.error("Password is required");
+      return false;
+    }
+
+    if (form.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return false;
+    }
+
+    if (!form.storeName.trim()) {
+      toast.error("Store Name is required");
+      return false;
+    }
+
+    if (!form.storeEmail.trim()) {
+      toast.error("Store Email is required");
+      return false;
+    }
+
+    if (!form.storePhone.trim()) {
+      toast.error("Store Phone is required");
+      return false;
+    }
+
+    if (!form.storegstno.trim()) {
+      toast.error("Store GST No is required");
+      return false;
+    }
+
+
+    if (!form.storeWebsite.trim()) {
+      toast.error("Store Website is required");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!form.name || !form.email || !form.password) {
-      toast.error("Name, email and password are required");
-      return;
-    }
-    if (!form.storeName || !form.storeEmail) {
-      toast.error("Store name and store email are required");
-      return;
-    }
-    if (!form.storeWebsite) {
-      toast.error("Store website is required (domain matching mate)");
-      return;
-    }
+
 
     const payload = {
       name: form.name,
@@ -98,6 +147,7 @@ export default function Register() {
       storeLogo: form.storeLogo || undefined,
       storeBanner: form.storeBanner || undefined,
       storeDescription: form.storeDescription || undefined,
+      storegstno: form.storegstno,
       storeTheme: form.storeTheme,
       storeAddress: cleanAddress(form.storeAddress),
     };
@@ -114,6 +164,9 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+
+      {/* <toast /> */}
+
       <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-4xl">
         <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">
           Register Store Owner
@@ -122,16 +175,16 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input type="text" name="name" value={form.name} onChange={handleChange}
-              placeholder="Full Name" required
+              placeholder="Full Name"
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
             <input type="email" name="email" value={form.email} onChange={handleChange}
-              placeholder="Email" required
+              placeholder="Email"
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div className="relative">
             <input type={showPassword ? "text" : "password"} name="password"
-              value={form.password} onChange={handleChange} placeholder="Password" required
+              value={form.password} onChange={handleChange} placeholder="Password"
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
             <button type="button" onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
@@ -175,19 +228,23 @@ export default function Register() {
           <h3 className="text-xl font-semibold text-gray-700">Store Info</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input type="text" name="storeName" value={form.storeName} onChange={handleChange}
-              placeholder="Store Name" required
+              placeholder="Store Name"
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
             <input type="email" name="storeEmail" value={form.storeEmail} onChange={handleChange}
-              placeholder="Store Email" required
+              placeholder="Store Email"
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
             <input type="text" name="storePhone" value={form.storePhone} onChange={handleChange}
               placeholder="Store Phone"
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
 
+            <input type="text" name="storegstno" value={form.storegstno} onChange={handleChange}
+              placeholder="Store GST No"
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
+
             <div>
               <input type="text" name="storeWebsite" value={form.storeWebsite}
                 onChange={handleChange}
-                placeholder="Store Website (e.g. https://store1.com)" required
+                placeholder="Store Website (e.g. https://store1.com)"
                 className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" />
               <p className="text-xs text-gray-400 mt-1">
                 {/* Aa website domain sathe match thata users aa store_owner ne dikhase. */}

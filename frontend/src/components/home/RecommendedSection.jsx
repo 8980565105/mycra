@@ -8,10 +8,10 @@ import "slick-carousel/slick/slick-theme.css";
 import { useSelector } from "react-redux";
 import { getImageUrl } from "../utils/helper.js";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
+import FlowerIcon from "../icons/FlowerIcon.jsx";
 
 const RecommendedSection = () => {
-  const { products } = useSelector( (state) => state.products );
+  const { products } = useSelector((state) => state.products);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
@@ -49,16 +49,28 @@ const RecommendedSection = () => {
     nextArrow: <NextArrow />,
     infinite: true,
     speed: 600,
-    slidesToShow:  windowWidth <= 767 ? 1 : windowWidth <= 980 ? 2 : 3,
+    slidesToShow: windowWidth <= 767 ? 1 : windowWidth <= 980 ? 2 : 3,
     slidesToScroll: 1,
   };
 
   return (
     <Section className="w-full ">
-      <Row>
+      {/* <Row>
         <SectionHeading page="Home" order={8} />
-      </Row>
+      </Row> */}
 
+      <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
+        <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+
+        <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
+          <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
+            Recommended For You
+          </h2>
+          <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
+        </div>
+
+        <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+      </div>
       <Row className="!max-w-[1179px] mx-auto mb-[50px] md:mb-[90px] overflow-visible relative px-11 ">
         <Slider {...settings}>
           {products.map((item) => (
@@ -75,30 +87,37 @@ const RecommendedSection = () => {
 // PRODUCT CARD
 const ProductCard = ({ item }) => {
   const imageUrl =
-    item?.images?.length > 0
-      ? getImageUrl(item.images[0])
-      : "/placeholder.png";
+    item?.images?.length > 0 ? getImageUrl(item.images[0]) : "/placeholder.png";
 
   const title = item?.category?.name || "Recommanded Item";
   const description = item?.name || "No description available";
 
   return (
-      <div className="relative shadow-lg overflow-hidden transition-transform duration-300">
-        <div className="relative w-full min-h-[300px]  lg:w-[342px] h-[315px] sm:h-[398px]">
-          <img src={imageUrl} alt={title} className="w-full h-full object-cover filter grayscale brightness-35 contrast-125" />
-          <div className="absolute inset-0 bg-black opacity-30" style={{ mixBlendMode: 'luminosity' }}></div>
-        </div>
-        <div className="absolute inset-0 flex justify-center items-center">
-          <img src={imageUrl} alt={title} className="w-[90%] h-[92%] object-fit" />
-        </div>
-        <div className="absolute bottom-8 left-6 text-white z-20">
-          <h2 className="font-h5 max-w-[200px] leading">
-            {title}
-          </h2>
-          <p className="font-sans font-medium text-[16px] line-clamp-3">
-            {description}
-          </p>
-        </div>
+    <div className="relative shadow-lg overflow-hidden transition-transform duration-300">
+      <div className="relative w-full min-h-[300px]  lg:w-[342px] h-[315px] sm:h-[398px]">
+        <img
+          src={imageUrl}
+          alt={title}
+          className="w-full h-full object-cover filter grayscale brightness-35 contrast-125"
+        />
+        <div
+          className="absolute inset-0 bg-black opacity-30"
+          style={{ mixBlendMode: "luminosity" }}
+        ></div>
+      </div>
+      <div className="absolute inset-0 flex justify-center items-center">
+        <img
+          src={imageUrl}
+          alt={title}
+          className="w-[90%] h-[92%] object-fit"
+        />
+      </div>
+      <div className="absolute bottom-8 left-6 text-white z-20">
+        <h2 className="font-h5 max-w-[200px] leading">{title}</h2>
+        <p className="font-sans font-medium text-[16px] line-clamp-3">
+          {description}
+        </p>
+      </div>
     </div>
   );
 };

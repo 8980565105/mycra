@@ -36,7 +36,7 @@ const DesktopSortBar = ({ sortBy, setSortBy }) => (
       <select
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
-        className=" appearance-none bg-white text-black py-2  pl-3 pr-10 rounded-[3px] box-shadow focus:outline-none focus:ring-2 focus:ring-[#F43297] text-[16px]
+        className=" appearance-none bg-white text-black py-2  pl-3 pr-10 rounded-[3px] box-shadow focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] text-[16px]
                   transition duration-150 ease-in-out "
       >
         <option value="popularity">Popularity</option>
@@ -148,12 +148,15 @@ const CollapsibleFilter = ({
         className={`flex items-center justify-between cursor-pointer rounded-[10px] px-4 py-3 transition-all duration-300
                     ${
                       isOpen
-                        ? "bg-[rgba(210,175,159,0.3)]  border-transparent"
+                        ? "bg-[var(--primary-color)]  border-transparent"
                         : "bg-transparent border-white shadow-[0_0_4px_rgba(0,0,0,0.3)]"
                     }`}
         onClick={onToggle}
       >
-        <h3 className="font-medium font-inter text-black text-[14px]">
+        <h3
+          className={`font-medium font-inter 
+          ${isOpen ? "text-white" : "text-theme"}  text-[14px]`}
+        >
           {title}
         </h3>
         <div className="flex items-center space-x-2">
@@ -834,9 +837,9 @@ export default function WomenCollections() {
             </div>
           </div>
 
-          <h1 className="text-[22px] font-semibold font-inter mb-2 ">
+          {/* <h1 className="text-[22px] font-semibold font-inter mb-2 ">
             Women's Collections
-          </h1>
+          </h1> */}
           <p className="text-sm text-gray-600 mb-8">
             <span className="text-black border-b border-black lg:border-none">
               <Link to="/home">Home</Link>

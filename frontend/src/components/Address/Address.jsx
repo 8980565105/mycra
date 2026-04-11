@@ -6,6 +6,7 @@ import {
   updateUserAddressById,
 } from "../../features/address/addressThunk";
 import { clearAddressStatus } from "../../features/address/addressSlice";
+import Button from "../ui/Button";
 function Address({ userId = null }) {
   const dispatch = useDispatch();
   const { address, loading, error, successMessage } = useSelector(
@@ -60,10 +61,6 @@ function Address({ userId = null }) {
 
   return (
     <div>
-      {/* <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        {userId ? "Edit User Address" : "My Profile Address"}
-      </h2> */}
-
       {successMessage && (
         <div className="mb-4 px-4 py-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm font-medium">
           ✅ {successMessage}
@@ -87,7 +84,7 @@ function Address({ userId = null }) {
                 name="street"
                 value={formData.street}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none transition"
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:var(--primary-color) outline-none transition"
                 placeholder="123 Street Name"
               />
             </div>
@@ -100,7 +97,7 @@ function Address({ userId = null }) {
                 name="city"
                 value={formData.city}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:var(--primary-color) outline-none"
                 placeholder="Surat"
               />
             </div>
@@ -113,7 +110,7 @@ function Address({ userId = null }) {
                 name="state"
                 value={formData.state}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:var(--primary-color) outline-none"
                 placeholder="Gujarat"
               />
             </div>
@@ -126,7 +123,7 @@ function Address({ userId = null }) {
                 name="country"
                 value={formData.country}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:var(--primary-color) outline-none"
                 placeholder="India"
               />
             </div>
@@ -140,20 +137,20 @@ function Address({ userId = null }) {
                 name="zip_code"
                 value={formData.zip_code}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:var(--primary-color) outline-none"
                 placeholder="395001"
               />
             </div>
           </div>
 
           <div className="pt-4">
-            <button
+            <Button
               type="submit"
               disabled={loading}
               className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 disabled:bg-blue-300 transition-colors shadow-lg"
             >
               {loading ? "Processing..." : "Save Address"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

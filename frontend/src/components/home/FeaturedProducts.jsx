@@ -27,6 +27,7 @@ import {
   fetchCart,
 } from "../../features/cart/cartThunk";
 import toast from "react-hot-toast";
+import FlowerIcon from "../icons/FlowerIcon";
 
 function CountdownTimer({ endDate }) {
   const calcTimeLeft = useCallback(() => {
@@ -282,9 +283,23 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
     <>
       <section className="w-full py-[25px] md:py-[50px]">
         <div className="flex flex-col items-center">
-          <Row>
+          {/* <Row>
             <SectionHeading page="Home" order={4} />
-          </Row>
+          </Row> */}
+
+          <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
+            <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+
+            <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
+              <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
+                {/* {currentSection.title} */}
+                Featured Products
+              </h2>
+              <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
+            </div>
+
+            <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+          </div>
 
           <Row>
             {catLoading ? (
@@ -392,34 +407,6 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                           </span>
                         )}
                       </div>
-                      {/* <div className="absolute top-3 right-3 opacity-100 transition-opacity duration-300 z-10">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAddToWishlist(p);
-                          }}
-                          className="w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center bg-white text-black rounded-full border hover:scale-110 transition"
-                        >
-                          <HeartIcon className="w-[12px] h-[12px] sm:w-[12px] sm:h-[12px] lg:w-[26px] lg:h-[24px]" />
-                        </button>
-                      </div>
-
-                      <div className="absolute top-[38px] md:top-[38px] lg:top-[60px] right-3 opacity-100  transition-opacity duration-300 z-10">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAddToCart(p);
-                          }}
-                          className="w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center bg-white text-black rounded-full border hover:scale-110 transition"
-                        >
-                          <FontAwesomeIcon
-                            icon={faCartShopping}
-                            className="w-[12px] h-[12px] sm:w-[12px] sm:h-[12px] lg:w-[26px] lg:h-[24px]"
-                          />
-                        </button>
-                      </div> */}
                       <div className="absolute top-3 right-3 opacity-100 transition-opacity duration-300 z-10">
                         <div className="flex flex-col space-y-2">
                           <button
@@ -428,19 +415,18 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                               e.stopPropagation();
                               handleAddToWishlist(p);
                             }}
-                            className="w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center bg-white text-black rounded-full border hover:bg-[#F43297] hover:border-[#F43297] transition-all duration-200"
+                            className="w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center bg-white text-black rounded-full border hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] transition-all duration-200"
                           >
                             <HeartIcon className="w-[12px] h-[12px] sm:w-[12px] sm:h-[12px] lg:w-[20px] lg:h-[20px] hover:invert hover:brightness-0 hover:contrast-200" />
                           </button>
 
-                          {/* Cart Button */}
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               handleAddToCart(p);
                             }}
-                            className="w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center bg-white text-black rounded-full border hover:bg-[#F43297] hover:border-[#F43297] hover:text-white transition-all duration-200"
+                            className="w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center bg-white text-black rounded-full border hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] hover:text-white transition-all duration-200"
                           >
                             <FontAwesomeIcon
                               icon={faCartShopping}
@@ -461,7 +447,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                       <div className="flex items-center gap-2 justify-center mb-1">
                         {hasDiscount && (
                           <div className="flex items-center gap-2 justify-left mb-1">
-                            <span className="bg-[rgba(239,58,150,0.09)] text-theme text-[12px] md:text-[15px] px-2 py-1 rounded font-bold">
+                            <span className="bg-theme text-theme text-[12px] md:text-[15px] px-2 py-1 rounded font-bold">
                               {discount?.type === "percentage"
                                 ? `${discount?.value}% OFF`
                                 : `₹${discount?.value} OFF`}
@@ -496,13 +482,13 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                             </span>
                           )}
                         </p>
-                        {discountValue > 0 && (
+                        {/* {discountValue > 0 && (
                           <p className="text-theme text-[10px] lg:text-[12px] font-medium bg-[rgba(239,58,150,0.09)] p-[1px] w-[60px] block  mx-auto text-center">
                             {discountType === "percentage"
                               ? `${discountValue}% OFF`
                               : `₹${discountValue} OFF`}
                           </p>
-                        )}
+                        )} */}
                       </div>
 
                       <div className="flex gap-1.5 mt-2 justify-center">

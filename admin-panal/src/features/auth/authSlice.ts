@@ -56,7 +56,6 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // ── LOGIN ────────────────────────────────────────────────────────
     builder
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
@@ -85,7 +84,6 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // ── REGISTER ─────────────────────────────────────────────────────
     builder
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
@@ -114,7 +112,6 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // ── FORGOT PASSWORD ──────────────────────────────────────────────
     builder
       .addCase(forgotPassword.pending, (state) => {
         state.otpLoading = true;
@@ -132,7 +129,6 @@ const authSlice = createSlice({
         state.otpError = (action.payload as string) || "Failed to send OTP";
       });
 
-    // ── RESET PASSWORD ───────────────────────────────────────────────
     builder
       .addCase(resetPassword.pending, (state) => {
         state.resetLoading = true;

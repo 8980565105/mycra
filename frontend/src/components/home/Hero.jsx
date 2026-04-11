@@ -106,18 +106,20 @@ export default function Hero() {
                 <div className="absolute inset-0 bg-black/25" />
                 <div className="relative z-10 w-full h-full min-h-[220px] lg:min-h-[680px] flex items-center px-6 sm:px-12 lg:px-20 py-10 lg:py-0">
                   <div className="flex-1 flex flex-col items-start justify-center gap-3 lg:gap-6 max-w-[250px] sm:max-w-[400px] lg:max-w-[600px]">
-                    <h1 className="font-sans italic font-bold text-[20px] sm:text-[30px] lg:text-[68px] leading-tight text-white drop-shadow-lg m-0 text-left">
-                      <span dangerouslySetInnerHTML={{ __html: slide.title }} />
+                    <h1 className="text-stroke text-shadow-custom py-2 lg:py-5">
+                      <span
+                        className="font-sans italic font-bold  sm:text-[26px] lg:text-[80px] text-black "
+                        dangerouslySetInnerHTML={{ __html: slide.title }}
+                      />
                     </h1>
-                    <p className="text-white/90 text-[9px] sm:text-[13px] lg:text-[20px] leading-relaxed m-0 text-left">
+                    <span className="text-black text-[8px] md:text-[8px] lg:text-[24px] leading-[19px] relative">
                       {slide.description}
-                    </p>
+                      <span className="absolute left-0 bottom-0 sm:translate-y-[0px] md:translate-y-[0px] lg:translate-y-[10px]  w-[56px] sm:w-[56px] md:w-[90px] lg:w-[225px] h-[0.5px] bg-black"></span>
+                    </span>
+
                     {slide.is_button !== false && (
-                      <button
-                        onClick={() => navigate(slide.button_link || "/shop")}
-                        className="mt-1 lg:mt-2 w-[72px] h-[28px] lg:w-[160px] lg:h-[52px] text-[10px] lg:text-[18px] font-medium text-white rounded-md shadow-lg bg-color hover:opacity-90 active:scale-95 transition-all duration-200"
-                      >
-                        {slide.button_name || "Shop Now"}
+                      <button className="lg:w-[160px] w-[72px] lg:h-[54px] h-[26px]  text-[12px]  lg:text-[22px] text-white font-regular rounded shadow-md duration-300 bg-color ">
+                        {slide.button_name}
                       </button>
                     )}
                   </div>

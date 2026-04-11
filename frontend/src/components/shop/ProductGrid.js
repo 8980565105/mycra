@@ -33,7 +33,10 @@ const ProductGrid = ({ products = [], loading, setShowLoginPopup }) => {
           <button
             onClick={handleLoadMore}
             className="text-[18px] theme-border text-theme w-[187px] h-[70px] sm:w-[220px] sm:h-[89px] font-medium rounded-[10px] shadow-lg transition duration-300 uppercase"
-            style={{ boxShadow: "inset 0px 0px 30px rgba(244, 50, 151, 0.25)" }}
+            style={{
+              //  boxShadow: "inset 0px 0px 30px rgba(244, 50, 151, 0.25)"
+              boxShadow: "inset 0px 0px 30px ",
+               }}
           >
             Load More
           </button>

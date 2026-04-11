@@ -186,39 +186,11 @@ const bulkDeleteStores = async (req, res) => {
   }
 };
 
-// const getStoreByDomain = async (req, res) => {
-//   try {
-//     const host = req.headers.host; // localhost:3000
-
-//     const store = await Store.findOne({
-//       domain: host,
-//       status: "active",
-//     });
-
-//     if (!store) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Store not found for this domain",
-//       });
-//     }
-
-//     res.json({
-//       success: true,
-//       data: store,
-//     });
-//   } catch (err) {
-//     res.status(500).json({
-//       success: false,
-//       message: err.message,
-//     });
-//   }
-// };
 
 const getStoreByDomain = async (req, res) => {
   try {
     const { resolveStoreByDomain } = require("../config/domainResolver");
 
-    // origin header thhi domain lo (frontend URL)
     const origin = req.headers.origin || "";
     let domain = "";
     if (origin) {
@@ -243,9 +215,44 @@ const getStoreByDomain = async (req, res) => {
   }
 };
 
+
+const getMyStore = async (req, res) => {
+  try {
+    const storeId = req.user.storeId;
+    if (!storeId) return sendResponse(res, false, null, "No store assigned");
+    
+    const store = await Store.findById(storeId);
+    if (!store) return sendResponse(res, false, null, "Store not found");
+    
+    sendResponse(res, true, store, "Store fetched successfully");
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
+
+const updateMyStore = async (req, res) => {
+  try {
+    const storeId = req.user.storeId;
+    if (!storeId) return sendResponse(res, false, null, "No store assigned");
+
+    const updatedStore = await Store.findByIdAndUpdate(
+      storeId,
+      { $set: req.body },
+      { new: true }
+    );
+    
+    if (!updatedStore) return sendResponse(res, false, null, "Store not found");
+    sendResponse(res, true, updatedStore, "Store updated successfully");
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
+
 module.exports = {
   getStores,
   getAllStores,
+  getMyStore,
+  updateMyStore,
   getStoreByDomain,
   getStoreById,
   createStore,

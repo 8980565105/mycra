@@ -230,6 +230,8 @@ export const ROUTES = {
     update: (id: string) => `/stores/${id}`,
     delete: (id: string) => `/stores/${id}`,
     bulkDelete: "/stores/bulk-delete",
+    getMy: "/stores/my",
+    updateMy: "/stores/my",
   },
   packing: {
     getAll: "/packing",

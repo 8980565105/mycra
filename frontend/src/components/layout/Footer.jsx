@@ -22,7 +22,6 @@ import Section from "../ui/Section";
 import { Link } from "react-router-dom";
 import mylogo from "../../assets/my_logo.png";
 import { fetchFooter } from "../../features/footer/footerThunk";
-import { fetchPublicSettings } from "../../features/setting/settingThunk";
 
 import { useDispatch, useSelector } from "react-redux";
 const getSocialIcon = (platform) => {
@@ -42,23 +41,25 @@ export default function Footer() {
   const dispatch = useDispatch();
   const { footers = [], loading } = useSelector((state) => state.footer);
   const { info: storeInfo } = useSelector((state) => state.store);
-  const settingsData = useSelector((state) => state.settings?.data);
-  const socialLinks = settingsData?.social_links || [];
+  const socialLinks = storeInfo?.social_links || [];
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const contentRef = useRef(null);
-  const contactEmail = settingsData?.contact_email || "info@gmail.com";
-  const contactPhone = settingsData?.contact_phone || "+1 [155] 000-01000";
+  const contactEmail = storeInfo?.email || "info@gmail.com";
+  const contactPhone = storeInfo?.phone || "+1 [155] 000-01000";
+  const footertext =
+    storeInfo?.theme?.footerText ||
+    "Become a MYcra member and get 10% off your next purchase!";
   const copyright =
-    settingsData?.copyright_text ||
+    storeInfo?.theme?.copyrightText ||
     "2026 MYcra Fashion Ltd. All Rights Reserved";
   const contactAddress =
     [
-      settingsData?.contact_address?.street,
-      settingsData?.contact_address?.city,
-      settingsData?.contact_address?.state,
-      settingsData?.contact_address?.country,
-      settingsData?.contact_address?.postal_code,
+      storeInfo?.address?.street,
+      storeInfo?.address?.city,
+      storeInfo?.address?.state,
+      storeInfo?.address?.country,
+      storeInfo?.address?.zip_code,
     ]
       .filter(Boolean)
       .join(", ") || "215, Dhara Arcade near Lajamani Chowk, Surat";
@@ -76,7 +77,6 @@ export default function Footer() {
 
   useEffect(() => {
     dispatch(fetchFooter({ isPublic: true }));
-    dispatch(fetchPublicSettings());
   }, [dispatch]);
 
   const reversedFooters = [...footers].reverse();
@@ -123,8 +123,9 @@ export default function Footer() {
         }}
       >
         <div
-          className="text-light"
-          style={{ backgroundColor: "rgba(210, 175, 159, 0.3)" }}
+          className="text-light sec-theme"
+          // style={{ backgroundColor: "rgba(210, 175, 159, 0.3)" }}
+
         >
           <Row className="py-[50px] md:py-[80px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="space-y-[22px] max-w-[280px] w-full">
@@ -200,9 +201,7 @@ export default function Footer() {
               <h2 className="font-regular text-20px text-black  mb-[35px] tracking-[3%]">
                 JOIN NOW !<span className="theme-border-block w-[45px]"></span>
               </h2>
-              <p className="text-sm mb-3 text-light">
-                Become a MYcra member and get 10% off your next purchase!
-              </p>
+              <p className="text-sm mb-3 text-light">{footertext}</p>
 
               <div className="flex flex-col sm:flex-row mb-4 gap-2">
                 <div className="relative w-full">
@@ -244,7 +243,9 @@ export default function Footer() {
             </div>
           </Row>
 
-          <Section style={{ backgroundColor: "rgba(210, 175, 159, 30%)" }}>
+          <Section className="sec-theme" 
+          // style={{ backgroundColor: "rgba(210, 175, 159, 30%)" }}
+          >
             <Row>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[50px] md:gap-[30px] items-center">
                 <div className="flex flex-col text-center md:text-right items-center md:items-end">
@@ -300,37 +301,6 @@ export default function Footer() {
                       );
                     })}
                   </div>
-
-                  {/* <div className="flex gap-3 flex-wrap justify-center md:justify-center">
-                    <Link
-                      to="https://www.facebook.com/mycra.fashion"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <FiFacebook className="w-[50px] h-[50px] p-2 rounded-[5px] bg-color text-white cursor-pointer" />
-                    </Link>
-                    <Link
-                      to="https://www.instagram.com/mycra.fashion"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <FaInstagram className="w-[50px] h-[50px] p-2 rounded-[5px] bg-color text-white cursor-pointer" />
-                    </Link>
-                    <Link
-                      to="https://www.youtube.com/@mycrafashion"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <FaYoutube className="w-[50px] h-[50px] p-2 rounded-[5px] bg-color text-white cursor-pointer" />
-                    </Link>
-                    <Link
-                      to="https://twitter.com/mycrafashion"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <TfiTwitter className="w-[50px] h-[50px] p-2 rounded-[5px] bg-color text-white cursor-pointer" />
-                    </Link>
-                  </div> */}
                 </div>
               </div>
             </Row>

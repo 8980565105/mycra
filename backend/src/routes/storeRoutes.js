@@ -11,10 +11,17 @@ const {
   updateStore,
   deleteStore,
   bulkDeleteStores,
+  getMyStore,
+  updateMyStore,
   getStoreByDomain,
 } = require("../controllers/storeController");
+
 router.get("/info", getStoreByDomain);
 router.use(authMiddleware);
+
+router.get("/my", authorizeMinRole("store_owner"), getMyStore);
+router.put("/my", authorizeMinRole("store_owner"), updateMyStore);
+
 router.get("/", authorizeMinRole("store_owner"), getStores);
 router.get("/:id", authorizeMinRole("store_owner"), getStoreById);
 router.post("/", authorizeMinRole("store_owner"), createStore);

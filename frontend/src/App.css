@@ -398,11 +398,17 @@
 .font-18{
   font-size: var(--font-size-h4);
 }
-.input-common {
+/* .input-common {
   @apply w-full border-b light-border rounded-[5px] px-[10px] py-[8px] md:px-[20px] md:py-[13px] focus:outline-none focus:ring-2 focus:ring-pink-400 form-shadow placeholder-[#BCBCBC];
+} */
+
+.input-common {
+  @apply w-full border-b light-border rounded-[5px] px-[10px] py-[8px] md:px-[20px] md:py-[13px] focus:outline-none form-shadow placeholder-[#BCBCBC];
 }
-
-
+.input-common:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--theme-bg-rgba);
+}
 
 @media (max-width: 767px) {
 .font-h2{

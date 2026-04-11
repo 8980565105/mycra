@@ -257,7 +257,8 @@ const Header = () => {
   })();
 
   return (
-    <header className="w-full mb-[5px] md:mb-[10px] sec-theme box-shadow">
+    // <header className="w-full mb-[5px] md:mb-[10px] sec-theme box-shadow">
+    <header className="w-full mb-[5px] md:mb-[10px] bg-theme box-shadow sticky top-0 z-50">
       <Row className="h-[70px] custom-lg:h-[100px] flex items-center justify-between gap-[10px]">
         <button
           className="custom-lg:hidden text-light transition-colors duration-300 border rounded-[3px] p-[5px] border-[#D2AF9F]"
@@ -269,11 +270,7 @@ const Header = () => {
         <div className="flex items-center">
           <Link to="/home">
             {/* <img src={HeaderLogo} alt="Logo" className="h-10 custom-lg:h-14" /> */}
-            <img
-              src={dynamicLogoUrl || HeaderLogo}
-              alt="Logo"
-              className=""
-            />
+            <img src={dynamicLogoUrl || HeaderLogo} alt="Logo" className="" />
           </Link>
         </div>
 
@@ -556,7 +553,7 @@ const Header = () => {
                 )}
               </div>
               <ul className="text-light text-p p-[17px]">
-                <li className="py-[10px] hover:text-[#F43297]">
+                <li className="py-[10px] hover:text-[var(--theme-color)]">
                   <button
                     onClick={() => openProtectedLink("/my-account")}
                     className="flex items-center gap-[15px] w-full"
@@ -565,7 +562,7 @@ const Header = () => {
                     <span>My Profile</span>
                   </button>
                 </li>
-                <li className="py-[8px] hover:text-[#F43297]">
+                <li className="py-[8px] hover:text-[var(--theme-color)]">
                   <button
                     onClick={() => openProtectedLink("/my-account/orders")}
                     className="flex items-center gap-[15px] w-full"
@@ -574,7 +571,7 @@ const Header = () => {
                     <span>Orders</span>
                   </button>
                 </li>
-                <li className="py-[8px] hover:text-[#F43297]">
+                <li className="py-[8px] hover:text-[var(--theme-color)]">
                   <button
                     onClick={() => openProtectedLink("/wishlist")}
                     className="flex items-center gap-[15px] w-full"
@@ -591,7 +588,7 @@ const Header = () => {
             onClick={() => openProtectedLink("/wishlist")}
             className="relative text-light"
           >
-            <Heart className="w-5 h-5" />
+            <Heart className="w-5 h-5 text-theme" />
             {wishlistCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-[#D2AF9F] text-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
                 {wishlistCount}
@@ -603,7 +600,10 @@ const Header = () => {
             className="relative text-light"
             onClick={() => openProtectedLink("/cart")}
           >
-            <FontAwesomeIcon icon={faCartShopping} className="w-5 h-5" />
+            <FontAwesomeIcon
+              icon={faCartShopping}
+              className="w-5 h-5 text-theme"
+            />
             {cartCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-[#D2AF9F] text-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
                 {cartCount}

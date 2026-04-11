@@ -4,7 +4,7 @@ const FlowerIcon = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
-    viewBox="0 0 102 72"  // <- ADD viewBox for responsive scaling
+    viewBox="0 0 102 72" 
     {...props}
   >
     <path

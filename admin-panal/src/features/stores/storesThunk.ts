@@ -89,3 +89,30 @@ export const bulkDeleteStores = createAsyncThunk(
     }
   }
 );
+
+
+export const fetchMyStore = createAsyncThunk(
+  "stores/fetchMyStore",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get(ROUTES.stores.getMy);
+      if (res.data.success) return res.data.data;
+      return rejectWithValue(res.data.message || "Failed to fetch store");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
+    }
+  }
+);
+
+export const updateMyStore = createAsyncThunk(
+  "stores/updateMyStore",
+  async (data: any, { rejectWithValue }) => {
+    try {
+      const res = await api.put(ROUTES.stores.updateMy, data);
+      if (res.data.success) return res.data.data;
+      return rejectWithValue(res.data.message || "Failed to update store");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
+    }
+  }
+);

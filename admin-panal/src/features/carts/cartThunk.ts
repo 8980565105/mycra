@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
 
-// Fetch all cart items
 export const fetchCartItems = createAsyncThunk(
   "cart/fetchAll",
   async (
@@ -19,7 +18,6 @@ export const fetchCartItems = createAsyncThunk(
   }
 );
 
-// Get cart item by ID
 export const getCartItemById = createAsyncThunk(
   "cart/getById",
   async (id: string, { rejectWithValue }) => {
@@ -33,7 +31,6 @@ export const getCartItemById = createAsyncThunk(
   }
 );
 
-// Delete single cart item
 export const deleteCartItem = createAsyncThunk(
   "cart/delete",
   async (id: string, { rejectWithValue }) => {
@@ -47,7 +44,6 @@ export const deleteCartItem = createAsyncThunk(
   }
 );
 
-// Bulk delete cart items
 export const bulkDeleteCartItems = createAsyncThunk(
   "cart/bulkDelete",
   async (ids: string[], { rejectWithValue }) => {

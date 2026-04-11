@@ -151,7 +151,7 @@ const storeOwnerSections = [
   {
     label: "Customers",
     items: [
-      { title: "Store", url: "/store_owner/stores", icon: Users },
+      // { title: "Store", url: "/store_owner/stores", icon: Users },
       { title: "Users", url: "/store_owner/users", icon: Users },
       { title: "Customer Reviews", url: "/store_owner/customer-reviews", icon: Star },
       { title: "Wishlist", url: "/store_owner/wishlists", icon: Heart },

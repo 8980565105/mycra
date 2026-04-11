@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchFaqs, getFaqBanner } from "../features/faqs/faqsThunk";
+import { Plus } from "lucide-react";
 
 function FAQItem({ question, answer }) {
   const [open, setOpen] = useState(false);
@@ -12,13 +13,14 @@ function FAQItem({ question, answer }) {
     <div className="border border-gray-200 rounded-lg mb-2 overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${open ? "bg-[rgba(239,58,150,0.09)]" : "bg-white hover:bg-[rgba(239,58,150,0.09)]"}`}
+        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors
+           ${open ? "bg-theme" : "bg-white hover:bg-theme"}`}
       >
         <span className="text-sm font-medium text-gray-800">{question}</span>
         <span
           className={`text-xl text-gray-400 transition-transform duration-200 flex-shrink-0 ml-4 ${open ? "rotate-45" : ""}`}
         >
-          +
+          <Plus className="w-4 h-4" />
         </span>
       </button>
       {open && (
@@ -119,8 +121,9 @@ export default function FAQPage() {
                     onClick={() => handleCategorySelect(cat.key)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors ${
                       activeCat === cat.key
-                        ? "bg-[rgba(239,58,150,0.09)] text-theme font-medium"
-                        : "text-black hover:bg-gray-100"
+                        ? // ? "bg-[rgba(239,58,150,0.09)] text-theme font-medium"
+                          "bg-theme text-[var(--theme-color)] font-medium"
+                        : "text-black hover:bg-gray-100 hover:text-[var(--theme-color)]"
                     }`}
                   >
                     {cat.label}

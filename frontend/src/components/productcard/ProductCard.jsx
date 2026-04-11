@@ -262,8 +262,8 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                   e.preventDefault();
                   handleAddToWishlist(product);
                 }}
-                className={`h-[26px] w-[26px] sm:h-[40px] sm:w-[40px] flex items-center justify-center rounded-full hover:bg-[#F43297]
-                ${isWishlisted ? "bg-[#F43297]" : "bg-white"}`}
+                className={`h-[26px] w-[26px] sm:h-[40px] sm:w-[40px] flex items-center justify-center rounded-full hover:bg-[var(--primary-color)]
+                ${isWishlisted ? "bg-[var(--primary-color)]" : "bg-white"}`}
               >
                 <HeartIcon
                   className={`w-[16px] h-[16px] sm:w-[26px] sm:h-[24px] transition hover:invert over:brightness-0 hover:contrast-200
@@ -277,7 +277,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                   e.stopPropagation();
                   handleAddToCart(product);
                 }}
-                className="h-[26px] w-[26px] sm:h-[40px] sm:w-[40px] bg-white flex items-center justify-center rounded-full hover:bg-[#F43297]"
+                className="h-[26px] w-[26px] sm:h-[40px] sm:w-[40px] bg-white flex items-center justify-center rounded-full hover:bg-[var(--primary-color)]"
               >
                 <FontAwesomeIcon
                   icon={faCartShopping}
@@ -314,7 +314,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
             <div className="flex items-center gap-2 justify-left mb-1">
               {hasDiscount && (
                 <div className="flex items-center gap-2 justify-left mb-1">
-                  <span className="bg-[rgba(239,58,150,0.09)] text-theme text-[12px] md:text-[15px] px-2 py-1 rounded font-bold">
+                  <span className="bg-theme text-theme text-[12px] md:text-[15px] px-2 py-1 rounded font-bold">
                     {discount?.type === "percentage"
                       ? `${discount?.value || 0}% OFF`
                       : `₹${discount?.value || 0} OFF`}

@@ -9,6 +9,7 @@ import earringsimg from "../../assets/earrings.png";
 import { useSelector } from "react-redux";
 import { getImageUrl } from "../utils/helper";
 import { useNavigate } from "react-router-dom";
+import FlowerIcon from "../icons/FlowerIcon";
 
 // ---------------- IMAGE CARD ----------------
 const ImageCard = ({
@@ -117,9 +118,23 @@ export default function NewArrivals() {
 
   return (
     <section className="w-full py-[25px] md:py-[50px]">
-      <Row className="flex flex-col items-center">
+      <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
+        <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+
+        <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
+          <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
+            {/* {currentSection.title} */}
+            New Arrivals
+          </h2>
+          <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
+        </div>
+
+        <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+      </div>
+
+      {/* <Row className="flex flex-col items-center">
         <SectionHeading page="Home" order={3} />
-      </Row>
+      </Row> */}
 
       <Row className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {Object.entries(groupedItems).map(([col, items]) => (

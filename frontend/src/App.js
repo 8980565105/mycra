@@ -30,6 +30,49 @@ import ScrollToTop from "./components/ScrollToTop";
 import { fetchStoreInfo } from "./features/store/storeThunk";
 import { useDispatch, useSelector } from "react-redux";
 
+const hexToRgba = (hex, opacity) => {
+  if (!hex) return null;
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.substr(0, 2), 16);
+  const g = parseInt(clean.substr(2, 2), 16);
+  const b = parseInt(clean.substr(4, 2), 16);
+  return `rgba(${r},${g},${b},${opacity})`;
+};
+
+const injectThemeColors = (theme) => {
+  if (!theme) return;
+  const root = document.documentElement;
+
+  const primary = theme.primaryColor;
+  const secondary = theme.secondaryColor;
+  const button = theme.buttonColor;
+  const font = theme.fontFamily;
+
+  if (primary) {
+    root.style.setProperty("--primary-color", primary);
+    root.style.setProperty("--theme-color", primary);
+    root.style.setProperty("--theme-hover-color", hexToRgba(primary, 0.5));
+    root.style.setProperty("--theme-bg-100", primary);
+    root.style.setProperty("--ef3a96-9", hexToRgba(primary, 0.09));
+    root.style.setProperty("--theme-bg-rgba", hexToRgba(primary, 0.3));
+    root.style.setProperty("--theme-bg-light", hexToRgba(primary, 0.15));
+  }
+
+  if (secondary) {
+    root.style.setProperty("--secondary-color", secondary);
+    root.style.setProperty("--sec-theme-color-30", hexToRgba(secondary, 0.5));
+  }
+
+  if (button) {
+    root.style.setProperty("--button-color", button);
+  }
+
+  if (font) {
+    root.style.setProperty("--font-family-main", `'${font}', sans-serif`);
+    root.style.setProperty("--font-inter", `'${font}', sans-serif`);
+  }
+};
+
 function App() {
   const RouterWrapper = () => {
     const location = useLocation();
@@ -55,6 +98,12 @@ function App() {
         document.head.appendChild(link);
       }
       link.href = fullUrl;
+    }, [storeData]);
+
+    useEffect(() => {
+      if (storeData?.theme) {
+        injectThemeColors(storeData.theme);
+      }
     }, [storeData]);
 
     return (

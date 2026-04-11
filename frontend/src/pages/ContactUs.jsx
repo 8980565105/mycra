@@ -79,7 +79,7 @@ export default function ContactUs() {
       </Section>
 
       <MapForm />
-      {/* <FAQ /> */}
+     <FAQ /> 
     </>
   );
 }

@@ -17,6 +17,7 @@ import CustomerAlsoViewed from "../components/productcard/CustomerAlsoViewed";
 import { fetchPages } from "../features/pages/pagesThunk";
 import { addRecentlyViewed } from "../components/utils/recentlyViewed";
 import LoginForm from "./Login";
+import FlowerIcon from "../components/icons/FlowerIcon";
 
 export default function Product() {
   const { id } = useParams();
@@ -75,9 +76,23 @@ export default function Product() {
       </Section>
 
       <Section>
-        <Row>
+        {/* <Row>
           <SectionHeading page="products" order="2" index="0" />
-        </Row>
+        </Row> */}
+
+        <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
+          <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+
+          <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
+            <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
+              Similar Products
+            </h2>
+            <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
+          </div>
+
+          <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+        </div>
+
         <SimilarProducts
           product={product}
           products={products}
@@ -86,9 +101,22 @@ export default function Product() {
       </Section>
 
       <Section>
-        <Row>
+        {/* <Row>
           <SectionHeading page="products" order="2" index="1" />
-        </Row>
+        </Row> */}
+        <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
+          <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+
+          <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
+            <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
+              Customer Also Viewed
+            </h2>
+            <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
+          </div>
+
+          <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+        </div>
+
         <CustomerAlsoViewed
           products={products}
           currentProductId={product?._id}

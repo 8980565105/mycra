@@ -53,8 +53,8 @@ router.put(
   ]),
   updateUser,
 );
-router.put("/:id/status", authorizeMinRole("admin"), updateUserStatus);
-router.delete("/:id", authorizeMinRole("admin"), deleteUser);
-router.post("/bulk-delete", authorizeMinRole("admin"), bulkDeleteUsers);
+router.put("/:id/status", authorizeMinRole("store_owner"), updateUserStatus);
+router.delete("/:id", authorizeMinRole("store_owner"), deleteUser);
+router.post("/bulk-delete", authorizeMinRole("store_owner"), bulkDeleteUsers);
 
 module.exports = router;

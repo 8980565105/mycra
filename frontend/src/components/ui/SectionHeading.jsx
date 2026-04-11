@@ -6,12 +6,10 @@ export default function SectionHeading({ page, order, index = 0 }) {
   const pages = useSelector((state) => state.pages?.pages || []);
   const loading = useSelector((state) => state.pages?.loading);
 
-  // Wait until pages load
   if (loading || !pages.length) return null;
 
-  // Find the correct page
   const currentPage = pages.find(
-    (p) => p.slug?.toLowerCase().trim() === page?.toLowerCase().trim()
+    (p) => p.slug?.toLowerCase().trim() === page?.toLowerCase().trim(),
   );
 
   if (!currentPage) {
@@ -19,9 +17,8 @@ export default function SectionHeading({ page, order, index = 0 }) {
     return null;
   }
 
-  // Filter all sections with same order
   const matchedSections = currentPage.sections.filter(
-    (section) => Number(section.order) === Number(order)
+    (section) => Number(section.order) === Number(order),
   );
 
   if (!matchedSections.length) {
@@ -29,7 +26,6 @@ export default function SectionHeading({ page, order, index = 0 }) {
     return null;
   }
 
-  // Pick correct section based on index
   const currentSection = matchedSections[index];
 
   if (!currentSection) {

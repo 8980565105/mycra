@@ -84,7 +84,7 @@ export default function ProductGallery({
             onClick={() => setCurrentImage(img)}
             className={`w-[160px] h-[208px] object-cover rounded-[3px] cursor-pointer transition-all duration-200 ${
               currentImage === img
-                ? "ring-1 ring-[#F43297] scale-[1.02]"
+                ? "ring-1 ring-theme scale-[1.02]"
                 : "opacity-50 hover:opacity-100"
             }`}
           />
@@ -106,7 +106,6 @@ export default function ProductGallery({
           </div>
         )}
 
-        {/* ✅ Color Dots - CLICKABLE - parent state update → ProductInfo sizes filter */}
         <div className="flex gap-[8px] mt-[30px] justify-center">
           {colorOptions.map((color) => (
             <span
@@ -125,7 +124,6 @@ export default function ProductGallery({
         </div>
       </div>
 
-      {/* ✅ Mobile Slider */}
       <div className="block md:hidden w-full rounded-[10px]">
         {fullImageUrls.length > 0 ? (
           <Slider {...sliderSettings}>

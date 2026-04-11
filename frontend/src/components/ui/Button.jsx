@@ -3,8 +3,8 @@ import React from "react";
 const Button = ({
   children,
   onClick,
-  variant = "primary", // default variant
-  size = "md",         // default size
+  variant = "primary", 
+  size = "md",       
   className = "",
   type = "button",
   disabled = false,

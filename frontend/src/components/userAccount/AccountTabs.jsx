@@ -29,7 +29,6 @@ const tabs = [
     name: "Address",
     path: "/my-account/address",
     icon: <MapPin />,
-    // component: () => <p>Address content goes here.</p>,
     component: Address,
   },
   {

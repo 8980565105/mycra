@@ -7,6 +7,8 @@ import {
   updateStore,
   deleteStore,
   bulkDeleteStores,
+  fetchMyStore,
+  updateMyStore,
 } from "./storesThunk";
 
 interface Store {
@@ -22,7 +24,7 @@ interface Store {
     country: string;
     zip_code: string;
   };
-  assignedName?:string;
+  assignedName?: string;
   status?: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
@@ -30,6 +32,7 @@ interface Store {
 
 interface StoresState {
   stores: Store[];
+  myStore: any | null;
   total: number;
   loading: boolean;
   error: string | null;
@@ -37,6 +40,7 @@ interface StoresState {
 
 const initialState: StoresState = {
   stores: [],
+  myStore: null,
   total: 0,
   loading: false,
   error: null,
@@ -48,7 +52,6 @@ const storesSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch all
       .addCase(fetchStores.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -63,42 +66,49 @@ const storesSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Get by ID
       .addCase(getStoreById.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(getStoreById.fulfilled, (state, action) => {
         state.loading = false;
-        // Optionally, you can update the store in the list if needed
       })
       .addCase(getStoreById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
 
-      // Create
       .addCase(createStore.fulfilled, (state, action) => {
         state.stores.unshift(action.payload);
         state.total += 1;
       })
 
-      // Update
       .addCase(updateStore.fulfilled, (state, action) => {
-        const index = state.stores.findIndex((s) => s._id === action.payload._id);
+        const index = state.stores.findIndex(
+          (s) => s._id === action.payload._id,
+        );
         if (index !== -1) state.stores[index] = action.payload;
       })
 
-      // Delete
       .addCase(deleteStore.fulfilled, (state, action) => {
         state.stores = state.stores.filter((s) => s._id !== action.payload);
         state.total -= 1;
       })
 
-      // Bulk Delete
       .addCase(bulkDeleteStores.fulfilled, (state, action) => {
-        state.stores = state.stores.filter((s) => !action.payload.includes(s._id));
+        state.stores = state.stores.filter(
+          (s) => !action.payload.includes(s._id),
+        );
         state.total -= action.payload.length;
+      })
+
+      .addCase(fetchMyStore.fulfilled, (state, action) => {
+        state.loading = false;
+        state.myStore = action.payload;
+      })
+      .addCase(updateMyStore.fulfilled, (state, action) => {
+        state.loading = false;
+        state.myStore = action.payload;
       });
   },
 });

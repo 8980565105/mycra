@@ -28,7 +28,6 @@ const cartSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch all
       .addCase(fetchCartItems.pending, (state) => {
         state.loading = true;
       })
@@ -41,17 +40,13 @@ const cartSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Get by ID
       .addCase(getCartItemById.fulfilled, (state, action) => {
         state.selectedItem = action.payload;
       })
-      // Delete single
       .addCase(deleteCartItem.fulfilled, (state, action) => {
-        // state.carts = state.carts.filter((item) => item._id !== action.payload);
 
         state.carts = state.carts.filter((cart) => cart._id !== action.payload);
       })
-      // Bulk delete
       .addCase(bulkDeleteCartItems.fulfilled, (state, action) => {
         state.carts = state.carts.filter(
           (item) => !action.payload.includes(item._id)

@@ -6,6 +6,7 @@ import Section from "../ui/Section.jsx";
 import { getImageUrl } from "../utils/helper.js";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import FlowerIcon from "../icons/FlowerIcon.jsx";
 
 const Bestsellers = () => {
   const { products = [] } = useSelector((state) => state.products);
@@ -32,9 +33,22 @@ const Bestsellers = () => {
 
   return (
     <Section>
-      <Row className="pt-[25px] md:pt-[50px]">
+      {/* <Row className="pt-[25px] md:pt-[50px]">
         <SectionHeading page="Home" order={7} />
-      </Row>
+      </Row> */}
+
+      <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
+        <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+
+        <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
+          <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
+            Our Best Seller’s
+          </h2>
+          <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
+        </div>
+
+        <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+      </div>
 
       <Row className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] lg:gap-[30px]">
         {bestSellersLimited.map((product) => {
