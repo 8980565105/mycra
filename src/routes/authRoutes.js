@@ -6,6 +6,7 @@ const {
   registerStoreOwner,
   forgotPassword,
   resetPassword,
+  googleLogin,
 } = require("../controllers/authController");
 const { authMiddleware } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/upload");
@@ -20,6 +21,7 @@ router.post("/register-store-owner", registerStoreOwner);
 
 router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
+router.post("/google-login", googleLogin);
 router.post("/reset-password", resetPassword);
 router.get("/me", authMiddleware, async (req, res) => {
   const { sendResponse } = require("../utils/response");

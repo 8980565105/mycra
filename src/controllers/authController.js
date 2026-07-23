@@ -521,10 +521,81 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const googleLogin = async (req, res) => {
+  try {
+    const { credential, domain: rawDomain } = req.body;
+    if (!credential)
+      return sendResponse(res, false, null, "Google credential is required");
+
+    // Verify token with Google
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub: googleId } = payload;
+
+    if (!email)
+      return sendResponse(res, false, null, "Google account has no email");
+
+    const domain = cleanDomain(rawDomain);
+    let store = null;
+    if (domain) {
+      store = await Store.findOne({ domain });
+    }
+
+    let user;
+    if (store) {
+      // Store-user flow: find or create user under this store
+      user = await User.findOne({ email, storeId: store._id });
+      if (!user) {
+        user = await User.create({
+          name,
+          email,
+          password: googleId + process.env.JWT_SECRET, // random unusable password
+          role: "store_user",
+          domain: store.domain,
+          storeId: store._id,
+          profile_picture: picture,
+        });
+      }
+    } else {
+      // Fallback: admin/store_owner login
+      user = await User.findOne({
+        email,
+        role: { $in: ["admin", "store_owner"] },
+      });
+      if (!user)
+        return sendResponse(res, false, null, "No account found for this email");
+    }
+
+    if (!user.is_active)
+      return sendResponse(res, false, null, "Account inactive");
+
+    const populatedUser = await User.findById(user._id).populate("storeId");
+    const token = generateToken(populatedUser);
+    const userObj = populatedUser.toObject();
+    delete userObj.password;
+
+    console.log(`[GoogleLogin] ✅ ${email}`);
+    return sendResponse(
+      res,
+      true,
+      { token, user: userObj },
+      "Google login successful",
+    );
+  } catch (err) {
+    console.error("[GoogleLogin] ❌", err.message);
+    return sendResponse(res, false, null, err.message || "Google login failed");
+  }
+};
+
+
 module.exports = {
   login,
   register,
   registerStoreOwner,
   forgotPassword,
   resetPassword,
+  googleLogin,
 };
