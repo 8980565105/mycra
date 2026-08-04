@@ -25,8 +25,8 @@ export default function Login() {
       toast.success("Logged in successfully!");
 
       const userRole = result.payload.user.role;
-      if (userRole === "admin") navigate("/");
-      else navigate("/store_user"); // store_user
+      if (userRole === "admin") navigate("/admin");
+      else navigate("/store_user"); 
     } else {
       const message =
         (result.payload as string) || "Login failed: Invalid credentials";

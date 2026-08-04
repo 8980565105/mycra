@@ -9,6 +9,7 @@ import {
   bulkDeleteStores,
   fetchMyStore,
   updateMyStore,
+  fetchStoreDashboard,
 } from "./storesThunk";
 
 interface Store {
@@ -32,17 +33,21 @@ interface Store {
 
 interface StoresState {
   stores: Store[];
+  store: Store | null;
   myStore: any | null;
   total: number;
   loading: boolean;
   error: string | null;
+  dashboard: any;
 }
 
 const initialState: StoresState = {
   stores: [],
+  store: null,
   myStore: null,
   total: 0,
   loading: false,
+  dashboard: null,
   error: null,
 };
 
@@ -65,43 +70,38 @@ const storesSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-
       .addCase(getStoreById.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(getStoreById.fulfilled, (state, action) => {
         state.loading = false;
+        state.store = action.payload;
       })
       .addCase(getStoreById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-
       .addCase(createStore.fulfilled, (state, action) => {
         state.stores.unshift(action.payload);
         state.total += 1;
       })
-
       .addCase(updateStore.fulfilled, (state, action) => {
         const index = state.stores.findIndex(
           (s) => s._id === action.payload._id,
         );
         if (index !== -1) state.stores[index] = action.payload;
       })
-
       .addCase(deleteStore.fulfilled, (state, action) => {
         state.stores = state.stores.filter((s) => s._id !== action.payload);
         state.total -= 1;
       })
-
       .addCase(bulkDeleteStores.fulfilled, (state, action) => {
         state.stores = state.stores.filter(
           (s) => !action.payload.includes(s._id),
         );
         state.total -= action.payload.length;
       })
-
       .addCase(fetchMyStore.fulfilled, (state, action) => {
         state.loading = false;
         state.myStore = action.payload;
@@ -109,6 +109,9 @@ const storesSlice = createSlice({
       .addCase(updateMyStore.fulfilled, (state, action) => {
         state.loading = false;
         state.myStore = action.payload;
+      })
+      .addCase(fetchStoreDashboard.fulfilled, (state, action) => {
+        state.dashboard = action.payload;
       });
   },
 });

@@ -12,12 +12,10 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { fetchSettings, updateSettings } from "@/features/settings/settingsThunk";
-import { fetchMyStore, updateMyStore } from "@/features/stores/storesThunk";
-
+// import { fetchMyStore, updateMyStore } from "@/features/stores/storesThunk";
 export default function Settings() {
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -29,22 +27,21 @@ export default function Settings() {
   const [state, setState] = useState("");
   const [zip, setZip] = useState("");
   const [country, setCountry] = useState("");
-
-  const [storeId, setStoreId] = useState<string | null>(null);
+  // const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState("");
   const [storeEmail, setStoreEmail] = useState("");
   const [storePhone, setStorePhone] = useState("");
-  const [gstNumber, setGstNumber] = useState("");
+  // const [gstNumber, setGstNumber] = useState("");
   const [contactStreet, setContactStreet] = useState("");
   const [contactCity, setContactCity] = useState("");
   const [contactState, setContactState] = useState("");
   const [contactCountry, setContactCountry] = useState("");
   const [contactPostal, setContactPostal] = useState("");
   const [logo, setLogo] = useState<string | null>(null);
+  const [mobilelogo, setMobilelogo] = useState<string | null>(null);
   const [favicon, setFavicon] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState("#000000");
   const [secondaryColor, setSecondaryColor] = useState("#ffffff");
-  // const [buttonColor, setButtonColor] = useState("#007bff");
   const [fontFamily, setFontFamily] = useState("");
   const [footerText, setFooterText] = useState("");
   const [copyrightText, setCopyrightText] = useState("");
@@ -53,8 +50,6 @@ export default function Settings() {
   const [metaKeyphrase, setMetaKeyphrase] = useState("");
   const [seoImage, setSeoImage] = useState<string | null>(null);
   const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
-  // const [customCss, setCustomCss] = useState("");
-  // const [customJs, setCustomJs] = useState("");
   useEffect(() => {
     dispatch(fetchMe()).then((res: any) => {
       if (res.payload?.user) {
@@ -76,50 +71,94 @@ export default function Settings() {
       }
     });
   }, [dispatch]);
+
+  // useEffect(() => {
+  //   dispatch(fetchMyStore()).then((res: any) => {
+  //     if (res.payload) {
+  //       const s = res.payload;
+  //       setStoreId(s._id);
+  //       setStoreName(s.name || "");
+  //       setStoreEmail(s.email || "");
+  //       setStorePhone(s.phone || "");
+  //       setGstNumber(s.gst_number || "");
+  //       if (s.address) {
+  //         setContactStreet(s.address.street || "");
+  //         setContactCity(s.address.city || "");
+  //         setContactState(s.address.state || "");
+  //         setContactCountry(s.address.country || "");
+  //         setContactPostal(s.address.zip_code || "");
+  //       }
+  //       if (s.theme) {
+  //         setLogo(s.theme.logoUrl || null);
+  //         setMobilelogo(s.theme.mobilelogoUrl || null);
+  //         setFavicon(s.theme.faviconUrl || null);
+  //         setPrimaryColor(s.theme.primaryColor || "#000000");
+  //         setSecondaryColor(s.theme.secondaryColor || "#ffffff");
+  //         setFontFamily(s.theme.fontFamily || "");
+  //         setFooterText(s.theme.footerText || "");
+  //         setCopyrightText(s.theme.copyrightText || "");
+  //       }
+  //       if (s.seo) {
+  //         setMetaTitle(s.seo.meta_title || "");
+  //         setMetaDescription(s.seo.meta_description || "");
+  //         setMetaKeyphrase(s.seo.meta_keyphrase || "");
+  //         setSeoImage(s.seo.seo_image || null);
+  //       }
+  //       setSocialLinks(s.social_links || []);
+  //     }
+  //   });
+  // }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(fetchSettings()).then((res: any) => {
+  //   });
+  // }, [dispatch]);
+
   useEffect(() => {
-    dispatch(fetchMyStore()).then((res: any) => {
-      if (res.payload) {
-        const s = res.payload;
-        setStoreId(s._id);
-        setStoreName(s.name || "");
-        setStoreEmail(s.email || "");
-        setStorePhone(s.phone || "");
-        setGstNumber(s.gst_number || "");
-        if (s.address) {
-          setContactStreet(s.address.street || "");
-          setContactCity(s.address.city || "");
-          setContactState(s.address.state || "");
-          setContactCountry(s.address.country || "");
-          setContactPostal(s.address.zip_code || "");
-        }
-        if (s.theme) {
-          setLogo(s.theme.logoUrl || null);
-          setFavicon(s.theme.faviconUrl || null);
-          setPrimaryColor(s.theme.primaryColor || "#000000");
-          setSecondaryColor(s.theme.secondaryColor || "#ffffff");
-          // setButtonColor(s.theme.buttonColor || "#007bff");
-          setFontFamily(s.theme.fontFamily || "");
-          setFooterText(s.theme.footerText || "");
-          setCopyrightText(s.theme.copyrightText || "");
-        }
-        if (s.seo) {
-          setMetaTitle(s.seo.meta_title || "");
-          setMetaDescription(s.seo.meta_description || "");
-          setMetaKeyphrase(s.seo.meta_keyphrase || "");
-          setSeoImage(s.seo.seo_image || null);
-        }
-        setSocialLinks(s.social_links || []);
+    dispatch(fetchSettings()).then((res: any) => {
+      if (!res.payload) return;
+
+      const s = res.payload;
+
+      setStoreName(s.site_name || "");
+      setStoreEmail(s.contact_email || "");
+      setStorePhone(s.contact_phone || "");
+
+      setLogo(s.logourl || null);
+      setMobilelogo(s.mobilelogoUrl || null);
+      setFavicon(s.favicon_url || null);
+
+      setPrimaryColor(s.primary_color || "#000000");
+      setSecondaryColor(s.secondary_color || "#ffffff");
+      setFontFamily(s.font_family || "");
+
+      setFooterText(s.footer_text || "");
+      setCopyrightText(s.copyright_text || "");
+
+      setMetaTitle(s.meta_title || "");
+      setMetaDescription(s.meta_description || "");
+      setMetaKeyphrase(s.meta_keyphrase || "");
+      setSeoImage(s.seo_image || null);
+
+      setSocialLinks(s.social_links || []);
+
+      if (s.contact_address) {
+        setContactStreet(s.contact_address.street || "");
+        setContactCity(s.contact_address.city || "");
+        setContactState(s.contact_address.state || "");
+        setContactCountry(s.contact_address.country || "");
+        setContactPostal(s.contact_address.postal_code || "");
       }
     });
   }, [dispatch]);
-  useEffect(() => {
-    dispatch(fetchSettings()).then((res: any) => {
-      // if (res.payload) {
-      //   setCustomCss(res.payload.custom_css || "");
-      //   setCustomJs(res.payload.custom_js || "");
-      // }
-    });
-  }, [dispatch]);
+
+
+
+
+
+
+
+
+
   const handleSaveProfile = async () => {
     const res = await dispatch(updateMe({
       name,
@@ -136,62 +175,87 @@ export default function Settings() {
     }
   };
   const handleSaveAppearance = async () => {
-    const res = await dispatch(updateMyStore({
-      theme: {
-        logoUrl: logo,
-        faviconUrl: favicon,
-        primaryColor,
-        secondaryColor,
-        // buttonColor,
-        fontFamily,
-        footerText,
-        copyrightText,
-      },
+    const res = await dispatch(updateSettings({
+      // theme: {
+      //   logoUrl: logo,
+      //   mobilelogoUrl: mobilelogo,
+      //   faviconUrl: favicon,
+      //   primaryColor,
+      //   secondaryColor,
+      //   fontFamily,
+      //   footerText,
+      //   copyrightText,
+      // },
+      logourl: logo,
+      mobilelogoUrl: mobilelogo,
+      favicon_url: favicon,
+      primary_color: primaryColor,
+      secondary_color: secondaryColor,
+      font_family: fontFamily,
+      footer_text: footerText,
+      copyright_text: copyrightText
+
     }));
-    if (updateMyStore.fulfilled.match(res)) {
+    if (updateSettings.fulfilled.match(res)) {
       toast({ title: "Appearance Updated", description: "Theme saved successfully." });
     } else {
       toast({ title: "Update Failed", description: res.payload as string, variant: "destructive" });
     }
   };
   const handleSaveContact = async () => {
-    const res = await dispatch(updateMyStore({
-      name: storeName,
-      email: storeEmail,
-      phone: storePhone,
-      gst_number: gstNumber,
-      address: {
+    const res = await dispatch(updateSettings({
+      //   name: storeName,
+      //   email: storeEmail,
+      //   phone: storePhone,
+      //   gst_number: gstNumber,
+      //   address: {
+      //     street: contactStreet,
+      //     city: contactCity,
+      //     state: contactState,
+      //     country: contactCountry,
+      //     zip_code: contactPostal,
+      //   },
+      // }));
+      site_name: storeName,
+      contact_email: storeEmail,
+      contact_phone: storePhone,
+      contact_address: {
         street: contactStreet,
         city: contactCity,
         state: contactState,
         country: contactCountry,
-        zip_code: contactPostal,
-      },
+        postal_code: contactPostal
+      }
     }));
-    if (updateMyStore.fulfilled.match(res)) {
+    if (updateSettings.fulfilled.match(res)) {
       toast({ title: "Contact Updated", description: "Store info saved successfully." });
     } else {
       toast({ title: "Update Failed", description: res.payload as string, variant: "destructive" });
     }
   };
   const handleSaveSocial = async () => {
-    const res = await dispatch(updateMyStore({ social_links: socialLinks }));
-    if (updateMyStore.fulfilled.match(res)) {
+    const res = await dispatch(updateSettings({ social_links: socialLinks }));
+    if (updateSettings.fulfilled.match(res)) {
       toast({ title: "Social Links Updated", description: "Social links saved." });
     } else {
       toast({ title: "Update Failed", description: res.payload as string, variant: "destructive" });
     }
   };
   const handleSaveSeo = async () => {
-    const res = await dispatch(updateMyStore({
-      seo: {
-        meta_title: metaTitle,
-        meta_description: metaDescription,
-        meta_keyphrase: metaKeyphrase,
-        seo_image: seoImage,
-      },
+    // const res = await dispatch(updateMyStore({
+    const res = await dispatch(updateSettings({
+      // seo: {
+      //   meta_title: metaTitle,
+      //   meta_description: metaDescription,
+      //   meta_keyphrase: metaKeyphrase,
+      //   seo_image: seoImage,
+      // },
+      meta_title: metaTitle,
+      meta_description: metaDescription,
+      meta_keyphrase: metaKeyphrase,
+      seo_image: seoImage
     }));
-    if (updateMyStore.fulfilled.match(res)) {
+    if (updateSettings.fulfilled.match(res)) {
       toast({ title: "SEO Updated", description: "SEO settings saved." });
     } else {
       toast({ title: "Update Failed", description: res.payload as string, variant: "destructive" });
@@ -229,7 +293,7 @@ export default function Settings() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Profile Picture</Label>
-                  <ImageUpload value={profilePic} onChange={(v) => setProfilePic(v as string | null)}  className="w-10 h-10 "/>
+                  <ImageUpload value={profilePic} onChange={(v) => setProfilePic(v as string | null)} className="w-10 h-10 " />
                 </div>
                 <div className="space-y-2">
                   <Label>Full Name</Label>
@@ -300,10 +364,14 @@ export default function Settings() {
           <Card>
             <CardHeader><CardTitle>Theme Settings</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label>Logo</Label>
+                  <Label>Destop Logo</Label>
                   <ImageUpload value={logo} onChange={(v) => setLogo(v as string | null)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>mobile Logo</Label>
+                  <ImageUpload value={mobilelogo} onChange={(v) => setMobilelogo(v as string | null)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Favicon</Label>
@@ -319,10 +387,7 @@ export default function Settings() {
                   <Label>Secondary Color</Label>
                   <Input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} />
                 </div>
-                {/* <div className="space-y-2">
-                  <Label>Button Color</Label>
-                  <Input type="color" value={buttonColor} onChange={(e) => setButtonColor(e.target.value)} />
-                </div> */}
+
               </div>
               <div className="space-y-2">
                 <Label>Font Family</Label>
@@ -355,7 +420,7 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="contact">
           <Card>
-            <CardHeader><CardTitle>Store Information</CardTitle></CardHeader>
+            <CardHeader><CardTitle>WebSite Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
@@ -370,10 +435,10 @@ export default function Settings() {
                   <Label>Phone</Label>
                   <Input value={storePhone} onChange={(e) => setStorePhone(e.target.value)} placeholder="Enter phone number" />
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label>GST Number</Label>
                   <Input value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} placeholder="Enter GST number" />
-                </div>
+                </div> */}
               </div>
               <div className="space-y-2">
                 <Label>Street</Label>

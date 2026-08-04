@@ -20,6 +20,8 @@ export const fetchOrders = createAsyncThunk(
       product?: string;
       color?: string;
       size?: string;
+      role?: string;
+      store?: string;
     } = {},
     { rejectWithValue },
   ) => {

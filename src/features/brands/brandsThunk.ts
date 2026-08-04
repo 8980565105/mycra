@@ -6,18 +6,28 @@ import { ROUTES } from "../../services/routes";
 export const fetchBrands = createAsyncThunk(
   "brands/fetchBrands",
   async (
-    params: { page?: number; limit?: number; search?: string; isDownload?: boolean,status?: "active" | "inactive"; } = {},
-    { rejectWithValue }
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      isDownload?: boolean;
+      status?: "active" | "inactive";
+      role?: string;
+      store?: string;
+    } = {},
+    { rejectWithValue },
   ) => {
     try {
       const { isDownload = false, ...query } = params;
-      const res = await api.get(ROUTES.brands.getAll, { params: { ...query, isDownload } });
+      const res = await api.get(ROUTES.brands.getAll, {
+        params: { ...query, isDownload },
+      });
       if (res.data.success) return res.data.data;
       return rejectWithValue(res.data.message || "Failed to fetch brands");
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Get brand by ID
@@ -31,7 +41,7 @@ export const getBrandById = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Create brand
@@ -45,7 +55,7 @@ export const createBrand = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Update brand
@@ -59,13 +69,16 @@ export const updateBrand = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // ✅ Update brand status
 export const updateBrandStatus = createAsyncThunk(
   "brands/updateBrandStatus",
-  async ({ id, status }: { id: string; status: "active" | "inactive" }, { rejectWithValue }) => {
+  async (
+    { id, status }: { id: string; status: "active" | "inactive" },
+    { rejectWithValue },
+  ) => {
     try {
       const res = await api.put(ROUTES.brands.updateStatus(id), { status });
       if (res.data.success) return res.data.data;
@@ -73,7 +86,7 @@ export const updateBrandStatus = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Delete brand
@@ -87,7 +100,7 @@ export const deleteBrand = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Bulk delete brands
@@ -101,5 +114,5 @@ export const bulkDeleteBrands = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );

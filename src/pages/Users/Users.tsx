@@ -1,11 +1,6 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Button } from "@/components/ui/button";
-import { Plus, Download } from "lucide-react";
-import { useBasePath } from "@/hooks/useBasePath";
-
-import { AppDispatch, RootState   } from "@/store";
+import { AppDispatch, RootState } from "@/store";
 import {
   fetchUsers,
   deleteUser,
@@ -16,11 +11,8 @@ import { GenericTable } from "@/components/ui/adminTable";
 
 export default function Users() {
   const dispatch = useDispatch<AppDispatch>();
-  const basePath = useBasePath();
-
   const { user } = useSelector((state: RootState) => state.auth);
   const isAdmin = user?.role === "admin";
-
   const columns = [
     {
       key: "name",
@@ -45,19 +37,32 @@ export default function Users() {
       ),
     },
     { key: "email", label: "Email" },
-    { key: "role", label: "Role" },
+    ...(isAdmin
+      ? [
+        { key: "role", label: "Role" },
+      ] : []),
+
+    ...(isAdmin ? [
+      {
+        key: "createdBy",
+        label: "Created By",
+        render: (item: any) => item.createdBy?.name || "-",
+      }
+    ] : []),
+
 
   ];
 
   return (
+
     <GenericTable
       title="Users"
       columns={columns}
       rowKey="_id"
       searchEnabled
-      statusToggleEnabled
-      // editEnabled={false}
+      statusToggleEnabled={isAdmin}
       editEnabled={isAdmin}
+      viewEnabled={isAdmin}
       filters={[
         { label: "Active", value: "true" },
         { label: "Inactive", value: "false" },
@@ -65,60 +70,60 @@ export default function Users() {
       fetchData={async ({ page, limit, search, status }) => {
         const boolStatus =
           status === "true" ? true : status === "false" ? false : undefined;
-
         try {
           const res = await dispatch(
             fetchUsers({ page, limit, search, is_active: boolStatus })
           ).unwrap();
-
           const usersWithStatus = res.users.map((user: any) => ({
             ...user,
             status: user.is_active ? "active" : "inactive",
           }));
-
           return { data: usersWithStatus, total: res.total };
         } catch (err: any) {
           console.error("fetchData error:", err);
           throw new Error(err || "Failed to load users");
         }
       }}
-
-      deleteItem={async (id) => {
-        try {
-          await dispatch(deleteUser(id)).unwrap();
-        } catch (err: any) {
-          throw new Error(err || "Failed to delete user");
-        }
-      }}
-      bulkDeleteItems={async (ids) => {
-        try {
-          await dispatch(bulkDeleteUsers(ids)).unwrap();
-        } catch (err: any) {
-          throw new Error(err || "Failed to delete users");
-        }
-      }}
-      onStatusToggle={async (id, newStatus) => {
-        try {
-          await dispatch(
-            updateUserStatus({
-              id,
-              is_active: Boolean(newStatus),
-            })
-          ).unwrap();
-        } catch (err: any) {
-          throw new Error(err?.message || "Failed to update status");
-        }
-      }}
-    // headerActions={
-    //   <>
-    //     <Link to={`${basePath}/users/add`}>
-    //       <Button className="flex items-center gap-2">
-    //         <Plus className="h-4 w-4" /> Add User
-    //       </Button>
-    //     </Link>
-    //   </>
-    // }
+      deleteItem={
+        isAdmin
+          ? async (id) => {
+            try {
+              await dispatch(deleteUser(id)).unwrap();
+            } catch (err: any) {
+              throw new Error(err || "Failed to delete user");
+            }
+          }
+          : undefined
+      }
+      bulkDeleteItems={
+        isAdmin
+          ? async (ids) => {
+            try {
+              await dispatch(bulkDeleteUsers(ids)).unwrap();
+            } catch (err: any) {
+              throw new Error(err || "Failed to delete users");
+            }
+          }
+          : undefined
+      }
+      onStatusToggle={
+        isAdmin
+          ? async (id, newStatus) => {
+            try {
+              await dispatch(
+                updateUserStatus({
+                  id,
+                  is_active: Boolean(newStatus),
+                })
+              ).unwrap();
+            } catch (err: any) {
+              throw new Error(err?.message || "Failed to update status");
+            }
+          }
+          : undefined
+      }
     />
+
   );
 }
 

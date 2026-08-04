@@ -12,6 +12,8 @@ export const fetchProducts = createAsyncThunk(
       search?: string;
       isDownload?: boolean;
       status?: "active" | "inactive";
+      role?: string;
+      store?: string;
     } = {},
     { rejectWithValue },
   ) => {

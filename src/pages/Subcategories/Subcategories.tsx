@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { GenericTable } from "@/components/ui/adminTable";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
 import { useBasePath } from "@/hooks/useBasePath";
 import {
   bulkDeletesubCategories,
@@ -11,10 +11,21 @@ import {
   fetchsubCategories,
   updatesubCategoryStatus,
 } from "@/features/subcategories/subcategoriesThunk";
+import { useEffect, useState } from "react";
+import { fetchUsers } from "@/features/users/usersThunk";
 
 export default function subCategoriesPage() {
   const dispatch = useDispatch<AppDispatch>();
   const basePath = useBasePath();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isAdmin = user?.role === "admin";
+  const [creatorsMap, setCreatorsMap] = useState<Record<string, string>>({});
+
+  const getCreatorName = (createdById?: string) => {
+    if (!createdById) return "-";
+    return creatorsMap[createdById] || "-";
+  };
+
   const columns = [
     {
       key: "image_url",
@@ -40,6 +51,11 @@ export default function subCategoriesPage() {
       render: (item: any) => item.parent_id?.name || "-",
       width: "w-48",
     },
+    {
+      key: "createdBy",
+      label: "Created By",
+      render: (item: any) => item.createdBy?.name || "-",
+    },
   ];
 
   return (
@@ -49,14 +65,36 @@ export default function subCategoriesPage() {
       rowKey="_id"
       searchEnabled
       statusToggleEnabled
+      storeFilterEnabled={isAdmin}
+
       filters={[
         { label: "Active", value: "active" },
         { label: "Inactive", value: "inactive" },
       ]}
-      fetchData={async ({ page, limit, search, status }) => {
+      filters1={isAdmin
+        ? [
+          { label: "Admin", value: "admin" },
+          { label: "store", value: "store_owner" },
+        ]
+        : undefined
+      }
+      fetchStores={async () => {
+        const res = await dispatch(
+          fetchUsers({
+            role: "store_owner",
+            page: 1,
+            limit: 1000,
+          })
+        ).unwrap();
+        return res.users.map((u: any) => ({
+          label: u.storeName || u.name,
+          value: u._id
+        }));
+      }}
+      fetchData={async ({ page, limit, search, status, role, store }) => {
         try {
           const res = await dispatch(
-            fetchsubCategories({ page, limit, search, status })
+            fetchsubCategories({ page, limit, search, status, role, store })
           ).unwrap();
           return { data: res.categories, total: res.total };
         } catch (err: any) {

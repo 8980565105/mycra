@@ -2,12 +2,20 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-// ✅ Fetch coupons
 export const fetchCoupons = createAsyncThunk(
   "coupons/fetchCoupons",
   async (
-    params: { page?: number; limit?: number; search?: string; status?: "active" | "inactive"; isDownload?: boolean } = {},
-    { rejectWithValue }
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      status?: "active" | "inactive";
+      isDownload?: boolean;
+      role?: string;
+      store?: string;
+
+    } = {},
+    { rejectWithValue },
   ) => {
     try {
       const res = await api.get(ROUTES.coupons.getAll, { params });
@@ -16,10 +24,9 @@ export const fetchCoupons = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
-// ✅ Get coupon by ID
 export const getCouponById = createAsyncThunk(
   "coupons/getCouponById",
   async (id: string, { rejectWithValue }) => {
@@ -30,10 +37,9 @@ export const getCouponById = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
-// ✅ Create coupon
 export const createCoupon = createAsyncThunk(
   "coupons/createCoupon",
   async (data: any, { rejectWithValue }) => {
@@ -44,10 +50,9 @@ export const createCoupon = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
-// ✅ Update coupon
 export const updateCoupon = createAsyncThunk(
   "coupons/updateCoupon",
   async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
@@ -58,13 +63,15 @@ export const updateCoupon = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
-// ✅ Update coupon status
 export const updateCouponStatus = createAsyncThunk(
   "coupons/updateCouponStatus",
-  async ({ id, status }: { id: string; status: "active" | "inactive" }, { rejectWithValue }) => {
+  async (
+    { id, status }: { id: string; status: "active" | "inactive" },
+    { rejectWithValue },
+  ) => {
     try {
       const res = await api.put(ROUTES.coupons.updateStatus(id), { status });
       if (res.data.success) return res.data.data;
@@ -72,10 +79,9 @@ export const updateCouponStatus = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
-// ✅ Delete coupon
 export const deleteCoupon = createAsyncThunk(
   "coupons/deleteCoupon",
   async (id: string, { rejectWithValue }) => {
@@ -86,10 +92,9 @@ export const deleteCoupon = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
-// ✅ Bulk delete coupons
 export const bulkDeleteCoupons = createAsyncThunk(
   "coupons/bulkDeleteCoupons",
   async (ids: string[], { rejectWithValue }) => {
@@ -100,5 +105,5 @@ export const bulkDeleteCoupons = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );

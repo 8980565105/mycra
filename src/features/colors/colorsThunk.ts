@@ -5,16 +5,29 @@ import { ROUTES } from "../../services/routes";
 // Fetch colors
 export const fetchColors = createAsyncThunk(
   "colors/fetchColors",
-  async (params: { page?: number; limit?: number; search?: string; isDownload?: boolean; status?: "active" | "inactive" } = {}, { rejectWithValue }) => {
+  async (
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      isDownload?: boolean;
+      status?: "active" | "inactive";
+      role?: string;
+      store?: string;
+    } = {},
+    { rejectWithValue },
+  ) => {
     try {
       const { isDownload = false, ...query } = params;
-      const res = await api.get(ROUTES.colors.getAll, { params: { ...query, isDownload } });
+      const res = await api.get(ROUTES.colors.getAll, {
+        params: { ...query, isDownload },
+      });
       if (res.data.success) return res.data.data;
       return rejectWithValue(res.data.message || "Failed to fetch colors");
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Get color by ID
@@ -28,7 +41,7 @@ export const getColorById = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Create color
@@ -42,7 +55,7 @@ export const createColor = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Update color
@@ -56,13 +69,16 @@ export const updateColor = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // ✅ Update color status
 export const updateColorStatus = createAsyncThunk(
   "colors/updateColorStatus",
-  async ({ id, status }: { id: string; status: "active" | "inactive" }, { rejectWithValue }) => {
+  async (
+    { id, status }: { id: string; status: "active" | "inactive" },
+    { rejectWithValue },
+  ) => {
     try {
       const res = await api.put(ROUTES.colors.updateStatus(id), { status });
       if (res.data.success) return res.data.data;
@@ -70,9 +86,8 @@ export const updateColorStatus = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
-
 
 // Delete color
 export const deleteColor = createAsyncThunk(
@@ -85,7 +100,7 @@ export const deleteColor = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Bulk delete colors
@@ -99,5 +114,5 @@ export const bulkDeleteColors = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );

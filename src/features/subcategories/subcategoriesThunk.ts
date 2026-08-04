@@ -4,15 +4,21 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-// Fetch categories with pagination and search
 export const fetchsubCategories = createAsyncThunk(
   "subcategories/fetchsubCategories",
   async (
-    params: { page?: number; limit?: number; search?: string; isDownload?: boolean,status?: "active" | "inactive"; } = {},
-    { rejectWithValue }
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      isDownload?: boolean;
+      status?: "active" | "inactive";
+      role?: string;
+      store?: string;
+    } = {},
+    { rejectWithValue },
   ) => {
     try {
-      // Default isDownload to false
       const { isDownload = false, ...query } = params;
 
       const res = await api.get(ROUTES.subcategories.getAll, {
@@ -24,7 +30,7 @@ export const fetchsubCategories = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Get category by ID
@@ -38,7 +44,7 @@ export const getsubCategoryById = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Create category
@@ -48,39 +54,47 @@ export const createsubCategory = createAsyncThunk(
     try {
       const res = await api.post(ROUTES.subcategories.create, data);
       if (res.data.success) return res.data.data;
-      return rejectWithValue(res.data.message || "Failed to create subcategory");
+      return rejectWithValue(
+        res.data.message || "Failed to create subcategory",
+      );
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
-
 
 export const updatesubCategory = createAsyncThunk(
   "subcategories/updatesubCategory",
   async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
     try {
-    const res = await api.put(ROUTES.subcategories.update(id), data);
+      const res = await api.put(ROUTES.subcategories.update(id), data);
       if (res.data.success) return res.data.data;
-      return rejectWithValue(res.data.message || "Failed to update subcategory");
+      return rejectWithValue(
+        res.data.message || "Failed to update subcategory",
+      );
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // ✅ Update category status
 export const updatesubCategoryStatus = createAsyncThunk(
   "subcategories/updatesubCategoryStatus",
-  async ({ id, status }: { id: string; status: "active" | "inactive" }, { rejectWithValue }) => {
+  async (
+    { id, status }: { id: string; status: "active" | "inactive" },
+    { rejectWithValue },
+  ) => {
     try {
-      const res = await api.put(ROUTES.subcategories.updateStatus(id), { status });
+      const res = await api.put(ROUTES.subcategories.updateStatus(id), {
+        status,
+      });
       if (res.data.success) return res.data.data;
       return rejectWithValue(res.data.message || "Failed to update status");
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Delete category
@@ -90,11 +104,13 @@ export const deletesubCategory = createAsyncThunk(
     try {
       const res = await api.delete(ROUTES.subcategories.delete(id));
       if (res.data.success) return id;
-      return rejectWithValue(res.data.message || "Failed to delete subcategory");
+      return rejectWithValue(
+        res.data.message || "Failed to delete subcategory",
+      );
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Bulk delete categories
@@ -104,10 +120,11 @@ export const bulkDeletesubCategories = createAsyncThunk(
     try {
       const res = await api.post(ROUTES.subcategories.bulkDelete, { ids });
       if (res.data.success) return ids;
-      return rejectWithValue(res.data.message || "Failed to delete subcategories");
+      return rejectWithValue(
+        res.data.message || "Failed to delete subcategories",
+      );
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
-

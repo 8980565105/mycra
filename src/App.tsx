@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Categories from "./pages/Categories/Categories";
+import Attributes from "./pages/Attributes/Attributes";
 import CategoryFormPage from "./pages/Categories/CategoryForm";
 import BrandFormPage from "./pages/Brands/BrandFormPage";
 import Brands from "./pages/Brands/Brands";
@@ -27,8 +28,8 @@ import Colors from "./pages/Colors/Colors";
 import ColorFormPage from "./pages/Colors/ColorForm";
 import Sizes from "./pages/Sizes/Sizes";
 import SizeFormPage from "./pages/Sizes/SizeForm";
-import Discounts from "./pages/Discount/Discounts";
-import DiscountFormPage from "./pages/Discount/DiscountForm";
+// import Discounts from "./pages/Discount/Discounts";
+// import DiscountFormPage from "./pages/Discount/DiscountForm";
 import CouponFormPage from "./pages/coupons/CouponForm";
 import CouponsPage from "./pages/coupons/Coupons";
 import Orders from "./pages/Orders/Orders";
@@ -55,7 +56,19 @@ import Subcategories from "./pages/Subcategories/Subcategories"
 import SubCategoryFormPage from "./pages/Subcategories/SubcategoryForm";
 import FaqsFrom from "./pages/Faqs/FaqsFrom";
 import Faqspage from "./pages/Faqs/Faqs";
-
+import StoreView from "./pages/Stores/StoreView";
+import UserView from "./pages/Users/UserView";
+import GustUserHeader from "./components/layout/gustuserheader";
+import GuestLayout from "./components/layout/GustLayout";
+import Home from "./pages/Gustuser/home";
+import UserWallets from "./pages/Wallets/UserWallets";
+import WalletsPage from "./pages/Wallets/WalletsPage";
+import ContinueWithKyc from "./pages/Wallets/ContinueWithKyc";
+import KycForm from "./pages/Wallets/KycForm";
+import SellerOnboarding from "./pages/SellerOnboarding";
+import SellerApplications from "./pages/Stores/SellerApplications";
+import Business from "./pages/Business/Business";
+import BusinessFromPage from "./pages/Business/BusinessFromPage";
 
 const queryClient = new QueryClient();
 
@@ -66,17 +79,27 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="login" element={<Login />} />
+          <Route element={<GuestLayout />}>
+            <Route index element={<Home />} />
+          </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route element={<GuestLayout />}>
+              <Route path="/wallets" element={<WalletsPage />} />
+              <Route path="/walletkycintro" element={<ContinueWithKyc />} />
+              <Route path="/kycform" element={<KycForm />} />
+            </Route>
+          </Route>
+
+          <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/seller/onboarding" element={<SellerOnboarding />} />
           <Route path="/forgate-password" element={<Forgatepassword />}></Route>
           {/* ════════════════════════════════════════════════════════════════
               ADMIN ROUTES   —   prefix: /
           ════════════════════════════════════════════════════════════════ */}
           <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-            <Route path="/" element={<AdminLayout />}>
-
+            <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<VelzonDashboard />} />
-
               <Route path="products" element={<Products />} />
               <Route path="products/add" element={<AddProduct />} />
               <Route path="products/:id/edit" element={<AddProduct />} />
@@ -86,6 +109,7 @@ const App = () => (
               <Route path="subcategories" element={<Subcategories />} />
               <Route path="subcategories/add" element={<SubCategoryFormPage />} />
               <Route path="subcategories/:id/edit" element={<SubCategoryFormPage />} />
+              <Route path="attributes" element={<Attributes />} />
               <Route path="brands" element={<Brands />} />
               <Route path="brands/add" element={<BrandFormPage />} />
               <Route path="brands/:id/edit" element={<BrandFormPage />} />
@@ -104,9 +128,6 @@ const App = () => (
               <Route path="sizes" element={<Sizes />} />
               <Route path="sizes/add" element={<SizeFormPage />} />
               <Route path="sizes/:id/edit" element={<SizeFormPage />} />
-              <Route path="discounts" element={<Discounts />} />
-              <Route path="discounts/add" element={<DiscountFormPage />} />
-              <Route path="discounts/:id/edit" element={<DiscountFormPage />} />
               <Route path="coupons" element={<CouponsPage />} />
               <Route path="coupons/add" element={<CouponFormPage />} />
               <Route path="coupons/:id/edit" element={<CouponFormPage />} />
@@ -118,6 +139,7 @@ const App = () => (
               <Route path="users" element={<Users />} />
               <Route path="users/add" element={<UserFormPage />} />
               <Route path="users/:id/edit" element={<UserFormPage />} />
+              <Route path="users/:id/view" element={<UserView />} />
               <Route path="customer-reviews" element={<CustomerReviews />} />
               <Route path="wishlists" element={<Wishlist />} />
               <Route path="carts" element={<Cart />} />
@@ -138,8 +160,18 @@ const App = () => (
               <Route path="stores" element={<Stores />} />
               <Route path="stores/add" element={<StoreFormPage />} />
               <Route path="stores/:id/edit" element={<StoreFormPage />} />
+              <Route path="stores/:id/view" element={<StoreView />} />
+              <Route path="seller-applications" element={<SellerApplications />} />
               <Route path="store-owners/add" element={<StoreOwnerFormPage />} />
               <Route path="store-owners/:id/edit" element={<StoreOwnerFormPage />} />
+              <Route path="wallets/users" element={<UserWallets />} />
+              {/* <Route path="business" element={<Business />} /> */}
+
+              <Route path="business" element={<Business />} />
+              <Route path="business/add" element={<BusinessFromPage />} />
+              <Route path="business/:id/edit" element={<BusinessFromPage />} />
+
+
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
@@ -148,6 +180,7 @@ const App = () => (
               STORE-OWNER ROUTES   —   prefix: /store_owner
           ════════════════════════════════════════════════════════════════ */}
           <Route element={<ProtectedRoute allowedRoles={["store_owner"]} />}>
+            <Route path="/seller/onboarding" element={<SellerOnboarding />} />
             <Route path="/store_owner" element={<AdminLayout />}>
               <Route index element={<VelzonDashboard />} />
               <Route path="products" element={<Products />} />
@@ -177,9 +210,6 @@ const App = () => (
               <Route path="sizes" element={<Sizes />} />
               <Route path="sizes/add" element={<SizeFormPage />} />
               <Route path="sizes/:id/edit" element={<SizeFormPage />} />
-              <Route path="discounts" element={<Discounts />} />
-              <Route path="discounts/add" element={<DiscountFormPage />} />
-              <Route path="discounts/:id/edit" element={<DiscountFormPage />} />
               <Route path="coupons" element={<CouponsPage />} />
               <Route path="coupons/add" element={<CouponFormPage />} />
               <Route path="coupons/:id/edit" element={<CouponFormPage />} />

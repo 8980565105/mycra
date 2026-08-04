@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-// Fetch sizes
 export const fetchSizes = createAsyncThunk(
   "sizes/fetchSizes",
   async (
@@ -12,6 +11,8 @@ export const fetchSizes = createAsyncThunk(
       search?: string;
       isDownload?: boolean;
       status?: "active" | "inactive";
+      role?: string;
+      store?: string;
     } = {},
     { rejectWithValue },
   ) => {
@@ -28,7 +29,6 @@ export const fetchSizes = createAsyncThunk(
   },
 );
 
-// Get size by ID
 export const getSizeById = createAsyncThunk(
   "sizes/getSizeById",
   async (id: string, { rejectWithValue }) => {
@@ -42,7 +42,6 @@ export const getSizeById = createAsyncThunk(
   },
 );
 
-// Create size
 export const createSize = createAsyncThunk(
   "sizes/createSize",
   async (data: any, { rejectWithValue }) => {
@@ -56,7 +55,6 @@ export const createSize = createAsyncThunk(
   },
 );
 
-// Update size
 export const updateSize = createAsyncThunk(
   "sizes/updateSize",
   async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
@@ -70,7 +68,6 @@ export const updateSize = createAsyncThunk(
   },
 );
 
-// ✅ Update sizes status
 export const updateSizeStatus = createAsyncThunk(
   "sizes/updateSizeStatus",
   async (
@@ -87,7 +84,6 @@ export const updateSizeStatus = createAsyncThunk(
   },
 );
 
-// Delete size
 export const deleteSize = createAsyncThunk(
   "sizes/deleteSize",
   async (id: string, { rejectWithValue }) => {
@@ -101,7 +97,6 @@ export const deleteSize = createAsyncThunk(
   },
 );
 
-// Bulk delete sizes
 export const bulkDeleteSizes = createAsyncThunk(
   "sizes/bulkDeleteSizes",
   async (ids: string[], { rejectWithValue }) => {

@@ -1,5 +1,3 @@
-//D:\mycara\admin-panal\src\features\categories\categoriesSlice.ts
-
 import { createSlice } from "@reduxjs/toolkit";
 import {
   fetchCategories,
@@ -42,7 +40,6 @@ const categoriesSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch
       .addCase(fetchCategories.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -57,13 +54,11 @@ const categoriesSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Create
       .addCase(createCategory.fulfilled, (state, action) => {
         state.categories.unshift(action.payload);
         state.total += 1;
       })
 
-      // Update
       .addCase(updateCategory.fulfilled, (state, action) => {
         const index = state.categories.findIndex(
           (c) => c._id === action.payload.id,
@@ -80,7 +75,6 @@ const categoriesSlice = createSlice({
         }
       })
 
-      // Delete
       .addCase(deleteCategory.fulfilled, (state, action) => {
         state.categories = state.categories.filter(
           (c) => c._id !== action.payload,
@@ -88,7 +82,6 @@ const categoriesSlice = createSlice({
         state.total -= 1;
       })
 
-      // Bulk delete
       .addCase(bulkDeleteCategories.fulfilled, (state, action) => {
         state.categories = state.categories.filter(
           (c) => !action.payload.includes(c._id),

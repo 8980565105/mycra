@@ -19,18 +19,33 @@ export type Slide = {
   order: number;
 };
 
+export type FeatureItem = {
+  image_url: string;
+  title: string;
+  description: string;
+  order: number;
+};
+
+export type FaqItem = {
+  question: string;
+  answer: string;
+  order: number;
+};
 export type SectionType = {
-  type: "content" | "hero_slider" | "feature";
+  type: "content" | "hero_slider" | "feature" | "banner" | "faqs";
   title: string;
   description: string;
   image_url?: string;
   background_image_url?: string;
   is_button?: boolean;
   button_name?: string;
+  rs?: number;
   button_link?: string;
   order: number;
   status: string;
   slides?: Slide[];
+  items?: FeatureItem[];
+  faqs?: FaqItem[];
 };
 
 interface Page {

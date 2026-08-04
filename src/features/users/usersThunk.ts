@@ -111,3 +111,18 @@ export const bulkDeleteUsers = createAsyncThunk(
     }
   },
 );
+
+export const getUserTracking = createAsyncThunk(
+  "users/getUserTracking",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await api.get(ROUTES.users.getById(id) + "/tracking");
+      if (res.data.success) return res.data.data;
+      return rejectWithValue(
+        res.data.message || "Failed to fetch tracking data",
+      );
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
+    }
+  },
+);

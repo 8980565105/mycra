@@ -40,6 +40,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { fetchsubCategories } from "@/features/subcategories/subcategoriesThunk";
+import { fetchUsers } from "@/features/users/usersThunk";
 
 export default function Products() {
   const dispatch = useDispatch<AppDispatch>();
@@ -57,6 +58,14 @@ export default function Products() {
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "">(
     ""
   );
+  const [roleFilter, setRoleFilter] = useState<"admin" | "store_owner" | "">("");
+  const [storeFilter, setStoreFilter] = useState("");
+  const [stores, setStores] = useState<
+    {
+      label: string;
+      value: string;
+    }[]
+  >([]);
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [brandFilter, setBrandFilter] = useState<string[]>([]);
   const [sizeFilter, setSizeFilter] = useState<string[]>([]);
@@ -87,6 +96,8 @@ export default function Products() {
     page,
     limit,
     search: debouncedQuery,
+    role: roleFilter || undefined,
+    store: storeFilter || undefined,
     status: statusFilter || undefined,
     categories: categoryFilter.length ? categoryFilter.join(",") : undefined,
     brands: brandFilter.length ? brandFilter.join(",") : undefined,
@@ -102,11 +113,37 @@ export default function Products() {
   });
 
   useEffect(() => {
+    if (roleFilter === "store_owner") {
+      dispatch(
+        fetchUsers({
+          role: "store_owner",
+          page: 1,
+          limit: 1000,
+        })
+      )
+        .unwrap()
+        .then((res) => {
+          setStores(
+            res.users.map((u: any) => ({
+              label: u.storeName || u.name,
+              value: u._id,
+            }))
+          );
+        });
+    } else {
+      setStoreFilter("");
+      setStores([]);
+    }
+  }, [roleFilter]);
+
+  useEffect(() => {
     dispatch(fetchProducts(buildQuery()));
   }, [
     debouncedQuery,
     page,
     statusFilter,
+    roleFilter,
+    storeFilter,
     categoryFilter,
     brandFilter,
     sizeFilter,
@@ -169,7 +206,6 @@ export default function Products() {
     dispatch(fetchProductLabels({ page: 1, limit: 100 }));
     dispatch(fetchsubCategories({ page: 1, limit: 100, status: "active" }));
   }, [dispatch]);
-
 
   const MultiSelectPopover = ({
     label,
@@ -357,7 +393,7 @@ export default function Products() {
 
         <Card className="shadow-sm border border-gray-200">
           <CardContent className="space-y-4 p-4">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 flex-wrap">
+            <div className="flex flex-col md:flex-row gap-4 flex-wrap">
               <div className="relative w-full md:max-w-sm">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
@@ -386,16 +422,54 @@ export default function Products() {
                 </SelectContent>
               </Select>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full md:w-auto">
-                    Advanced Filters
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full md:w-96 p-4 space-y-4">
-                  <AdvancedFilters onApply={() => { }} />
-                </PopoverContent>
-              </Popover>
+              <Select
+                value={roleFilter || "all"}
+                onValueChange={(val) =>
+                  setRoleFilter(
+                    (val === "all" ? "" : val) as "" | "admin" | "store_owner"
+                  )
+                }
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="admin">admin</SelectItem>
+                  <SelectItem value="store_owner">store</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {
+                roleFilter === "store_owner" && (
+                  <Select
+                    value={storeFilter || "all"}
+                    onValueChange={(val) =>
+                      setStoreFilter(val === "all" ? "" : val)
+                    }
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select Store" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="all">
+                        All Stores
+                      </SelectItem>
+
+                      {stores.map((store) => (
+                        <SelectItem
+                          key={store.value}
+                          value={store.value}
+                        >
+                          {store.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )
+              }
+
             </div>
           </CardContent>
 
@@ -423,8 +497,6 @@ export default function Products() {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold">
               Products
-              {/* {" "} */}
-              {/* <span className="text-gray-400 font-normal">({total})</span> */}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -447,7 +519,7 @@ export default function Products() {
                     </th>
                     <th className="p-3 text-left">Product</th>
                     <th className="p-3 text-left">SubCategory</th>
-                    <th className="p-3 text-left">Discount</th>
+                    <th className="p-3 text-left">Created By</th>
                     <th className="p-3 text-left">Price / Stock</th>
                     <th className="p-3 w-32 text-left">Status</th>
                     <th className="p-3 w-32 text-right">Actions</th>
@@ -522,7 +594,6 @@ export default function Products() {
                             </td>
                             <td className="p-3 flex items-center gap-2">
 
-
                               {Array.isArray(product.images) && product.images.length > 0 && (
                                 <img
                                   src={`${import.meta.env.VITE_API_URL_IMAGE}${product.images[0]}`}
@@ -540,12 +611,14 @@ export default function Products() {
                                 : subCategories.find((c) => c._id === product.category_id)?.name || "-"}
                             </td>
 
-                            <td className="p-3">
-                              {product?.discount?.name || "-"}
+                            <td className="p-3 text-gray-500 truncate">
+                              {product?.createdByUser?.name || "-"}
                             </td>
 
+
+
                             <td className="p-3">
-                              $
+                              ₹
                               {minPrice === maxPrice
                                 ? minPrice
                                 : `${minPrice} - ${maxPrice}`}{" "}

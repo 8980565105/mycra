@@ -27,7 +27,7 @@ export default function UserFormPage() {
   // Basic info
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "user">("user");
+  const [role, setRole] = useState<"admin" | "store_user">("store_user");
   const [status, setStatus] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -51,7 +51,7 @@ export default function UserFormPage() {
 
           setName(u.name ?? "");
           setEmail(u.email ?? "");
-          setRole(u.role ?? "user");
+          setRole(u.role ?? "store_user");
           setStatus(!!u.is_active); // ensure boolean
           setAvatarUrl(u.profile_picture ?? null);
           setMobileNumber(u.mobile_number ?? "");
@@ -144,12 +144,12 @@ export default function UserFormPage() {
 
               <div>
                 <Label htmlFor="role">Role</Label>
-                <Select value={role} onValueChange={(val) => setRole(val as "admin" | "user")}>
+                <Select value={role} onValueChange={(val) => setRole(val as "admin" | "store_user")}>
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="store_user">Store User</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>

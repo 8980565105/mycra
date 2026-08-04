@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { Link } from "react-router-dom";
-import { Edit, Trash } from "lucide-react";
+import { Edit, Eye, Trash } from "lucide-react";
 import { useBasePath } from "@/hooks/useBasePath";
 import {
   Select,
@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./select";
-
 interface Column<T> {
   key: string;
   label: string;
@@ -25,7 +24,6 @@ interface Column<T> {
   width?: string;
   exportValue?: (item: T) => any;
 }
-
 interface GenericTableProps<T> {
   title: string;
   fetchData: (params: any) => Promise<{ data: T[]; total: number }>;
@@ -35,13 +33,21 @@ interface GenericTableProps<T> {
   rowKey: keyof T;
   searchEnabled?: boolean;
   filters?: { label: string; value: string }[];
+  filters1?: { label: string; value: string }[];
   headerActions?: React.ReactNode;
   pageSize?: number;
   rowActions?: (item: T) => React.ReactNode;
   statusToggleEnabled?: boolean;
   onStatusToggle?: (id: string, newStatus: boolean) => Promise<void>;
   editEnabled?: boolean;
+  viewEnabled?: boolean;
   statusKey?: string;
+  storeFilterEnabled?: boolean;
+  fetchStores?: () => Promise<
+    {
+      label: string;
+      value: string;
+    }[]>;
 }
 
 export function GenericTable<T extends Record<string, any>>({
@@ -53,13 +59,17 @@ export function GenericTable<T extends Record<string, any>>({
   rowKey,
   searchEnabled = true,
   filters,
+  filters1,
   headerActions,
   pageSize = 10,
   rowActions,
   onStatusToggle,
   statusToggleEnabled = false,
   editEnabled = true,
+  viewEnabled = false,
   statusKey = "status",
+  storeFilterEnabled = false,
+  fetchStores,
 }: GenericTableProps<T>) {
   const [data, setData] = useState<T[]>([]);
   const [total, setTotal] = useState(0);
@@ -68,12 +78,46 @@ export function GenericTable<T extends Record<string, any>>({
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [storeFilter, setStoreFilter] = useState("");
+  const [stores, setStores] = useState<
+    {
+      label: string;
+      value: string;
+    }[]
+  >([]);
   const [page, setPage] = useState(1);
   const basePath = useBasePath();
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedQuery(searchQuery), 400);
     return () => clearTimeout(handler);
   }, [searchQuery]);
+
+
+  useEffect(() => {
+
+    if (
+      roleFilter === "store_owner" &&
+      storeFilterEnabled &&
+      fetchStores
+    ) {
+
+      fetchStores().then((res) => {
+        setStores(res);
+      });
+
+    } else {
+
+      setStoreFilter("");
+      setStores([]);
+
+    }
+
+  }, [
+    roleFilter
+  ]);
+
+
 
   const loadData = async () => {
     setLoading(true);
@@ -83,6 +127,8 @@ export function GenericTable<T extends Record<string, any>>({
         limit: pageSize,
         search: debouncedQuery,
         status: statusFilter,
+        role: roleFilter,
+        store: storeFilter,
       });
 
       if (result.data.length === 0 && page > 1) {
@@ -100,7 +146,7 @@ export function GenericTable<T extends Record<string, any>>({
 
   useEffect(() => {
     loadData();
-  }, [debouncedQuery, page, statusFilter]);
+  }, [debouncedQuery, page, statusFilter, roleFilter, storeFilter]);
 
   const handleDelete = async (id: string) => {
     if (!deleteItem) return;
@@ -146,8 +192,14 @@ export function GenericTable<T extends Record<string, any>>({
   };
 
   const totalPages = Math.ceil(total / pageSize);
+  const hasActions = Boolean(
+    rowActions || editEnabled || viewEnabled || deleteItem
+  );
+
   const extraCols =
-    (bulkDeleteItems ? 1 : 0) + (statusToggleEnabled ? 1 : 0) + 1;
+    (bulkDeleteItems ? 1 : 0) +
+    (statusToggleEnabled ? 1 : 0) +
+    (hasActions ? 1 : 0);
 
   return (
     <div className="space-y-6">
@@ -234,6 +286,63 @@ export function GenericTable<T extends Record<string, any>>({
             </SelectContent>
           </Select>
         )}
+
+        {filters1 && (
+          <Select
+            value={roleFilter || "all"}
+            onValueChange={(val) => setRoleFilter(val === "all" ? "" : val)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              {filters1.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {
+          roleFilter === "store_owner" &&
+          storeFilterEnabled &&
+          (
+            <Select
+              value={storeFilter || "all"}
+              onValueChange={(v) =>
+                setStoreFilter(v === "all" ? "" : v)
+              }
+            >
+
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Select Store" />
+              </SelectTrigger>
+
+              <SelectContent>
+
+                <SelectItem value="all">
+                  All Stores
+                </SelectItem>
+
+                {
+                  stores.map((store) => (
+                    <SelectItem
+                      key={store.value}
+                      value={store.value}
+                    >
+                      {store.label}
+                    </SelectItem>
+                  ))
+                }
+
+              </SelectContent>
+
+            </Select>
+          )
+        }
+
       </div>
 
       <div className="overflow-x-auto border rounded-lg bg-white shadow-sm">
@@ -260,9 +369,11 @@ export function GenericTable<T extends Record<string, any>>({
                 </th>
               ))}
               {statusToggleEnabled && (
-                <th className="w-20 p-3 text-center">Status</th>
+                <th className="w-20 p-3 text-right">Status</th>
               )}
-              <th className="w-20 p-3 text-right">Actions</th>
+              {hasActions && (
+                <th className="w-22 p-3 text-right">Actions</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -306,45 +417,55 @@ export function GenericTable<T extends Record<string, any>>({
                       {col.render ? col.render(item) : item[col.key]}
                     </td>
                   ))}
+
                   {statusToggleEnabled && (
-                    <td className="p-3 text-center">
+                    <td className="p-3 text-right">
                       <Switch
                         checked={getStatusChecked(item)}
                         onCheckedChange={() => handleStatusToggle(item)}
                       />
                     </td>
                   )}
-                  <td className="p-3 text-right">
-                    {rowActions ? (
-                      rowActions(item)
-                    ) : (
-                      <div className="flex justify-end items-center gap-2">
-                        {editEnabled && (
-                          <Link
-                            // to={`${basePath}/${title.toLowerCase()}/${item[rowKey]}/edit`}
-                            to={`${basePath}/${title.toLowerCase().replace(/\s+/g, "-")}/${item[rowKey]}/edit`}
-                            className="p-1 rounded hover:bg-gray-100 flex items-center justify-center"
-                          >
-                            <Edit className="w-5 h-5 text-blue-600 hover:text-blue-800" />
-                          </Link>
-                        )}
-                        {deleteItem && (
-                          <ConfirmDialog
-                            title={`Delete ${title.slice(0, -1)}`}
-                            description={`Are you sure you want to delete "${item.title || item.name || item[rowKey] || ""
-                              }"?`}
-                            confirmText="Delete"
-                            danger
-                            onConfirm={() =>
-                              handleDelete(item[rowKey] as string)
-                            }
-                          >
-                            <Trash className="w-5 h-5 text-red-600 hover:text-red-800" />
-                          </ConfirmDialog>
-                        )}
-                      </div>
-                    )}
-                  </td>
+                  {hasActions && (
+                    <td className="p-3 text-right">
+                      {rowActions ? (
+                        rowActions(item)
+                      ) : (
+                        <div className="flex justify-end items-center gap-1">
+                          {editEnabled && (
+                            <Link
+                              to={`${basePath}/${title.toLowerCase().replace(/\s+/g, "-")}/${item[rowKey]}/edit`}
+                              className="p-1 rounded hover:bg-gray-100 flex items-center justify-center"
+                            >
+                              <Edit className="w-5 h-5 text-blue-600 hover:text-blue-800" />
+                            </Link>
+                          )}
+                          {viewEnabled && (
+                            <Link
+                              to={`${basePath}/${title.toLowerCase().replace(/\s+/g, "-")}/${item[rowKey]}/view`}
+                              className="p-1 rounded hover:bg-gray-100 flex items-center justify-center"
+                            >
+                              <Eye className="w-5 h-5 text-blue-600 hover:text-blue-800" />
+                            </Link>
+                          )}
+                          {deleteItem && (
+                            <ConfirmDialog
+                              title={`Delete ${title.slice(0, -1)}`}
+                              description={`Are you sure you want to delete "${item.title || item.name || item[rowKey] || ""
+                                }"?`}
+                              confirmText="Delete"
+                              danger
+                              onConfirm={() =>
+                                handleDelete(item[rowKey] as string)
+                              }
+                            >
+                              <Trash className="w-5 h-5 text-red-600 hover:text-red-800" />
+                            </ConfirmDialog>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))
             )}

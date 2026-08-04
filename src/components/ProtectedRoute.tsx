@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 
 interface ProtectedRouteProps {
-  allowedRoles?: string[]; // 👈 optional, if not provided then any logged-in user can access
+  allowedRoles?: string[]; 
 }
 
 const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
@@ -11,15 +11,12 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const user = useSelector((state: RootState) => state.auth.user);
   const location = useLocation();
 
-  // 🚪 1️⃣ Not logged in → redirect to /login
   if (!token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 🛑 2️⃣ Logged in but doesn't have required role → redirect to home
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    // return <Navigate to="/" replace />;
-    if (user.role === "admin") return <Navigate to="/" replace />;
+    if (user.role === "admin") return <Navigate to="/admin" replace />;
     if (user.role === "store_owner") return <Navigate to="/store_owner" replace />;
     return <Navigate to="/login" replace />;
   }

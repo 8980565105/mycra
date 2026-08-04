@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { GenericTable } from "@/components/ui/adminTable";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
 import { useBasePath } from "@/hooks/useBasePath";
 import {
   fetchColors,
@@ -11,14 +11,22 @@ import {
   bulkDeleteColors,
   updateColorStatus,
 } from "@/features/colors/colorsThunk";
+import { fetchUsers } from "@/features/users/usersThunk";
 
 export default function ColorsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const basePath = useBasePath();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isAdmin = user?.role === "admin";
+
   const columns = [
     { key: "name", label: "Name", width: "w-48" },
     { key: "code", label: "Code", width: "w-32" },
-
+    {
+      key: "createdBy",
+      label: "Created By",
+      render: (item: any) => item.createdBy?.name || "-",
+    },
   ];
 
   return (
@@ -28,13 +36,36 @@ export default function ColorsPage() {
       rowKey="_id"
       searchEnabled
       statusToggleEnabled
+      storeFilterEnabled={isAdmin}
+
       filters={[
         { label: "Active", value: "active" },
         { label: "Inactive", value: "inactive" },
       ]}
-      fetchData={async ({ page, limit, search, status }) => {
+
+      filters1={isAdmin
+        ? [
+          { label: "Admin", value: "admin" },
+          { label: "store", value: "store_owner" },
+        ]
+        : undefined
+      }
+      fetchStores={async () => {
         const res = await dispatch(
-          fetchColors({ page, limit, search, status })
+          fetchUsers({
+            role: "store_owner",
+            page: 1,
+            limit: 1000,
+          })
+        ).unwrap();
+        return res.users.map((u: any) => ({
+          label: u.storeName || u.name,
+          value: u._id
+        }));
+      }}
+      fetchData={async ({ page, limit, search, status, role, store }) => {
+        const res = await dispatch(
+          fetchColors({ page, limit, search, status, role, store })
         ).unwrap();
         return { data: res.colors, total: res.total };
       }}

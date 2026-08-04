@@ -16,7 +16,9 @@ import {
   getPageById,
   updatePage,
 } from "@/features/pages/pagesThunk";
-import { SectionType, Slide } from "@/features/pages/pagesSlice";
+import { FaqItem, FeatureItem, SectionType, Slide } from "@/features/pages/pagesSlice";
+import { Select } from "@radix-ui/react-select";
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function PageFormPage() {
   const dispatch = useDispatch<any>();
@@ -41,13 +43,13 @@ export default function PageFormPage() {
   const [metaKeyphrase, setMetaKeyphrase] = useState("");
   const [seoImage, setSeoImage] = useState("");
 
-  // Sections
   const [sections, setSections] = useState<SectionType[]>([
     {
       type: "content",
       title: "",
       description: "",
       image_url: "",
+      rs: 0,
       background_image_url: "",
       order: 1,
       is_button: false,
@@ -57,14 +59,12 @@ export default function PageFormPage() {
     },
   ]);
 
-  // Store owner auto storeId
   useEffect(() => {
     if (user?.role === "store_owner" && user?.storeId) {
       setSelectedStoreId(user.storeId);
     }
   }, [user]);
 
-  // Fetch page if edit mode
   useEffect(() => {
     if (isEditMode && id) {
       dispatch(getPageById(id)).then((res: any) => {
@@ -85,12 +85,13 @@ export default function PageFormPage() {
     }
   }, [dispatch, id, isEditMode]);
 
-  // Add / remove sections
+
   const addSection = (type: SectionType["type"] = "content") => {
     const newSection: SectionType = {
       type,
       title: "",
       description: "",
+      rs: 0,
       image_url: "",
       background_image_url: "",
       order: sections.length + 1,
@@ -99,7 +100,42 @@ export default function PageFormPage() {
       button_link: "",
       status: "active",
     };
-    if (type === "hero_slider") newSection.slides = [];
+
+    if (type === "hero_slider") {
+      newSection.slides = [
+        {
+          title: "",
+          description: "",
+          background_image_url: "",
+          is_button: false,
+          button_name: "",
+          button_link: "",
+          order: 1,
+        },
+      ];
+    }
+
+    if (type === "feature") {
+      newSection.items = [
+        {
+          image_url: "",
+          title: "",
+          description: "",
+          order: 1,
+        },
+      ];
+    }
+
+    if (type === "faqs") {
+      newSection.faqs = [
+        {
+          question: "",
+          answer: "",
+          order: 1,
+        },
+      ];
+    }
+    
     setSections([...sections, newSection]);
   };
 
@@ -157,6 +193,76 @@ export default function PageFormPage() {
     updated[sectionIndex].slides!.splice(slideIndex, 1);
     setSections(updated);
   };
+
+  const addItem = (sectionIndex: number) => {
+    const updated = [...sections];
+    if (!updated[sectionIndex].items) updated[sectionIndex].items = [];
+    updated[sectionIndex].items!.push({
+      image_url: "",
+      title: "",
+      description: "",
+      order: updated[sectionIndex].items!.length + 1,
+    });
+    setSections(updated);
+  };
+
+  const updateItem = (
+    sectionIndex: number,
+    itemIndex: number,
+    field: keyof FeatureItem,
+    value: FeatureItem[keyof FeatureItem]
+  ) => {
+    setSections((prev) => {
+      const updated = [...prev];
+      if (!updated[sectionIndex].items) return updated;
+      updated[sectionIndex].items![itemIndex] = {
+        ...updated[sectionIndex].items![itemIndex],
+        [field]: value,
+      };
+      return updated;
+    });
+  };
+
+  const removeItem = (sectionIndex: number, itemIndex: number) => {
+    const updated = [...sections];
+    updated[sectionIndex].items!.splice(itemIndex, 1);
+    setSections(updated);
+  };
+
+  const addFaq = (sectionIndex: number) => {
+    const updated = [...sections];
+    if (!updated[sectionIndex].faqs) updated[sectionIndex].faqs = [];
+    updated[sectionIndex].faqs!.push({
+      question: "",
+      answer: "",
+      order: updated[sectionIndex].faqs!.length + 1,
+    });
+    setSections(updated);
+  };
+
+  const updateFaq = (
+    sectionIndex: number,
+    faqIndex: number,
+    field: keyof FaqItem,
+    value: FaqItem[keyof FaqItem]
+  ) => {
+    setSections((prev) => {
+      const updated = [...prev];
+      if (!updated[sectionIndex].faqs) return updated;
+      updated[sectionIndex].faqs![faqIndex] = {
+        ...updated[sectionIndex].faqs![faqIndex],
+        [field]: value,
+      };
+      return updated;
+    });
+  };
+
+  const removeFaq = (sectionIndex: number, faqIndex: number) => {
+    const updated = [...sections];
+    updated[sectionIndex].faqs!.splice(faqIndex, 1);
+    setSections(updated);
+  };
+
 
   // Submit
   const handleSubmit = async (e: React.FormEvent) => {
@@ -231,13 +337,8 @@ export default function PageFormPage() {
         </div>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6">
-
-        {/* ─── Left Column ─── */}
         <div className="lg:col-span-2 space-y-6">
-
-          {/* Page Details */}
           <Card className="shadow-md border border-gray-200">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">Page Details</CardTitle>
@@ -258,42 +359,9 @@ export default function PageFormPage() {
                   placeholder="Short page description..."
                 />
               </div>
-
-              {/* Admin — store selector */}
-              {user?.role === "admin" && (
-                <div>
-                  <Label>Store</Label>
-                  <select
-                    value={selectedStoreId}
-                    onChange={(e) => setSelectedStoreId(e.target.value)}
-                    className="border border-gray-300 rounded-md p-2 w-full mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">-- Global (No Store) --</option>
-                    {stores.map((store: any) => (
-                      <option key={store._id} value={store._id}>
-                        {store.store_name || store.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Store select karo to page te store mate j show thase
-                  </p>
-                </div>
-              )}
-
-              {/* Store owner — read only */}
-              {user?.role === "store_owner" && (
-                <div>
-                  <Label>Store</Label>
-                  <div className="mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-600">
-                    Auto-assigned to your store
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
-          {/* SEO Details */}
           <Card className="shadow-md border border-gray-200">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">SEO Details</CardTitle>
@@ -330,26 +398,10 @@ export default function PageFormPage() {
             </CardContent>
           </Card>
 
-          {/* Page Sections */}
           <Card className="shadow-sm border border-gray-100">
             <CardHeader className="flex justify-between items-center pb-2">
               <CardTitle className="text-lg font-semibold">Page Sections</CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => addSection("hero_slider")}
-                >
-                  <Plus className="w-4 h-4" /> Add Hero Slide
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => addSection("content")}
-                >
-                  <Plus className="w-4 h-4" /> Add Content
-                </Button>
-              </div>
+
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
               {sections.length === 0 ? (
@@ -362,7 +414,6 @@ export default function PageFormPage() {
                     key={sectionIndex}
                     className="relative rounded-xl border border-gray-200 bg-white shadow-sm p-5 hover:shadow-md transition-shadow"
                   >
-                    {/* Remove Section */}
                     <button
                       type="button"
                       onClick={() => removeSection(sectionIndex)}
@@ -374,8 +425,6 @@ export default function PageFormPage() {
                     <h4 className="text-base font-medium text-gray-800 mb-4">
                       Section {sectionIndex + 1}
                     </h4>
-
-                    {/* Section Type */}
                     <div className="mb-4">
                       <Label>Section Type</Label>
                       <select
@@ -388,74 +437,104 @@ export default function PageFormPage() {
                         <option value="hero_slider">Hero Slider</option>
                         <option value="content">Content</option>
                         <option value="feature">Feature</option>
+                        <option value="banner">Banner</option>
+                        <option value="faqs">FAQs</option>
+
                       </select>
                     </div>
-
-                    {/* Section Fields */}
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Title</Label>
-                        <Input
-                          value={section.title}
-                          placeholder="Enter section title"
-                          onChange={(e) =>
-                            updateSection(sectionIndex, "title", e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Textarea
-                          value={section.description}
-                          placeholder="Enter section description"
-                          onChange={(e) =>
-                            updateSection(sectionIndex, "description", e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Image</Label>
-                        <ImageUpload
-                          value={section.image_url}
-                          onChange={(url) =>
-                            updateSection(sectionIndex, "image_url", url as string)
-                          }
-                        />
-                      </div>
-
-                      {section.type === "hero_slider" && (
+                    {section.type !== "feature" && section.type !== "hero_slider" && section.type !== "faqs" && (
+                      <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label>Background Image</Label>
-                          <ImageUpload
-                            value={section.background_image_url}
-                            onChange={(url) =>
-                              updateSection(
-                                sectionIndex,
-                                "background_image_url",
-                                url as string
-                              )
+                          <Label>Title</Label>
+                          <Input
+                            value={section.title}
+                            placeholder="Enter section title"
+                            onChange={(e) =>
+                              updateSection(sectionIndex, "title", e.target.value)
                             }
                           />
                         </div>
-                      )}
-                    </div>
+                        <div className="space-y-2">
+                          <Label>Description</Label>
+                          <Textarea
+                            value={section.description}
+                            placeholder="Enter section description"
+                            onChange={(e) =>
+                              updateSection(sectionIndex, "description", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Image</Label>
+                          <ImageUpload
+                            value={section.image_url}
+                            onChange={(url) =>
+                              updateSection(sectionIndex, "image_url", url as string)
+                            }
+                          />
+                        </div>
+                        {section.type === "banner" && (
+                          <div className="space-y-2">
+                            <Label>Price (Rs.)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={section.rs ?? 0}
+                              placeholder="Enter price e.g. 999"
+                              onChange={(e) =>
+                                updateSection(sectionIndex, "rs", Number(e.target.value))
+                              }
+                            />
+                          </div>
+                        )}
 
-                    {/* Include Button */}
-                    <div className="flex items-center justify-between mt-5 border-t pt-3">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={section.is_button || false}
-                          onCheckedChange={(val) =>
-                            updateSection(sectionIndex, "is_button", val)
+
+
+                        {/* {section.type === "hero_slider" && (
+                          <div className="space-y-2">
+                            <Label>Background Image</Label>
+                            <ImageUpload
+                              value={section.background_image_url}
+                              onChange={(url) =>
+                                updateSection(
+                                  sectionIndex,
+                                  "background_image_url",
+                                  url as string
+                                )
+                              }
+                            />
+                          </div>
+                        )} */}
+
+
+                      </div>
+                    )}
+
+                    {section.type === "hero_slider" && (
+                      <div className="space-y-2 mt-4">
+                        <Label>Section Background Image (optional overall bg)</Label>
+                        <ImageUpload
+                          value={section.background_image_url}
+                          onChange={(url) =>
+                            updateSection(sectionIndex, "background_image_url", url as string)
                           }
                         />
-                        <Label>Include Button</Label>
                       </div>
-                    </div>
-
-                    {section.is_button && (
+                    )}
+                    {section.type !== "feature" && section.type !== "faqs" && (
+                      <div className="flex items-center justify-between mt-5 border-t pt-3">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={section.is_button || false}
+                            onCheckedChange={(val) =>
+                              updateSection(sectionIndex, "is_button", val)
+                            }
+                          />
+                          <Label>Include Button</Label>
+                        </div>
+                      </div>
+                    )}
+                    {section.is_button && section.type !== "feature" && (
                       <div className="grid md:grid-cols-2 gap-4 mt-4">
                         <div className="space-y-2">
                           <Label>Button Name</Label>
@@ -480,7 +559,7 @@ export default function PageFormPage() {
                       </div>
                     )}
 
-                    {/* Hero Slider Slides */}
+
                     {section.type === "hero_slider" && (
                       <div className="mt-4">
                         <div className="flex items-center justify-between mb-2">
@@ -493,11 +572,9 @@ export default function PageFormPage() {
                             <Plus className="w-4 h-4" /> Add Slide
                           </Button>
                         </div>
-
                         {section.slides && section.slides.length === 0 && (
                           <p className="text-sm text-gray-500">No slides yet</p>
                         )}
-
                         {section.slides?.map((slide, slideIndex) => (
                           <div
                             key={slideIndex}
@@ -510,7 +587,6 @@ export default function PageFormPage() {
                             >
                               <Trash className="h-4 w-4" />
                             </button>
-
                             <div className="grid md:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label>Slide Title</Label>
@@ -529,7 +605,7 @@ export default function PageFormPage() {
                                   onChange={(e) =>
                                     updateSlide(sectionIndex, slideIndex, "description", e.target.value)
                                   }
-                                   placeholder="Enter slide description"
+                                  placeholder="Enter slide description"
                                 />
                               </div>
                               <div className="space-y-2">
@@ -582,14 +658,192 @@ export default function PageFormPage() {
                         ))}
                       </div>
                     )}
+
+                    {section.type === "feature" && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <Label>Feature Items</Label>
+
+                        </div>
+
+                        {section.items?.map((item, itemIndex) => (
+                          <div
+                            key={itemIndex}
+                            className="relative border border-gray-200 rounded p-4 mb-3"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => removeItem(sectionIndex, itemIndex)}
+                              className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </button>
+
+                            <div className="grid md:grid-cols-3 gap-4">
+                              <div className="space-y-2">
+                                <Label>Title</Label>
+                                <Input
+                                  value={item.title}
+                                  placeholder="Enter item title"
+                                  onChange={(e) =>
+                                    updateItem(sectionIndex, itemIndex, "title", e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2 md:col-span-2">
+                                <Label>Description</Label>
+                                <Textarea
+                                  value={item.description}
+                                  placeholder="Enter item description"
+                                  onChange={(e) =>
+                                    updateItem(sectionIndex, itemIndex, "description", e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Image</Label>
+                                <ImageUpload
+                                  value={item.image_url}
+                                  onChange={(url) =>
+                                    updateItem(sectionIndex, itemIndex, "image_url", url as string)
+                                  }
+                                />
+                              </div>
+
+                            </div>
+                          </div>
+
+                        ))}
+                        <div className="flex justify-center">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => addItem(sectionIndex)}
+                          >
+                            <Plus className="w-4 h-4" /> Add Item
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+
+                    {section.type === "faqs" && (
+                      <div className="space-y-4 mt-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Title</Label>
+                            <Input
+                              value={section.title}
+                              placeholder="e.g. Frequently Asked Questions"
+                              onChange={(e) =>
+                                updateSection(sectionIndex, "title", e.target.value)
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Description</Label>
+                            <Textarea
+                              value={section.description}
+                              placeholder="Enter faq section description"
+                              onChange={(e) =>
+                                updateSection(sectionIndex, "description", e.target.value)
+                              }
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <Label>Background Image</Label>
+                            <ImageUpload
+                              value={section.background_image_url}
+                              onChange={(url) =>
+                                updateSection(sectionIndex, "background_image_url", url as string)
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mb-2">
+                          <Label>FAQ Items</Label>
+                        </div>
+
+                        {section.faqs?.map((faq, faqIndex) => (
+                          <div
+                            key={faqIndex}
+                            className="relative border border-gray-200 rounded p-4 mb-3"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => removeFaq(sectionIndex, faqIndex)}
+                              className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </button>
+                            <div className="grid gap-4">
+                              <div className="space-y-2">
+                                <Label>Question</Label>
+                                <Input
+                                  value={faq.question}
+                                  placeholder="Enter question"
+                                  onChange={(e) =>
+                                    updateFaq(sectionIndex, faqIndex, "question", e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Answer</Label>
+                                <Textarea
+                                  value={faq.answer}
+                                  placeholder="Enter answer"
+                                  onChange={(e) =>
+                                    updateFaq(sectionIndex, faqIndex, "answer", e.target.value)
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="flex justify-center">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => addFaq(sectionIndex)}
+                          >
+                            <Plus className="w-4 h-4" /> Add FAQ
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
+              <div className="flex justify-center items-center ">
+                <Select
+                  value=""
+                  onValueChange={(val) => addSection(val as SectionType["type"])}
+
+                >
+                  <SelectTrigger className="w-[200px] bg-primary text-white">
+                    <SelectValue placeholder="+ Add Section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hero_slider">Hero Slider</SelectItem>
+                    <SelectItem value="banner">Banner</SelectItem>
+                    <SelectItem value="content">Content</SelectItem>
+                    <SelectItem value="feature">Feature</SelectItem>
+                    <SelectItem value="faqs">FAQs</SelectItem>
+                  </SelectContent>
+                </Select>
+
+              </div>
+
+
+
+
+
+
             </CardContent>
           </Card>
         </div>
 
-        {/* ─── Right Column ─── */}
         <div className="space-y-6 relative">
           <Card className="sticky top-6 shadow-md border border-gray-200">
             <CardHeader>

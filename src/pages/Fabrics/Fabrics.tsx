@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { GenericTable } from "@/components/ui/adminTable";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
 import {
   fetchFabrics,
   deleteFabric,
@@ -11,9 +11,13 @@ import {
   updateFabricStatus,
 } from "@/features/fabrics/fabricsThunk";
 import { useBasePath } from "@/hooks/useBasePath";
+import { fetchUsers } from "@/features/users/usersThunk";
 export default function FabricsPage() {
   const dispatch = useDispatch<AppDispatch>();
- const basePath = useBasePath();
+  const basePath = useBasePath();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isAdmin = user?.role === "admin";
+
   const columns = [
     {
       key: "image_url",
@@ -31,10 +35,14 @@ export default function FabricsPage() {
             —
           </div>
         ),
-      exportValue: (item: any) => item.name, 
+      exportValue: (item: any) => item.name,
     },
     { key: "name", label: "Name", width: "w-48", exportValue: (item: any) => item.name },
-   
+    {
+      key: "createdBy",
+      label: "Created By",
+      render: (item: any) => item.createdBy?.name || "-",
+    },
   ];
 
   return (
@@ -44,14 +52,38 @@ export default function FabricsPage() {
       rowKey="_id"
       searchEnabled
       statusToggleEnabled
-       filters={[
+      storeFilterEnabled={isAdmin}
+
+      filters={[
         { label: "Active", value: "active" },
         { label: "Inactive", value: "inactive" },
       ]}
-      fetchData={async ({ page, limit, search, status }) => {
+
+      filters1={isAdmin
+        ? [
+          { label: "Admin", value: "admin" },
+          { label: "store", value: "store_owner" },
+        ]
+        : undefined
+      }
+
+      fetchStores={async () => {
+        const res = await dispatch(
+          fetchUsers({
+            role: "store_owner",
+            page: 1,
+            limit: 1000,
+          })
+        ).unwrap();
+        return res.users.map((u: any) => ({
+          label: u.storeName || u.name,
+          value: u._id
+        }));
+      }}
+      fetchData={async ({ page, limit, search, status, role, store }) => {
         try {
           const res = await dispatch(
-            fetchFabrics({ page, limit, search, status })
+            fetchFabrics({ page, limit, search, status, role, store })
           ).unwrap();
           return { data: res.fabrics, total: res.total };
         } catch (err: any) {

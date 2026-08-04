@@ -23,6 +23,12 @@ import {
   Settings,
   ChevronDown,
   Warehouse,
+  Store,
+  Folders,
+  BadgeCheck,
+  Shapes,
+  TicketPercent,
+  Wallet,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -44,69 +50,75 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { RootState } from "@/store";
-import { Layer } from "recharts";
 
 
 const adminSections = [
   {
     label: "Main",
-    items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }],
+    items: [{ title: "Dashboard", url: "/admin", icon: LayoutDashboard }],
+  },
+  {
+    label: "Business",
+    items: [{ title: "Business Type", url: "/admin/business", icon: LayoutDashboard }],
+
   },
   {
     label: "Catalog",
     items: [
-      { title: "Categories", url: "/categories", icon: FolderTree },
-      { title: "SubCategories", url: "/subcategories", icon: FolderTree },
-
-      { title: "Brands", url: "/brands", icon: Tag },
-      { title: "Types", url: "/types", icon: Shirt },
-      { title: "Fabrics", url: "/fabrics", icon: Palette },
-      { title: "Product Labels", url: "/product-labels", icon: Tags },
-      { title: "Colors", url: "/colors", icon: Droplet },
-      { title: "Sizes", url: "/sizes", icon: Ruler },
-      { title: "Products", url: "/products", icon: Package },
+      { title: "Categories", url: "/admin/categories", icon: FolderTree },
+      { title: "SubCategories", url: "/admin/subcategories", icon: Folders },
+      { title: "Product Categories", url: "/admin/types", icon: Shirt },
+      { title: "Attributes", url: "/admin/attributes", icon: Shapes },
+      // { title: "Brands", url: "/admin/brands", icon: BadgeCheck },
+      // { title: "Fabrics", url: "/admin/fabrics", icon: Shirt },
+      { title: "Product Labels", url: "/admin/product-labels", icon: Tag },
+      // { title: "Colors", url: "/admin/colors", icon: Palette },
+      // { title: "Sizes", url: "/admin/sizes", icon: Ruler },
+      { title: "Products", url: "/admin/products", icon: Package },
     ],
   },
   {
     label: "Promotions",
     items: [
-      { title: "Discounts", url: "/discounts", icon: Percent },
-      { title: "Coupons", url: "/coupons", icon: Ticket },
+      // { title: "Discounts", url: "/admin/discounts", icon: Percent },
+      { title: "Coupons", url: "/admin/coupons", icon: TicketPercent },
 
     ],
   },
   {
     label: "Sales",
     items: [
-      { title: "Orders", url: "/orders", icon: ShoppingCart },
-      { title: "Payments", url: "/payments", icon: CreditCard },
-      { title: "Warehouse", url: "/warehouse", icon: Warehouse },
+      { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
+      { title: "Payments", url: "/admin/payments", icon: CreditCard },
+      { title: "Warehouse", url: "/admin/warehouse", icon: Warehouse },
     ],
   },
   {
-    label: "Customers",
+    label: "Customers & Sellers",
     items: [
-      { title: "Store", url: "/stores", icon: Users },
-      { title: "Users", url: "/users", icon: Users },
-      { title: "Customer Reviews", url: "/customer-reviews", icon: Star },
-      { title: "Wishlist", url: "/wishlists", icon: Heart },
-      { title: "Cart", url: "/carts", icon: ShoppingBasket },
+      { title: "Seller Applications", url: "/admin/seller-applications", icon: BadgeCheck },
+      { title: "Store", url: "/admin/stores", icon: Store },
+      { title: "Users", url: "/admin/users", icon: Users },
+      { title: "Customer Reviews", url: "/admin/customer-reviews", icon: Star },
+      { title: "Wishlist", url: "/admin/wishlists", icon: Heart },
+      { title: "Cart", url: "/admin/carts", icon: ShoppingBasket },
     ],
   },
   {
-    label: "Pages",
+    label: "Wallets",
     items: [
-      { title: "Faqs", url: "/faqs", icon: Columns },
-    ]
+      { title: "User Wallets", url: "/admin/wallets/users", icon: Wallet },
+      // { title: "Store Wallets", url: "/admin/wallets/stores", icon: Wallet },
+    ],
   },
   {
     label: "System",
     items: [
-      { title: "Pages", url: "/pages", icon: Layers },
-      { title: "Navbar", url: "/navbar", icon: Navigation },
-      { title: "Footer", url: "/footer", icon: Columns },
-      { title: "Contact Messages", url: "/contact-messages", icon: MessageSquare },
-      { title: "Settings", url: "/settings", icon: Settings },
+      { title: "Pages", url: "/admin/pages", icon: Layers },
+      { title: "Navbar", url: "/admin/navbar", icon: Navigation },
+      { title: "Footer", url: "/admin/footer", icon: Columns },
+      { title: "Contact Messages", url: "/admin/contact-messages", icon: MessageSquare },
+      { title: "Settings", url: "/admin/settings", icon: Settings },
     ],
   },
 ];
@@ -115,20 +127,20 @@ const storeOwnerSections = [
   {
     label: "Main",
     items: [
-      { title: "Dashboard", url: "/", icon: LayoutDashboard },
+      { title: "Dashboard", url: "/store_owner", icon: LayoutDashboard },
     ],
   },
   {
     label: "Catalog",
     items: [
-      { title: "Categories", url: "/store_owner/categories", icon: FolderTree },
-      { title: "SubCategories", url: "/store_owner/subcategories", icon: FolderTree },
-      { title: "Brands", url: "/store_owner/brands", icon: Tag },
-      { title: "Types", url: "/store_owner/types", icon: Shirt },
-      { title: "Fabrics", url: "/store_owner/fabrics", icon: Palette },
-      { title: "Product Labels", url: "/store_owner/product-labels", icon: Tags },
-      { title: "Colors", url: "/store_owner/colors", icon: Droplet },
-      { title: "Sizes", url: "/store_owner/sizes", icon: Ruler },
+      // { title: "Categories", url: "/store_owner/categories", icon: FolderTree },
+      // { title: "SubCategories", url: "/store_owner/subcategories", icon: FolderTree },
+      // { title: "Brands", url: "/store_owner/brands", icon: Tag },
+      // { title: "Types", url: "/store_owner/types", icon: Shirt },
+      // { title: "Fabrics", url: "/store_owner/fabrics", icon: Palette },
+      // { title: "Product Labels", url: "/store_owner/product-labels", icon: Tags },
+      // { title: "Colors", url: "/store_owner/colors", icon: Droplet },
+      // { title: "Sizes", url: "/store_owner/sizes", icon: Ruler },
       { title: "Products", url: "/store_owner/products", icon: Package },
 
     ],
@@ -136,7 +148,6 @@ const storeOwnerSections = [
   {
     label: "Promotions",
     items: [
-      { title: "Discounts", url: "/store_owner/discounts", icon: Percent },
       { title: "Coupons", url: "/store_owner/coupons", icon: Ticket },
     ],
   },
@@ -151,33 +162,14 @@ const storeOwnerSections = [
   {
     label: "Customers",
     items: [
-      // { title: "Store", url: "/store_owner/stores", icon: Users },
       { title: "Users", url: "/store_owner/users", icon: Users },
-      { title: "Customer Reviews", url: "/store_owner/customer-reviews", icon: Star },
       { title: "Wishlist", url: "/store_owner/wishlists", icon: Heart },
       { title: "Cart", url: "/store_owner/carts", icon: ShoppingBasket },
     ],
   },
-  {
-    label: "Pages",
-    items: [
-      { title: "Faqs", url: "/store_owner/faqs", icon: Columns },
 
-    ]
-  },
-  {
-    label: "System",
-    items: [
-      { title: "Pages", url: "/store_owner/pages", icon: Layers },
-      { title: "Navbar", url: "/store_owner/navbar", icon: Navigation },
-      { title: "Footer", url: "/store_owner/footer", icon: Columns },
-      { title: "Contact Messages", url: "/store_owner/contact-messages", icon: MessageSquare },
-      { title: "Settings", url: "/store_owner/settings", icon: Settings },
-    ],
-  },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
 export function AdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();

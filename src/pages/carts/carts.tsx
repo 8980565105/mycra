@@ -26,7 +26,7 @@ export default function CartPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tableLoading, setTableLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const limit = 5;
+  const limit = 10;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -264,7 +264,7 @@ export default function CartPage() {
           </div>
 
           <div className="text-right mt-4 font-semibold text-lg">
-            Grand Total: ${grandTotal.toFixed(2)}
+            Grand Total: ₹{grandTotal.toFixed(2)}
           </div>
 
           {totalPages > 1 && (

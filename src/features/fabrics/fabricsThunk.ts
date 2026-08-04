@@ -6,18 +6,29 @@ import { ROUTES } from "../../services/routes";
 export const fetchFabrics = createAsyncThunk(
   "fabrics/fetchFabrics",
   async (
-    params: { page?: number; limit?: number; search?: string; isDownload?: boolean,status?: "active" | "inactive"; } = {},
-    { rejectWithValue }
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      isDownload?: boolean;
+      status?: "active" | "inactive";
+      role?: string;
+            store?: string;
+
+    } = {},
+    { rejectWithValue },
   ) => {
     try {
       const { isDownload = false, ...query } = params;
-      const res = await api.get(ROUTES.fabrics.getAll, { params: { ...query, isDownload } });
+      const res = await api.get(ROUTES.fabrics.getAll, {
+        params: { ...query, isDownload },
+      });
       if (res.data.success) return res.data.data;
       return rejectWithValue(res.data.message || "Failed to fetch fabrics");
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Get fabric by ID
@@ -31,7 +42,7 @@ export const getFabricById = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Create fabric
@@ -45,7 +56,7 @@ export const createFabric = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Update fabric
@@ -59,14 +70,16 @@ export const updateFabric = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
-
 
 // ✅ Update fabric status
 export const updateFabricStatus = createAsyncThunk(
   "fabrics/updateFabricStatus",
-  async ({ id, status }: { id: string; status: "active" | "inactive" }, { rejectWithValue }) => {
+  async (
+    { id, status }: { id: string; status: "active" | "inactive" },
+    { rejectWithValue },
+  ) => {
     try {
       const res = await api.put(ROUTES.fabrics.updateStatus(id), { status });
       if (res.data.success) return res.data.data;
@@ -74,9 +87,8 @@ export const updateFabricStatus = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
-
 
 // Delete fabric
 export const deleteFabric = createAsyncThunk(
@@ -89,7 +101,7 @@ export const deleteFabric = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );
 
 // Bulk delete fabrics
@@ -103,5 +115,5 @@ export const bulkDeleteFabrics = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );

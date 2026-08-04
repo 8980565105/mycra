@@ -137,22 +137,6 @@ export default function FooterFormPage() {
                   placeholder="/privacy, /contact, etc."
                 />
               </div>
-
-              {isAdmin && (
-                <div>
-                  <Label htmlFor="storeId">
-                    Store ID{" "}
-                    <span className="text-gray-400 text-xs">(admin only — leave blank for global)</span>
-                  </Label>
-                  <Input
-                    id="storeId"
-                    value={storeId}
-                    onChange={(e) => setStoreId(e.target.value)}
-                    className="mt-1"
-                    placeholder="Leave blank for global footer"
-                  />
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

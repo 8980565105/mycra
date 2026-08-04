@@ -7,6 +7,21 @@ export const ROUTES = {
     logout: "/auth/logout",
     forgotPassword: "/auth/forgot-password",
     resetPassword: "/auth/reset-password",
+    sendRegistrationOtp: "/auth/send-registration-otp",
+    verifyRegistrationOtp: "/auth/verify-registration-otp",
+  },
+  seller: {
+    saveBusinessDetails: "/seller/business-details",
+    savePickupAddress: "/seller/pickup-address",
+    saveBankDetails: "/seller/bank-details",
+    saveDocuments: "/seller/documents",
+    getOnboardingStatus: "/seller/onboarding-status",
+    submitApplication: "/seller/submit",
+    getApplications: "/seller/admin/applications",
+    approveApplication: (id: string) =>
+      `/seller/admin/applications/${id}/approve`,
+    rejectApplication: (id: string) =>
+      `/seller/admin/applications/${id}/reject`,
   },
   products: {
     getAll: "/products",
@@ -92,15 +107,15 @@ export const ROUTES = {
   upload: {
     image: "/uploads/image",
   },
-  discounts: {
-    getAll: "/discounts",
-    getById: (id: string) => `/discounts/${id}`,
-    create: "/discounts",
-    update: (id: string) => `/discounts/${id}`,
-    updateStatus: (id: string) => `/discounts/${id}/status`,
-    delete: (id: string) => `/discounts/${id}`,
-    bulkDelete: "/discounts/bulk-delete",
-  },
+  // discounts: {
+  //   getAll: "/discounts",
+  //   getById: (id: string) => `/discounts/${id}`,
+  //   create: "/discounts",
+  //   update: (id: string) => `/discounts/${id}`,
+  //   updateStatus: (id: string) => `/discounts/${id}/status`,
+  //   delete: (id: string) => `/discounts/${id}`,
+  //   bulkDelete: "/discounts/bulk-delete",
+  // },
   coupons: {
     getAll: "/coupons",
     getById: (id: string) => `/coupons/${id}`,
@@ -232,6 +247,7 @@ export const ROUTES = {
     bulkDelete: "/stores/bulk-delete",
     getMy: "/stores/my",
     updateMy: "/stores/my",
+    dashboard: (id: string) => `/stores/${id}/dashboard`,
   },
   packing: {
     getAll: "/packing",
@@ -263,5 +279,36 @@ export const ROUTES = {
     addFeature: "/about/feature",
     updateFeature: (featureId: string) => `/about/feature/${featureId}`,
     deleteFeature: (featureId: string) => `/about/feature/${featureId}`,
+  },
+  wallet: {
+    getBalance: "/wallet/balance",
+    addMoney: "/wallet/add-money",
+    verifyKyc: "/wallet/verify-kyc",
+    adminAll: "/wallet/admin/all",
+    adminAdjust: (userId: string) => `/wallet/admin/adjust/${userId}`,
+    adminVerifyKyc: (userId: string) => `/wallet/admin/verify-kyc/${userId}`,
+  },
+  kyc: {
+    adminSet: (userId: string) => `/kyc/admin/set/${userId}`,
+    validatePan: "/kyc/validate-pan",
+    generateOtp: "/kyc/generate-otp",
+    verifyOtp: "/kyc/verify-otp",
+  },
+  transection: {
+    getAll: "/transactions",
+    getById: (id: string) => `/transactions/${id}`,
+    adminAll: "/transactions/admin/all",
+    adminUpdateStatus: (id: string) => `/transactions/admin/status/${id}`,
+  },
+
+  business: {
+    getAll: "/business",
+    getById: (id: string) => `/business/${id}`,
+    create: "/business",
+    update: (id: string) => `/business/${id}`,
+    updateStatus: (id: string) => `/business/${id}/status`,
+    delete: (id: string) => `/business/${id}`,
+    bulkDelete: "/business/bulk-delete",
+    getActiveList: "/business/active/list",
   },
 };

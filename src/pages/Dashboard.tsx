@@ -4,7 +4,7 @@ import {
   Package,
   ShoppingCart,
   Users,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   TrendingDown,
   Eye,
@@ -39,26 +39,26 @@ const statsCards = [
   },
   {
     title: "Total Revenue",
-    value: "$45,231",
+    value: "₹45,231",
     change: "-2.4%",
     trending: "down",
-    icon: DollarSign,
+    icon: IndianRupee,
     description: "Revenue this month",
   },
 ];
 
 const recentOrders = [
-  { id: "#1234", customer: "John Doe", amount: "$85.00", status: "completed" },
-  { id: "#1235", customer: "Jane Smith", amount: "$120.50", status: "processing" },
-  { id: "#1236", customer: "Mike Johnson", amount: "$67.99", status: "shipped" },
-  { id: "#1237", customer: "Sarah Wilson", amount: "$199.99", status: "pending" },
+  { id: "#1234", customer: "John Doe", amount: "₹85.00", status: "completed" },
+  { id: "#1235", customer: "Jane Smith", amount: "₹120.50", status: "processing" },
+  { id: "#1236", customer: "Mike Johnson", amount: "₹67.99", status: "shipped" },
+  { id: "#1237", customer: "Sarah Wilson", amount: "₹199.99", status: "pending" },
 ];
 
 const topProducts = [
-  { name: "Blue Denim Jacket", sales: 245, revenue: "$12,250" },
-  { name: "White Cotton T-Shirt", sales: 189, revenue: "$3,780" },
-  { name: "Black Leather Boots", sales: 156, revenue: "$15,600" },
-  { name: "Red Summer Dress", sales: 134, revenue: "$8,040" },
+  { name: "Blue Denim Jacket", sales: 245, revenue: "₹12,250" },
+  { name: "White Cotton T-Shirt", sales: 189, revenue: "₹3,780" },
+  { name: "Black Leather Boots", sales: 156, revenue: "₹15,600" },
+  { name: "Red Summer Dress", sales: 134, revenue: "₹8,040" },
 ];
 
 const getStatusBadgeVariant = (status: string) => {
@@ -105,6 +105,7 @@ export default function Dashboard() {
                 </CardTitle>
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                   <IconComponent className="h-4 w-4 text-primary" />
+
                 </div>
               </CardHeader>
               <CardContent>

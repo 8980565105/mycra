@@ -19,6 +19,7 @@ interface ProductVariant {
   color_id: { _id: string; name: string } | string;
   size_id: { _id: string; name: string } | string;
   price: number;
+  offerprice: number;
   stock_quantity: number;
   sku: string;
   images: string[];
@@ -45,6 +46,11 @@ interface Product {
   updatedAt: string;
   category_id: { _id: string; name: string } | string;
   discount: { _id: string; name: string };
+  createdByUser?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
 }
 
 interface ProductsState {
