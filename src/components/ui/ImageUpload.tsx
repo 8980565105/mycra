@@ -73,7 +73,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   // Render multiple images
   if (multiple) {
     return (
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-4">
         {Array.isArray(value) &&
           value.map((url, idx) => (
             <div key={idx} className="relative" style={{ width: size, height: size }}>

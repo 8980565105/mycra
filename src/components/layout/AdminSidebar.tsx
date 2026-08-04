@@ -67,14 +67,16 @@ const adminSections = [
     items: [
       { title: "Categories", url: "/admin/categories", icon: FolderTree },
       { title: "SubCategories", url: "/admin/subcategories", icon: Folders },
-      { title: "Product Categories", url: "/admin/types", icon: Shirt },
       { title: "Attributes", url: "/admin/attributes", icon: Shapes },
+      { title: "Product Categories", url: "/admin/types", icon: Shirt },
+
       // { title: "Brands", url: "/admin/brands", icon: BadgeCheck },
       // { title: "Fabrics", url: "/admin/fabrics", icon: Shirt },
-      { title: "Product Labels", url: "/admin/product-labels", icon: Tag },
       // { title: "Colors", url: "/admin/colors", icon: Palette },
       // { title: "Sizes", url: "/admin/sizes", icon: Ruler },
       { title: "Products", url: "/admin/products", icon: Package },
+      { title: "Product Labels", url: "/admin/product-labels", icon: Tag },
+
     ],
   },
   {
