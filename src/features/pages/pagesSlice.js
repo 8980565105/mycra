@@ -3,6 +3,7 @@ import { fetchPages, fetchPageBySlug } from "./pagesThunk";
 
 const initialState = {
   pages: [],
+  pagesBySlug: {},
   currentPage: null,
   loading: false,
   slugLoading: false,
@@ -44,6 +45,7 @@ const pagesSlice = createSlice({
       .addCase(fetchPageBySlug.fulfilled, (state, action) => {
         state.slugLoading = false;
         state.currentPage = action.payload;
+        state.pagesBySlug[action.payload.slug] = action.payload;
 
         const exists = state.pages.find((p) => p._id === action.payload._id);
         if (!exists) {

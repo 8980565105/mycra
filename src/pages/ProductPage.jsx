@@ -75,10 +75,6 @@ export default function Product() {
       </Section>
 
       <Section>
-        {/* <Row>
-          <SectionHeading page="products" order="2" index="0" />
-        </Row> */}
-
         <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
           <div className="w-[18px] md:w-[50px] border-t border-black"></div>
 

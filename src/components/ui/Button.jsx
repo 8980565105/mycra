@@ -9,11 +9,13 @@ const Button = ({
 }) => {
   const variants = {
     common:
-      "bg-[var(--primary-color)] text-[var(--secondary-color)] text-[18px] min-w-[200px] py-[8px] md:py-[15px] hover:bg-[var(--secondary-color)] hover:text-[var(--primary-color)]",
+      "bg-[var(--primary-color)] text-white text-[18px] min-w-[100px] py-[8px] md:py-[15px] hover:bg-[var(--secondary-color)] hover:text-[var(--primary-color)]",
     secondary:
-      "bg-[var(--secondary-color)] text-[var(--primary-color)] hover:text-[var(--secondary-color)] hover:bg-[var(--primary-color)] text-[18px] min-w-[200px] py-[8px] md:py-[15px] box-shadow",
+      "bg-[var(--secondary-color)] text-[var(--primary-color)] hover:text-white hover:bg-[var(--primary-color)] text-[18px] min-w-[100px] py-[8px] md:py-[15px] box-shadow",
     outline:
-      "border border-[var(--primary-color)]  text-[var(--primary-color)] hover:text-[var(--secondary-color)] hover:border-[var(--secondary-color)] text-[18px] min-w-[200px] py-[8px] md:py-[15px] ",
+      "border border-[var(--primary-color)]  text-[var(--primary-color)] hover:text-[var(--secondary-color)] hover:border-[var(--secondary-color)] text-[18px] min-w-[100px] py-[8px] md:py-[15px] ",
+    white:
+      "text-[var(--primary-color)] hover:text-white bg-white hover:bg-[var(--primary-color)] text-[18px] min-w-[100px] py-[8px] md:py-[15px] box-shadow",
   };
   const sizes = {
     sm: "py-1 px-3 text-sm",

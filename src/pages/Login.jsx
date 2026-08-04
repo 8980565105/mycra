@@ -1,10 +1,8 @@
-
-
 import LoginSlider from "../components/login/loginSlider";
 import { FaPlay } from "react-icons/fa";
 import SocialButtons from "../components/login/SocialButtons";
 import Button from "../components/ui/Button";
-import { X } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import { loginUser } from "../features/auth/authThunk";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
@@ -12,14 +10,16 @@ import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import HeaderLogo from "../assets/logo.png";
 
-
 const LoginForm = ({ onClose, onSwitchRegister, onSwitchForget }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const { token } = useSelector((state) => state.auth);
-  const { info: storeInfo } = useSelector((state) => state.store);
+  // const { info: storeInfo } = useSelector((state) => state.store);
+  const settings = useSelector((state) => state.settings.data);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,13 +28,11 @@ const LoginForm = ({ onClose, onSwitchRegister, onSwitchForget }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ FIX: domain send karo — store_user ne correct store ma find karse
     const loginData = {
       email: formData.email,
       password: formData.password,
       domain: window.location.origin, // e.g. "http://localhost:3000" or "https://mystore.com"
       // domain: window.location.host, // e.g. "http://localhost:3000" or "https://mystore.com"
-
     };
 
     const res = await dispatch(loginUser(loginData));
@@ -58,27 +56,26 @@ const LoginForm = ({ onClose, onSwitchRegister, onSwitchForget }) => {
         navigate(redirectPage);
         localStorage.removeItem("redirectAfterLogin");
       } else {
-        navigate("/");
+        navigate("/home");
       }
     }
   }, [token]);
 
-    const BASE = process.env.REACT_APP_API_URL_IMAGE;
+  const BASE = process.env.REACT_APP_API_URL_IMAGE;
 
   const dynamicLogoUrl = (() => {
-    const logoPath = storeInfo?.theme?.logoUrl;
+    const logoPath = settings?.theme?.logoUrl;
     if (!logoPath) return null;
     if (logoPath.startsWith("http")) return logoPath;
     return `${BASE}${logoPath}`;
   })();
-
 
   return (
     <>
       <Toaster />
 
       <div className="flex items-center justify-center ">
-        <div className="bg-white box-shadow  rounded-lg flex w-full overflow-hidden  w-full max-w-[1062px] mx-auto ">
+        <div className="bg-white box-shadow rounded-lg flex w-full overflow-hidden  w-full max-w-[1062px] mx-auto ">
           <div className="w-1/3 md:flex items-center justify-center light-color hidden">
             <LoginSlider />
           </div>
@@ -92,15 +89,19 @@ const LoginForm = ({ onClose, onSwitchRegister, onSwitchForget }) => {
             </button>
 
             <div className="mb-6 text-center ">
-                  <img
+              <img
                 src={dynamicLogoUrl || HeaderLogo}
                 alt="Logo"
                 className="mx-auto mb-6"
               />
-             
-              <h3 className="mb-11 text-[var(--secondary-color)]">Welcome to {storeInfo?.name || "maycra store"}</h3>
 
-              <h3 className="text-[var(--primary-color)] text-bold text-[26px]">Sign In</h3>
+              <h3 className="mb-11 text-[var(--secondary-color)]">
+                Welcome to {settings?.name || "maycra store"}
+              </h3>
+
+              <h3 className="text-[var(--primary-color)] text-bold text-[26px]">
+                Sign In
+              </h3>
             </div>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
@@ -115,7 +116,7 @@ const LoginForm = ({ onClose, onSwitchRegister, onSwitchForget }) => {
                   className="input-common w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
                 />
               </div>
-              <div>
+              {/* <div>
                 <input
                   type="password"
                   name="password"
@@ -125,6 +126,26 @@ const LoginForm = ({ onClose, onSwitchRegister, onSwitchForget }) => {
                   required
                   className="input-common w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
                 />
+              </div> */}
+
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="input-common w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                </button>
               </div>
 
               <div className="flex flex-col sm:flex-row justify-between items-center text-sm gap-4 w-full pt-[26px]">
@@ -148,7 +169,7 @@ const LoginForm = ({ onClose, onSwitchRegister, onSwitchForget }) => {
             </form>
 
             <div className="mt-4  sm:mt-10 space-x-4">
-              <SocialButtons />
+              <SocialButtons onClose={onClose} />
             </div>
             <div className="text-center mt-[40px] text-p">
               <button

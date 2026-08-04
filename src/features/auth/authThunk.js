@@ -72,7 +72,6 @@ export const updateOwnProfile = createAsyncThunk(
   },
 );
 
-
 export const forgotPassword = createAsyncThunk(
   "auth/forgotPassword",
   async ({ email }, { rejectWithValue }) => {
@@ -89,7 +88,7 @@ export const forgotPassword = createAsyncThunk(
     }
   },
 );
- 
+
 export const resetPassword = createAsyncThunk(
   "auth/resetPassword",
   async ({ email, otp, newPassword }, { rejectWithValue }) => {
@@ -117,11 +116,35 @@ export const googleLoginUser = createAsyncThunk(
   async (credential, { rejectWithValue }) => {
     try {
       const domain = getCurrentDomain();
-      const res = await api.post(ROUTES.auth.googleLogin, { credential, domain });
+      const res = await api.post(ROUTES.auth.googleLogin, {
+        credential,
+        domain,
+      });
       return res.data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Google login failed",
+      );
+    }
+  },
+);
+
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (
+    { currentPassword, newPassword, confirmNewPassword },
+    { rejectWithValue },
+  ) => {
+    try {
+      const res = await api.put(ROUTES.auth.changePassword, {  
+        currentPassword,
+        newPassword,
+        confirmNewPassword,
+      });
+      return res.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Password change failed",
       );
     }
   },

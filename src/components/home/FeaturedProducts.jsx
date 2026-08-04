@@ -1,14 +1,6 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-  // useMemo,
-} from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Slider from "react-slick";
-// import SectionHeading from "../ui/SectionHeading";
 import Row from "../ui/Row";
 import HeartIcon from "../icons/HeartIcon";
 import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
@@ -19,9 +11,7 @@ import { getImageUrl } from "../utils/helper";
 import { useAddToWishlist } from "../wishlist/handleAddTowishlist";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-// import { fetchProductReviews } from "../../features/reivews/reviewsThunk";
 import { Star } from "lucide-react";
-
 import {
   addToCart,
   createCart,
@@ -29,6 +19,7 @@ import {
 } from "../../features/cart/cartThunk";
 import toast from "react-hot-toast";
 import FlowerIcon from "../icons/FlowerIcon";
+import { fetchWishlistByUser } from "../../features/wishlist/wishlistThunk";
 
 function CountdownTimer({ endDate }) {
   const calcTimeLeft = useCallback(() => {
@@ -43,21 +34,16 @@ function CountdownTimer({ endDate }) {
       seconds: String(seconds).padStart(2, "0"),
     };
   }, [endDate]);
-
   const [timeLeft, setTimeLeft] = useState(calcTimeLeft);
-
   useEffect(() => {
     const interval = setInterval(() => {
       const t = calcTimeLeft();
       setTimeLeft(t);
       if (!t) clearInterval(interval);
     }, 1000);
-
     return () => clearInterval(interval);
   }, [calcTimeLeft]);
-
   if (!timeLeft) return null;
-
   return (
     <span className="text-theme text-[12px] md:text-[15px] font-bold">
       Ends in {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
@@ -68,13 +54,31 @@ function CountdownTimer({ endDate }) {
 const FeaturedProducts = ({ setShowLoginPopup }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const { token } = useSelector((state) => state.auth);
   const cart = useSelector((state) => state.cart.cart);
   const [addingToCart, setAddingToCart] = useState(false);
   const [selectedColors, setSelectedColors] = useState({});
   const sliderRef = useRef();
   const { handleAddToWishlist } = useAddToWishlist(setShowLoginPopup);
+  const cartItems = useSelector((state) => state.cart.items) || [];
+  const userId = useSelector((state) => state.auth.user?._id);
+  const { items: wishlistItems = [] } = useSelector((state) => state.wishlist);
+  const isInWishlist = (productId, variantId) => {
+    if (!productId || !variantId) return false;
+    return wishlistItems.some(
+      (w) =>
+        (w.product_id?._id || w.product_id) === productId &&
+        (w.variant_id?._id || w.variant_id) === variantId,
+    );
+  };
+  const isInCart = (productId, variantId) => {
+    if (!productId || !variantId) return false;
+    return cartItems.some(
+      (ci) =>
+        (ci.product_id?._id || ci.product_id) === productId &&
+        (ci.variant_id?._id || ci.variant_id) === variantId,
+    );
+  };
   const { items: categories = [], loading: catLoading } = useSelector(
     (state) => state.categories,
   );
@@ -84,60 +88,59 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
   const { products = [], loading: productLoading } = useSelector(
     (state) => state.products,
   );
+  const handleCategorySelect = (category) => {
+    setActiveCategory(category._id);
+  };
   const { productReviews } = useSelector((state) => state.reviews);
-
-  // const reviewsState = useSelector((state) => state.reviews);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
   const tabItems = subcategories.length > 0 ? subcategories : categories;
-
   useEffect(() => {
-    if (tabItems.length > 0) {
-      setActiveCategory(tabItems[0]._id);
+    if (userId) {
+      dispatch(fetchWishlistByUser(userId));
     }
-  }, [tabItems]);
-
+  }, [dispatch, userId]);
+  useEffect(() => {
+    const cartId = localStorage.getItem("cart_id");
+    if (cartId) {
+      dispatch(fetchCart(cartId));
+    }
+  }, [dispatch]);
   const getDiscountedPrice = (product) => {
-    const originalPrice = product?.variants?.[0]?.price || 0;
-    const discount = product?.discount?.value || 0;
-    const discountType = product?.discount?.type || "none";
+    const variant = product?.variants?.[0] || {};
+    const originalPrice = Number(variant?.price) || 0;
+    const offerPrice =
+      variant?.offerprice !== undefined && variant?.offerprice !== null
+        ? Number(variant.offerprice)
+        : originalPrice;
 
-    let discountedPrice = originalPrice;
+    const hasOffer = offerPrice > 0 && offerPrice < originalPrice;
+    const discountPercent = hasOffer
+      ? Math.round(((originalPrice - offerPrice) / originalPrice) * 100)
+      : 0;
 
-    if (discountType === "percentage") {
-      discountedPrice = originalPrice - (originalPrice * discount) / 100;
-    } else if (discountType === "flat") {
-      discountedPrice = originalPrice - discount;
-    }
     return {
       originalPrice,
-      discountedPrice,
-      discountValue: discount,
-      discountType,
+      discountedPrice: hasOffer ? offerPrice : originalPrice,
+      hasOffer,
+      discountPercent,
     };
   };
-
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    const savedTab = localStorage.getItem("activeTab");
-
-    if (savedTab) {
-      setActiveCategory(savedTab);
-    } else if (tabItems.length > 0) {
-      setActiveCategory(tabItems[0]._id);
+    if (tabItems.length > 0) {
+      handleCategorySelect(tabItems[0]);
     }
   }, [tabItems]);
-
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
   const getUniqueColors = (variants) => {
     const colorMap = new Map();
     variants?.forEach((variant) => {
@@ -160,9 +163,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
       ) || product?.variants?.[0]
     );
   };
-
   if (!mounted) return null;
-
   const settings = {
     slidesToShow:
       windowWidth <= 480
@@ -183,15 +184,6 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
     dots: false,
     infinite: true,
     arrows: false,
-  };
-
-  const handleCategorySelect = (category) => {
-    setActiveCategory(category._id);
-    localStorage.setItem("activeTab", category._id);
-  };
-
-  const getProductCategoryId = (p) => {
-    return p.category_id || "";
   };
 
   const filteredProducts =
@@ -221,13 +213,11 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
         })
       : [];
   const limitedProducts = filteredProducts.slice(0, 8);
-
   const handleAddToCart = async (product) => {
     if (!token) {
       setShowLoginPopup(true);
       return;
     }
-
     const selectedColorCode = selectedColors[product._id];
     const variant = selectedColorCode
       ? getVariantForColor(product, selectedColorCode)
@@ -241,8 +231,13 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
       toast.error("This variant is out of stock!");
       return;
     }
-    setAddingToCart(true);
 
+    const alreadyInCart = isInCart(product._id, variant._id);
+    if (alreadyInCart) {
+      toast.success("Already added in cart", { position: "top-center" });
+      return;
+    }
+    setAddingToCart(true);
     try {
       let cartId = cart?._id || localStorage.getItem("cart_id");
 
@@ -280,30 +275,21 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
       setAddingToCart(false);
     }
   };
-  
-
   return (
     <>
       <section className="w-full py-[25px] md:py-[50px]">
         <div className="flex flex-col items-center">
-          {/* <Row>
-            <SectionHeading page="Home" order={4} />
-          </Row> */}
-
           <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
             <div className="w-[18px] md:w-[50px] border-t border-black"></div>
 
             <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
               <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
-                {/* {currentSection.title} */}
                 Featured Products
               </h2>
               <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
             </div>
-
             <div className="w-[18px] md:w-[50px] border-t border-black"></div>
           </div>
-
           <Row>
             {catLoading ? (
               <p>Loading categories...</p>
@@ -335,7 +321,6 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
               <p>No categories available.</p>
             )}
           </Row>
-
           <Row className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-[10px] lg:gap-[30px] lg:px-0 sm:px-2 pt-[50px] custom-lg:pt-[100px]">
             {productLoading ? (
               <p>Loading products...</p>
@@ -345,66 +330,27 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                 const {
                   originalPrice,
                   discountedPrice,
-                  discountValue,
-                  discountType,
+                  hasOffer,
+                  discountPercent,
                 } = getDiscountedPrice(p);
                 const uniqueColors = getUniqueColors(p.variants);
-
-                // const productReviewData =
-                //   reviewsState?.productReviews?.[p?._id];
-                // const reviews = productReviewData?.reviews || [];
-                // const reviewAverage =
-                //   reviews.length > 0
-                //     ? (
-                //         reviews.reduce(
-                //           (acc, curr) => acc + (Number(curr.rating) || 0),
-                //           0,
-                //         ) / reviews.length
-                //       ).toFixed(1)
-                //     : null;
-
                 const reviews = productReviews?.[p?._id]?.reviews || [];
-
                 let reviewAverage = 0;
                 let reviewTotal = 0;
-
                 if (reviews.length > 0) {
                   reviewTotal = reviews.length;
-
                   const sum = reviews.reduce(
                     (acc, curr) => acc + (Number(curr.rating) || 0),
                     0,
                   );
-
                   reviewAverage = (sum / reviewTotal).toFixed(1);
                 }
-
-                // const reviewData = useMemo(() => {
-                //   const reviews = productReviews?.[p?._id]?.reviews || [];
-
-                //   if (reviews.length === 0) return { average: 0, total: 0 };
-
-                //   const total = reviews.length;
-
-                //   const sum = reviews.reduce(
-                //     (acc, curr) => acc + (Number(curr.rating) || 0),
-                //     0,
-                //   );
-
-                //   return {
-                //     average: (sum / total).toFixed(1),
-                //     total,
-                //   };
-                // }, [p, p?._id]);
-
                 const discount = p?.discount || {};
                 const hasDiscount = discount?.value > 0;
-
                 const endsWithin24h =
                   discount?.end_date &&
                   new Date(discount.end_date).getTime() - Date.now() <=
                     24 * 60 * 60 * 1000;
-
                 const currentSelectedColor =
                   selectedColors[p._id] || uniqueColors[0]?.code;
                 const currentVariant = getVariantForColor(
@@ -412,12 +358,12 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                   currentSelectedColor,
                 );
                 const isOutOfStock = currentVariant?.stock_quantity === 0;
-
+                const wishlisted = isInWishlist(p._id, currentVariant?._id);
                 return (
                   <Link
                     to={`/products/${p._id}`}
                     key={index}
-                    className="relative overflow-hidden transform transition-transform cursor-pointer"
+                    className="relative overflow-hidden transform transition-transform cursor-aero_arrow.cur"
                   >
                     <div className="relative group">
                       <img
@@ -427,36 +373,8 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                             "/uploads/placeholder.png",
                         )}
                         alt={p.name}
-                        className="w-full h-[227px] md:h-[227px] lg:h-[355px] transform transition-transform duration-300 hover:scale-105"
+                        className="w-full h-[227px] md:h-[227px] lg:h-[355px] transform transition-transform duration-300"
                       />
-
-                      {/* <div className="absolute left-3 bottom-0">abc</div> */}
-
-                      {/* <div className="absolute left-0 bottom-0">
-                        {reviewAverage && (
-                          <span className="flex items-center gap-[5px] bg-[var(--theme-hover-color)] text-[var(--secondary-color)] px-2 py-[3px] rounded-[2px] text-[12px] font-medium">
-                            {reviewAverage}
-                            <Star
-                              size={10}
-                              fill="currentColor"
-                              className="text-yellow-500"
-                            />
-                          </span>
-                        )}
-                      </div> */}
-
-                      <div className="absolute bottom-1 left-1 flex flex-col space-y-2">
-                        {reviewTotal > 0 && (
-                          <span className="flex items-center gap-[5px] bg-white/50 text-black px-2 py-[3px] rounded-[2px] text-[12px] font-medium">
-                            {reviewAverage}{" "}
-                            <Star
-                              size={12}
-                              fill="currentColor"
-                              className="text-yellow-500"
-                            />
-                          </span>
-                        )}
-                      </div>
 
                       <div className="absolute top-3 right-3 opacity-100 transition-opacity duration-300 z-10">
                         <div className="flex flex-col space-y-2">
@@ -464,36 +382,52 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              handleAddToWishlist(p);
+                              handleAddToWishlist(p, currentVariant);
                             }}
-                            className="w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center bg-white text-black rounded-full border hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] transition-all duration-200"
+                            className={`w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center rounded-full border transition-all duration-200
+                ${
+                  wishlisted
+                    ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
+                    : "bg-white text-black hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)]"
+                }`}
                           >
-                            <HeartIcon className="w-[12px] h-[12px] sm:w-[12px] sm:h-[12px] lg:w-[20px] lg:h-[20px] hover:invert hover:brightness-0 hover:contrast-200" />
+                            <HeartIcon
+                              className={`w-[12px] h-[12px] sm:w-[12px] sm:h-[12px] lg:w-[20px] lg:h-[20px] ${
+                                wishlisted
+                                  ? "invert brightness-0 contrast-200"
+                                  : "hover:invert hover:brightness-0 hover:contrast-200"
+                              }`}
+                            />
                           </button>
-
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               handleAddToCart(p);
                             }}
-                            className="w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center bg-white text-black rounded-full border hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] hover:text-white transition-all duration-200"
+                            className={`w-[20px] h-[20px] md:w-[20px] md:h-[20px]
+  lg:w-[40px] lg:h-[40px]
+  flex items-center justify-center rounded-full border
+  transition-all duration-200
+  ${
+    isInCart(p._id, currentVariant?._id)
+      ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
+      : "bg-white text-black hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] hover:text-white"
+  }`}
                           >
                             <FontAwesomeIcon
                               icon={faCartShopping}
-                              className="w-[12px] h-[12px] sm:w-[12px] sm:h-[12px] lg:w-[20px] lg:h-[20px]"
+                              className="w-[12px] h-[12px] lg:w-[20px] lg:h-[20px]"
                             />
                           </button>
                         </div>
                       </div>
-
                       <div className="absolute inset-3 bg-[rgba(12,11,11,0.3)] border border-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-400">
                         <p className="text-white font-medium text-center">
                           View product
                         </p>
                       </div>
                     </div>
-
                     <div className="pt-[10px] text-center">
                       <div className="flex items-center gap-2 justify-center mb-1">
                         {hasDiscount && (
@@ -514,18 +448,17 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                           </div>
                         )}
                       </div>
-
                       <p className="text-black text-[12px] md:text-[15px] mb-1 line-clamp-1">
                         {p.name}
                       </p>
-                      <div>
+                      <div className="flex flex-col justify-center items-center">
                         <p className="text-black text-[12px] md:text-[15px] lg:text-[15px] mb-1">
                           Rs{" "}
                           {discountedPrice.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
-                          {discountValue > 0 && (
-                            <span className="line-through text-[#BCBCBC] text-[10px] md:text-[12px] lg:text-[12px] ml-[5px]">
+                          {hasOffer && (
+                            <span className="line-through text-light text-[10px] md:text-[12px] lg:text-[12px] ml-[5px]">
                               Rs{" "}
                               {originalPrice.toLocaleString("en-IN", {
                                 maximumFractionDigits: 0,
@@ -533,22 +466,18 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                             </span>
                           )}
                         </p>
-                        {/* {discountValue > 0 && (
-                          <p className="text-theme text-[10px] lg:text-[12px] font-medium bg-[rgba(239,58,150,0.09)] p-[1px] w-[60px] block  mx-auto text-center">
-                            {discountType === "percentage"
-                              ? `${discountValue}% OFF`
-                              : `₹${discountValue} OFF`}
+                        {hasOffer && (
+                          <p className="discount-badge">
+                            {discountPercent}% OFF
                           </p>
-                        )} */}
+                        )}
                       </div>
-
-                      <div className="flex gap-1.5 mt-2 justify-center">
+                      <div className="flex gap-1.5 py-1 justify-center">
                         {uniqueColors.map((clr, idx) => {
                           const clrVariant = getVariantForColor(p, clr.code);
                           const clrOutOfStock =
                             clrVariant?.stock_quantity === 0;
                           const isSelected = currentSelectedColor === clr.code;
-
                           return (
                             <button
                               key={idx}

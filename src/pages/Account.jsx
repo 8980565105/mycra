@@ -5,7 +5,7 @@ import AccountTabs from "../components/userAccount/AccountTabs";
 export default function MyAccount() {
   return (
     <div>
-      <UserProfile/>
+      <UserProfile />
       <AccountTabs />
     </div>
   );

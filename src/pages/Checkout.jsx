@@ -6,7 +6,6 @@ import Row from "../components/ui/Row";
 import CartProgress from "../components/cart/CartProgress";
 import { Link } from "react-router-dom";
 
-
 export default function Checkout() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [formData, setFormData] = React.useState({
@@ -19,7 +18,6 @@ export default function Checkout() {
     pincode: "",
     phone: "",
   });
-
   return (
     <div>
         <CartProgress currentStep={2}/>

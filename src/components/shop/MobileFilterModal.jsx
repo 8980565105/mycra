@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { X } from "lucide-react";
 import {
   CollapsibleFilter,
   FilterItemCheckbox,
   PriceRangeFilter,
 } from "./WomenCollections";
-import { useDispatch, useSelector } from "react-redux";
+import {  useSelector } from "react-redux";
 
 const MobileFilterModal = ({
   isOpen,
@@ -39,7 +39,7 @@ const MobileFilterModal = ({
   maxPrice,
   setMaxPrice,
 }) => {
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
   const [openFilter, setOpenFilter] = useState("Category");
   const toggleFilter = (filterId) => {
     setOpenFilter((prev) => (prev === filterId ? null : filterId));
@@ -65,16 +65,16 @@ const MobileFilterModal = ({
   const { fabrics = [], loading: fabricsLoading } = useSelector(
     (state) => state.fabrics,
   );
-  const { discounts = [], loading: discountsLoading } = useSelector(
-    (state) => state.discounts,
-  );
+  // const { discounts = [], loading: discountsLoading } = useSelector(
+  //   (state) => state.discounts,
+  // );
   const { productLabels = [], loading: labelsLoading } = useSelector(
     (state) => state.productLabels,
   );
 
   // useEffect(() => {
-    // dispatch(fetchCategories());
-    // dispatch(fetchsubCategories());
+  // dispatch(fetchCategories());
+  // dispatch(fetchsubCategories());
   //   dispatch(fetchSizes());
   //   dispatch(fetchColors());
   //   dispatch(fetchBrands());
@@ -131,13 +131,13 @@ const MobileFilterModal = ({
   }, {});
 
   //discountcount
-  const discountCounts = products.reduce((acc, product) => {
-    const discountId = product.discount_id;
-    if (discountId) {
-      acc[discountId] = (acc[discountId] || 0) + 1;
-    }
-    return acc;
-  }, {});
+  // const discountCounts = products.reduce((acc, product) => {
+  //   const discountId = product.discount_id;
+  //   if (discountId) {
+  //     acc[discountId] = (acc[discountId] || 0) + 1;
+  //   }
+  //   return acc;
+  // }, {});
 
   //productLabels
   const labelCounts = products.reduce((acc, product) => {
@@ -373,7 +373,8 @@ const MobileFilterModal = ({
                 )}
               </div>
             </CollapsibleFilter>
-            <CollapsibleFilter
+
+            {/* <CollapsibleFilter
               title="Discounts"
               isOpen={openFilter === "Discounts"}
               onToggle={() => toggleFilter("Discounts")}
@@ -400,7 +401,7 @@ const MobileFilterModal = ({
                   <p className="text-sm text-gray-500">No discounts found.</p>
                 )}
               </div>
-            </CollapsibleFilter>
+            </CollapsibleFilter> */}
 
             <CollapsibleFilter
               title="Product Label"

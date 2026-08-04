@@ -35,23 +35,62 @@ export default function ContactUs() {
   const contactPageFromApi = pages?.find((page) => page.slug === "contact");
   const contactPage = contactPageFromApi || staticBg;
 
-  const getBgImage = (section) => {
-    if (section.isStatic) return section.image_url;
-    return getImageUrl(section.background_image_url || section.image_url);
-  };
+  const faqSection = contactPage?.sections?.find(
+    (section) => section.type === "faqs",
+  );
 
+  const heroSection = contactPage?.sections?.find(
+    (section) => section.type === "hero_slider",
+  );
+
+  <FAQ faqSection={faqSection} />;
+
+  const getBgImage = (section) => {
+    const firstSlide = section.slides?.[0];
+
+    if (section.isStatic) {
+      return section.image_url;
+    }
+
+    return getImageUrl(
+      firstSlide?.background_image_url ||
+        section.background_image_url ||
+        section.image_url,
+    );
+  };
   return (
     <>
-      {contactPage?.sections?.map((section) => (
+      {/* {contactPage?.sections?.map((section) => {
+        const firstSlide = section.slides?.[0];
+
+        return (
+          <SecondarySection
+            key={section._id}
+            title={firstSlide?.title || section.title || "Contact Us"}
+            description={
+              firstSlide?.description ||
+              section.description ||
+              "We are here to help you. Reach out anytime."
+            }
+            backgroundImage={getBgImage(section)}
+          />
+        );
+      })} */}
+
+      {heroSection && (
         <SecondarySection
-          key={section._id}
-          title={section.title || "Contact Us"}
-          description={
-            section.description || "We are here to help you. Reach out anytime."
+          key={heroSection._id}
+          title={
+            heroSection.slides?.[0]?.title || heroSection.title || "Contact Us"
           }
-          backgroundImage={getBgImage(section)}
+          description={
+            heroSection.slides?.[0]?.description ||
+            heroSection.description ||
+            "We are here to help you."
+          }
+          backgroundImage={getBgImage(heroSection)}
         />
-      ))}
+      )}
       <Section>
         <Row className="xl:max-w-[1122px] grid grid-cols-1 md:grid-cols-3 gap-[30px] py-[25px] md:py-[50px]">
           <ContactCard
@@ -79,7 +118,7 @@ export default function ContactUs() {
       </Section>
 
       <MapForm />
-     <FAQ /> 
+      <FAQ faqSection={faqSection} />
     </>
   );
 }

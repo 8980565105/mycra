@@ -6,6 +6,7 @@ import {
   updateOwnProfile,
 } from "../../features/auth/authThunk";
 import toast, { Toaster } from "react-hot-toast";
+import ChangePassword from "./ChangePassword";
 
 function AccountDetails({ onSwitchForget }) {
   const { user, loading } = useSelector((state) => state.auth);
@@ -76,7 +77,6 @@ function AccountDetails({ onSwitchForget }) {
 
       <div className="space-y-4 mt-4">
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {/* ── Name ────────────────────────────────── */}
           <div className="flex flex-col mb-4">
             <input
               type="text"
@@ -89,7 +89,6 @@ function AccountDetails({ onSwitchForget }) {
             />
           </div>
 
-          {/* ── Email ───────────────────────────────── */}
           <div>
             <input
               type="email"
@@ -102,7 +101,6 @@ function AccountDetails({ onSwitchForget }) {
             />
           </div>
 
-          {/* ── Mobile ──────────────────────────────── */}
           <div className="flex flex-col">
             <input
               type="text"
@@ -114,7 +112,6 @@ function AccountDetails({ onSwitchForget }) {
             />
           </div>
 
-          {/* ── Gender ──────────────────────────────── */}
           <div className="flex flex-col">
             <select
               name="gender"
@@ -129,7 +126,6 @@ function AccountDetails({ onSwitchForget }) {
             </select>
           </div>
 
-          {/* ── Date of Birth ───────────────────────── */}
           <div className="flex flex-col">
             <input
               type={formData.date_of_birth ? "date" : "text"}
@@ -145,15 +141,12 @@ function AccountDetails({ onSwitchForget }) {
             />
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            variant="common"
-            // className="!min-w-[185px] flex items-center justify-between"
-          >
+          <Button type="submit" disabled={loading} variant="common">
             {loading ? "Updating..." : "Update Profile"}
           </Button>
         </form>
+
+        <ChangePassword />
       </div>
     </>
   );

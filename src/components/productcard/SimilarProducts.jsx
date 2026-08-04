@@ -90,7 +90,6 @@ export default function SimilarProducts({
       <Slider ref={sliderRef} {...settings}>
         {similarProducts.map((p) => (
           <div key={p._id} className="px-[15px]">
-            {/* <ProductCard product={p} /> */}
             <ProductCard product={p} setShowLoginPopup={setShowLoginPopup} />
           </div>
         ))}

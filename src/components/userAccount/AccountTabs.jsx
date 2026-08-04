@@ -4,12 +4,13 @@ import { FaTachometerAlt, FaShoppingBag, FaUser } from "react-icons/fa";
 import Orders from "./Orders";
 import Dashboard from "./Dashbord";
 import Section from "../ui/Section";
-import { LogOut, MapPin } from "lucide-react";
+import { LogOut, MapPin, Wallet } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
 import { clearCart } from "../../features/cart/cartSlice";
 import Address from "../Address/Address";
 import AccountDetails from "../AccountDetails/AccountDetails";
+import Wallets from "../../pages/Wallets";
 
 const tabs = [
   {
@@ -35,6 +36,12 @@ const tabs = [
     path: "/my-account/account-details",
     icon: <FaUser />,
     component: AccountDetails,
+  },
+  {
+    name: "Wallets",
+    path: "/my-account/wallets",
+    icon: <Wallet />,
+    component: Wallets,
   },
   {
     name: "Log out",
@@ -65,14 +72,14 @@ export default function AccountTabs() {
   return (
     <Section className="!pt-0 -mt-[43px]">
       <Row className="!max-w-[1122px]">
-        <div className="flex gap-[10px] flex-wrap">
+        <div className="flex justify-center gap-[5px] md:gap-[10px] flex-wrap">
           {tabs.map((tab) => {
             if (tab.isLogout) {
               return (
                 <button
                   key={tab.name}
                   onClick={handleLogout}
-                  className="flex items-center h-[43px] gap-[10px] px-[15px] sm:px-[30px] py-2 transition text-[18px] 
+                  className="flex items-center h-[43px] gap-[10px] px-[7px] md:px[15px] sm:px-[30px] py-2 transition text-[18px] 
                     bg-[rgba(255,255,255,0.50)] text-[var(--primary-color)] hover:text-[var(--secondary-color)]"
                 >
                   <span>{tab.icon}</span>

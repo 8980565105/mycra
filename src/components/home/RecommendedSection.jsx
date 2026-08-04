@@ -84,7 +84,6 @@ const RecommendedSection = () => {
   );
 };
 
-// PRODUCT CARD
 const ProductCard = ({ item }) => {
   const imageUrl =
     item?.images?.length > 0 ? getImageUrl(item.images[0]) : "/placeholder.png";

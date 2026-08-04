@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -27,8 +27,16 @@ import AccountDetails from "./components/AccountDetails/AccountDetails";
 import Faqs from "./pages/Faqs";
 import AboutPage from "./pages/About";
 import ScrollToTop from "./components/ScrollToTop";
-import { fetchStoreInfo } from "./features/store/storeThunk";
+// import { fetchStoreInfo } from "./features/store/storeThunk";
 import { useDispatch, useSelector } from "react-redux";
+import { trackPageVisit } from "./utils/trackPageVisit";
+import Wallets from "./pages/Wallets";
+import TransactionHistory from "./pages/paytransection";
+import WalletKycIntro from "./components/wallets/walletkycintro";
+import ContinueWithKyc from "./components/wallets/continuewithkyc";
+import KycForm from "./components/wallets/kycform";
+import GiftCardToBalance from "./components/wallets/giftcardtobalance";
+import { fetchPublicSettings } from "./features/setting/settingThunk";
 
 const hexToRgba = (hex, opacity) => {
   if (!hex) return null;
@@ -43,9 +51,9 @@ const injectThemeColors = (theme) => {
   if (!theme) return;
   const root = document.documentElement;
 
-  const primary = theme.primaryColor;
-  const secondary = theme.secondaryColor;
-  const button = theme.buttonColor;
+  const primary = theme.primary_color;
+  const secondary = theme.secondary_color;
+  // const button = theme.buttonColor;
   const font = theme.fontFamily;
 
   if (primary) {
@@ -63,9 +71,9 @@ const injectThemeColors = (theme) => {
     root.style.setProperty("--sec-theme-color-30", hexToRgba(secondary, 0.5));
   }
 
-  if (button) {
-    root.style.setProperty("--button-color", button);
-  }
+  // if (button) {
+  //   root.style.setProperty("--button-color", button);
+  // }
 
   if (font) {
     root.style.setProperty("--font-family-main", font);
@@ -73,6 +81,24 @@ const injectThemeColors = (theme) => {
     root.style.fontFamily = font;
   }
 };
+
+function PageTracker() {
+  const location = useLocation();
+  const lastTracked = useRef(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const currentPage = location.pathname;
+    if (lastTracked.current === currentPage) return;
+    lastTracked.current = currentPage;
+
+    trackPageVisit(currentPage);
+  }, [location.pathname]);
+
+  return null;
+}
 
 function App() {
   const SYSTEM_FONTS = [
@@ -91,11 +117,11 @@ function App() {
     const location = useLocation();
     const isShopPage = location.pathname === "/shop";
     const dispatch = useDispatch();
-    const storeData = useSelector((state) => state.store.info);
+    // const storeData = useSelector((state) => state.store.info);WomenCollections
+    const settings = useSelector((state) => state.settings.data);
 
     useEffect(() => {
-      
-      if (!storeData) {
+      if (!settings) {
         document.documentElement.style.setProperty(
           "--font-family-main",
           DEFAULT_FONT,
@@ -103,7 +129,7 @@ function App() {
         return;
       }
 
-      const font = storeData?.theme?.fontFamily;
+      const font = settings?.theme?.fontFamily;
       if (!font) {
         document.documentElement.style.setProperty(
           "--font-family-main",
@@ -114,7 +140,6 @@ function App() {
 
       const fontBaseName = font.split(",")[0].replace(/['"]/g, "").trim();
 
-
       if (SYSTEM_FONTS.includes(fontBaseName)) {
         document.documentElement.style.setProperty(
           "--font-family-main",
@@ -122,7 +147,6 @@ function App() {
         );
         return;
       }
-
 
       const existingLink = document.getElementById("dynamic-google-font");
       if (existingLink) existingLink.remove();
@@ -132,7 +156,6 @@ function App() {
       link.rel = "stylesheet";
       link.href = `https://fonts.googleapis.com/css2?family=${fontBaseName.replace(/\s+/g, "+")}:wght@300;400;500;600;700&display=swap`;
 
- 
       link.onload = () => {
         document.documentElement.style.setProperty(
           "--font-family-main",
@@ -148,14 +171,14 @@ function App() {
       };
 
       document.head.appendChild(link);
-    }, [storeData]);
+    }, [settings]);
 
     useEffect(() => {
-      dispatch(fetchStoreInfo());
+      dispatch(fetchPublicSettings());
     }, [dispatch]);
 
     useEffect(() => {
-      const faviconUrl = storeData?.theme?.faviconUrl;
+      const faviconUrl = settings?.favicon_url;
       if (!faviconUrl) return;
       const baseURL = process.env.REACT_APP_API_URL_IMAGE;
       const fullUrl = faviconUrl.startsWith("http")
@@ -168,13 +191,13 @@ function App() {
         document.head.appendChild(link);
       }
       link.href = fullUrl;
-    }, [storeData]);
+    }, [settings]);
 
     useEffect(() => {
-      if (storeData?.theme) {
-        injectThemeColors(storeData.theme);
+      if (settings) {
+        injectThemeColors(settings);
       }
-    }, [storeData]);
+    }, [settings]);
 
     return (
       <>
@@ -193,6 +216,7 @@ function App() {
             <Route path="orders" element={<Orders />} />
             <Route path="address" element={<Address />} />
             <Route path="account-details" element={<AccountDetails />} />
+            <Route path="wallets" element={<Wallets />} />
             <Route path="logout" />
           </Route>
           <Route path="/cart" element={<Cart />}></Route>
@@ -201,7 +225,13 @@ function App() {
           <Route path="/products/:id" element={<Product />}></Route>
           <Route path="/wishlist" element={<Wishlist />}></Route>
           <Route path="/faqs" element={<Faqs />} />
-          <Route path="about" element={<AboutPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          {/* <Route path="/wallets" element={<Wallets />} /> */}
+          <Route path="/transectionhistory" element={<TransactionHistory />} />
+          <Route path="/walletkycintro" element={<WalletKycIntro />} />
+          <Route path="/continuewithkyc" element={<ContinueWithKyc />} />
+          <Route path="/kycform" element={<KycForm />} />
+          <Route path="/gifcard" element={<GiftCardToBalance />} />
         </Routes>
         <Footer />
       </>
@@ -210,6 +240,7 @@ function App() {
   return (
     <>
       <Router>
+        <PageTracker />
         <RouterWrapper />
       </Router>
     </>

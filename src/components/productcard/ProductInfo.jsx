@@ -61,17 +61,6 @@ export default function ProductInfo({
   const cart = useSelector((state) => state.cart.cart);
   const [addingToCart, setAddingToCart] = useState(false);
 
-  // const reviewData = useMemo(() => {
-  //   const reviews = Array.isArray(product?.reviews) ? product.reviews : [];
-  //   if (reviews.length === 0) return { average: 0, total: 0 };
-  //   const total = reviews.length;
-  //   const sum = reviews.reduce(
-  //     (acc, curr) => acc + (Number(curr.rating) || 0),
-  //     0,
-  //   );
-  //   return { average: (sum / total).toFixed(1), total };
-  // }, [product?.reviews]);
-
   const { productReviews } = useSelector((state) => state.reviews);
 
   const reviewData = useMemo(() => {
@@ -147,18 +136,32 @@ export default function ProductInfo({
     }
   }, [selectedSize, selectedColor, product?.variants, setSelectedVariant]);
 
-  const originalPrice = activeVariant?.price || 0;
-  const discountType = product?.discount_id?.type;
-  const discountValue = product?.discount_id?.value || 0;
-  let discountedPrice = originalPrice;
-  if (discountType === "percentage") {
-    discountedPrice = Math.round(
-      originalPrice - (originalPrice * discountValue) / 100,
-    );
-  } else if (discountType === "flat") {
-    discountedPrice = Math.max(0, originalPrice - discountValue);
-  }
+  // const originalPrice = activeVariant?.price || 0;
+  // const discountType = product?.discount_id?.type;
+  // const discountValue = product?.discount_id?.value || 0;
+  // let discountedPrice = originalPrice;
+  // if (discountType === "percentage") {
+  //   discountedPrice = Math.round(
+  //     originalPrice - (originalPrice * discountValue) / 100,
+  //   );
+  // } else if (discountType === "flat") {
+  //   discountedPrice = Math.max(0, originalPrice - discountValue);
+  // }
+  const originalPrice = Number(activeVariant?.price) || 0;
 
+  const offerPrice =
+    activeVariant?.offerprice !== undefined &&
+    activeVariant?.offerprice !== null
+      ? Number(activeVariant.offerprice)
+      : originalPrice;
+
+  const hasOffer = offerPrice > 0 && offerPrice < originalPrice;
+
+  const discountedPrice = hasOffer ? offerPrice : originalPrice;
+
+  const discountPercent = hasOffer
+    ? Math.round(((originalPrice - offerPrice) / originalPrice) * 100)
+    : 0;
   const handleAddToCart = async () => {
     if (!token) {
       setShowLoginPopup(true);
@@ -211,18 +214,17 @@ export default function ProductInfo({
 
   const { handleAddToWishlist } = useAddToWishlist(setShowLoginPopup);
 
-  const discount = product?.discount || product?.discount_id || {};
-  const hasDiscount = discount?.value > 0;
-  const endsWithin24h =
-    discount?.end_date &&
-    new Date(discount.end_date).getTime() - Date.now() <= 24 * 60 * 60 * 1000;
+  // const discount = product?.discount || product?.discount_id || {};
+  // const hasDiscount = discount?.value > 0;
+  // const endsWithin24h =
+  //   discount?.end_date &&
+  //   new Date(discount.end_date).getTime() - Date.now() <= 24 * 60 * 60 * 1000;
 
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
       <p className="text-theme text-p pb-[25px] pt-[20px] md:pt-0">
-        Leatest Style <span className="text-[#BCBCBC]"> | </span> Express
-        Shipping
+        {product.tag}
       </p>
       <h1 className="text-[24px] uppercase">
         {activeVariant?.brand_id?.name || "No Brand"}
@@ -241,7 +243,7 @@ export default function ProductInfo({
 
       <div className="pb-[33px] border-dashed border-b light-border">
         <div className="flex items-center gap-2 justify-left mb-1">
-          {hasDiscount && (
+          {/* {hasDiscount && (
             <>
               <span className="bg-theme text-theme text-[12px] md:text-[15px] px-2 py-1 rounded font-bold">
                 {discount?.type === "percentage"
@@ -256,15 +258,18 @@ export default function ProductInfo({
                 </span>
               )}
             </>
-          )}
+          )} */}
         </div>
 
-        <div className="flex items-center">
+        <div className="flex gap-2 items-center">
           <p className="text-[26px] text-black">
             ₹{discountedPrice.toLocaleString("en-IN")}
           </p>
+          <span className="text-primary font-semibold">
+            {discountPercent}% OFF
+          </span>
         </div>
-        {discountValue > 0 && (
+        {hasOffer > 0 && (
           <p className="sec-text-color">
             MRP{" "}
             <span className="line-through">

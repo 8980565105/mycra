@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getImageUrl } from "../utils/helper";
 import { fetchPageBySlug } from "../../features/pages/pagesThunk";
+import Button from "../ui/Button";
 
 export default function Hero() {
   const dispatch = useDispatch();
@@ -16,8 +17,8 @@ export default function Hero() {
   useEffect(() => {
     dispatch(fetchPageBySlug("home"));
   }, [dispatch]);
-
-  const { currentPage, slugLoading } = useSelector((state) => state.pages);
+  const { pagesBySlug, slugLoading } = useSelector((state) => state.pages);
+  const currentPage = pagesBySlug["home"];
 
   const heroSection =
     currentPage?.slug === "home"
@@ -118,12 +119,13 @@ export default function Hero() {
                     </span>
 
                     {slide.is_button !== false && (
-                      <button
+                      <Button
                         onClick={() => navigate(slide.button_link)}
-                        className="lg:w-[160px] w-[72px] lg:h-[54px] h-[26px] text-[12px] lg:text-[22px] text-[var(--secondary-color)] hover:text-[var(--primary-color)] font-regular rounded shadow-md duration-300 bg-[var(--primary-color)] hover:bg-[var(--secondary-color)] "
+                        variant="common"
+                        className="lg:w-[160px] w-[72px]"
                       >
                         {slide.button_name}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>

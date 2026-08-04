@@ -3,39 +3,32 @@ import Row from "../ui/Row.jsx";
 import { useSelector } from "react-redux";
 import Section from "../ui/Section.jsx";
 import { getImageUrl } from "../utils/helper.js";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import FlowerIcon from "../icons/FlowerIcon.jsx";
+import Button from "../ui/Button.jsx";
 // import Button from "../ui/Button.jsx";
 
 const Bestsellers = () => {
+  const navigate = useNavigate();
   const { products = [] } = useSelector((state) => state.products);
-
   const sellersProducts = products.filter(
     (product) =>
       product.status === "active" &&
       product.variants?.some((variant) => variant.is_best_seller),
   );
-
   const bestSellersLimited = sellersProducts.slice(0, 4);
-
   const getDiscountedPrice = (product) => {
     const originalPrice = product?.variants?.[0]?.price || 0;
     const discount = product?.discount?.value || 0;
-
     const discountedPrice =
       discount > 0
         ? originalPrice - (originalPrice * discount) / 100
         : originalPrice;
-
     return { discount, originalPrice, discountedPrice };
   };
-
   return (
     <Section>
-      {/* <Row className="pt-[25px] md:pt-[50px]">
-        <SectionHeading page="Home" order={7} />
-      </Row> */}
       <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
         <div className="w-[18px] md:w-[50px] border-t border-black"></div>
         <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
@@ -62,7 +55,7 @@ const Bestsellers = () => {
                   className="w-full h-full transition-transform duration-300"
                 />
                 <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-                  <div className="absolute inset-3 bg-black bg-opacity-30 rounded-[5px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-400">
+                  <div className="absolute inset-3 bg-black bg-opacity-40 rounded-[5px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-400">
                     <div className="bg-white px-4 py-2 rounded-[5px] text-center mx-[10px]">
                       <p className="text-black text-[10px] lg:text-[18px] font-medium line-clamp-2">
                         {product.name}
@@ -82,12 +75,13 @@ const Bestsellers = () => {
       </Row>
 
       <Row className="flex justify-center pt-[50px] md:pt-[100px] pb-[0px] md:pb-[0px]">
-        <Link
-          to="/shop?filter=bestseller"
-          className="lg:w-[217px] lg:w-[217px] gap-[5px] flex items-center justify-center text-theme text-[12px] lg:text-[16px] font-sans border border-black py-3 px-5 rounded-[5px] transition-colors "
+        <Button
+          onClick={() => navigate("/shop?filter=bestseller")}
+          variant="outline"
+          className=""
         >
           View all Best Seller's <ArrowRight size={20} />
-        </Link>
+        </Button>
       </Row>
     </Section>
   );

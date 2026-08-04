@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { getImageUrl } from "../components/utils/helper";
 import Button from "../components/ui/Button";
-import { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 function Updatecart() {
   const { items = [], loading } = useSelector((state) => state.cart);
@@ -69,7 +69,7 @@ function Updatecart() {
 
   const handleDelete = (item_id) => {
     const cart_id = localStorage.getItem("cart_id");
-    if (!cart_id) return Toaster("No cart found!");
+    if (!cart_id) return toast.error("No cart found!");
     dispatch(deleteCartItem({ cart_id, item_id }))
       .unwrap()
       .then(() => dispatch(fetchCart(cart_id)));
@@ -131,7 +131,7 @@ function Updatecart() {
                   {item.product_id?.name}
                 </td>
                 <td className="px-3 xl:px-6 pt-[40px] pb-[20px]">
-                  <div className="inline-flex items-center gap-[10px] px-[8px] py-[5px] light-border border text-black rounded-[20px] leading">
+                  <div className="inline-flex items-center gap-[10px] px-[8px] py-[5px] light-border border text-black rounded-[5px] leading">
                     <button onClick={() => handleDecrease(item)}>
                       <Minus size={14} />
                     </button>

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   CollapsibleFilter,
   FilterItemCheckbox,
   PriceRangeFilter,
 } from "./WomenCollections";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 const DesktopFilters = ({
   selectedCategories = [],
@@ -37,7 +37,7 @@ const DesktopFilters = ({
   setMaxPrice,
   isCategorySelected,
 }) => {
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
   const [openFilter, setOpenFilter] = useState("Category");
 
   const toggleFilter = (filterId) => {
@@ -48,8 +48,8 @@ const DesktopFilters = ({
   );
   const {
     products = [],
-    loading,
-    error,
+    // loading,
+    // error,
   } = useSelector((state) => state.products);
   const { sizes = [], loading: sizeLoading } = useSelector(
     (state) => state.sizes,
@@ -66,9 +66,9 @@ const DesktopFilters = ({
   const { fabrics = [], loading: fabricsLoading } = useSelector(
     (state) => state.fabrics,
   );
-  const { discounts = [], loading: discountsLoading } = useSelector(
-    (state) => state.discounts,
-  );
+  // const { discounts = [], loading: discountsLoading } = useSelector(
+  //   (state) => state.discounts,
+  // );
   const { productLabels = [], loading: labelsLoading } = useSelector(
     (state) => state.productLabels,
   );
@@ -107,13 +107,13 @@ const DesktopFilters = ({
       }, {})
     : {};
 
-  const discountCounts = Array.isArray(products)
-    ? products.reduce((acc, product) => {
-        const discountId = product.discount_id;
-        if (discountId) acc[discountId] = (acc[discountId] || 0) + 1;
-        return acc;
-      }, {})
-    : {};
+  // const discountCounts = Array.isArray(products)
+  //   ? products.reduce((acc, product) => {
+  //       const discountId = product.discount_id;
+  //       if (discountId) acc[discountId] = (acc[discountId] || 0) + 1;
+  //       return acc;
+  //     }, {})
+  //   : {};
 
   const labelCounts = Array.isArray(products)
     ? products.reduce((acc, product) => {
@@ -320,7 +320,7 @@ const DesktopFilters = ({
         </div>
       </CollapsibleFilter>
 
-      <CollapsibleFilter
+      {/* <CollapsibleFilter
         title="Discounts"
         isOpen={openFilter === "Discounts"}
         onToggle={() => toggleFilter("Discounts")}
@@ -347,7 +347,8 @@ const DesktopFilters = ({
             <p className="text-sm text-gray-500">No discounts found.</p>
           )}
         </div>
-      </CollapsibleFilter>
+      </CollapsibleFilter> */}
+
       <CollapsibleFilter
         title="Product Label"
         isOpen={openFilter === "Product Label"}

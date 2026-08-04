@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-
 import { Minus, Plus, Eye, Trash2 } from "lucide-react";
-
 import Button from "../ui/Button";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -10,21 +8,20 @@ import {
   removeWishlistItem,
 } from "../../features/wishlist/wishlistThunk";
 import { getImageUrl } from "../utils/helper";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   addToCart,
   fetchCart,
   createCart,
   updateCartItem,
 } from "../../features/cart/cartThunk";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 
 const Wishlist = ({ product }) => {
   const [quantities, setQuantities] = useState([]);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { token } = useSelector((state) => state.auth);
-  // const [showLoginPopup, setShowLoginPopup] = useState(false);
   const { items = [] } = useSelector((state) => state.wishlist);
   const userId = useSelector((state) => state.auth.user?._id);
   const wishlistId = useSelector((state) => state.wishlist.wishlistId);
@@ -79,7 +76,7 @@ const Wishlist = ({ product }) => {
 
   const handleAddToCart = async (item, index) => {
     if (!token) {
-      Toaster("Please login to add items to cart");
+      toast.error("Please login to add items to cart");
       navigate("/login");
       return;
     }
@@ -90,7 +87,11 @@ const Wishlist = ({ product }) => {
     console.log("Adding to cart with quantity:", selectedQuantity);
 
     if (!product_id || !variant_id) {
-      Toaster("Product or variant not found!");
+      Toaster.error("Product or variant not found!");
+      return;
+    }
+    if (!item?.variant?.stock_quantity || item.variant.stock_quantity <= 0) {
+      toast.error("This item is out of stock!");
       return;
     }
 
@@ -107,7 +108,7 @@ const Wishlist = ({ product }) => {
           cart_id = cartResult._id;
           localStorage.setItem("cart_id", cart_id);
         } catch {
-          Toaster("Could not create cart. Please try again.");
+          Toaster.error("Could not create cart. Please try again.");
           setAddingToCart(null);
           return;
         }
@@ -152,7 +153,7 @@ const Wishlist = ({ product }) => {
       navigate("/cart");
     } catch (err) {
       console.error("Add to cart error:", err);
-      Toaster(
+      Toaster.error(
         typeof err === "string"
           ? err
           : err?.message || "Failed to add item to cart. Please try again.",
@@ -181,12 +182,12 @@ const Wishlist = ({ product }) => {
       dispatch(bulkDeleteWishlistItems(selectedItems))
         .unwrap()
         .then(() => {
-          Toaster("Selected wishlist items deleted successfully!");
+          toast.success("Selected wishlist items deleted successfully!");
           setSelectedItems([]);
           dispatch(fetchWishlistByUser(userId));
         })
         .catch(() => {
-          Toaster("Bulk delete failed. Try again.");
+          toast.error("Bulk delete failed. Try again.");
         });
     }
   }, [selectedItems]);
@@ -210,16 +211,17 @@ const Wishlist = ({ product }) => {
               {formattedItems.map((item, index) => (
                 <tr key={item._id} className="border-b light-border">
                   <td className="p-4 py-[40px] flex items-center gap-[25px] xl:gap-[40px]">
-                    <img
-                      src={
-                        item.variant_id?.images?.length > 0
-                          ? getImageUrl(item.variant_id.images[0])
-                          : getImageUrl(item.product_id?.images?.[0])
-                      }
-                      alt={item.product_id?.name}
-                      className="w-[74px] h-[84px] p-[5px] box-shadow"
-                    />
-
+                    <Link to={`/products/${item.product_id?._id}`}>
+                      <img
+                        src={
+                          item.variant_id?.images?.length > 0
+                            ? getImageUrl(item.variant_id.images[0])
+                            : getImageUrl(item.product_id?.images?.[0])
+                        }
+                        alt={item.product_id?.name}
+                        className="w-[74px] h-[84px] p-[5px] box-shadow"
+                      />
+                    </Link>
                     <div className="text-p break">
                       <h3 className=" leading-tight  line-clamp-2 ">
                         {item.product?.name}
@@ -286,10 +288,17 @@ const Wishlist = ({ product }) => {
                         />
                         <Button
                           variant="common"
+                          disabled={
+                            !item.variant?.stock_quantity ||
+                            item.variant.stock_quantity <= 0
+                          }
                           onClick={() => handleAddToCart(item, index)}
                           className="!min-w-[113px] !py-[5px] !px-[8px] text-14"
                         >
-                          Add To Cart
+                          {/* Add To Cart */}
+                          {item.variant?.stock_quantity > 0
+                            ? "Add To Cart"
+                            : "Out of Stock"}
                         </Button>
                         <Trash2
                           size={30}

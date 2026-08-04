@@ -1,10 +1,7 @@
-// features/cart/cartThunk.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-
-// ─── Helper: get token ────────────────────────────────────────────────────────
 const getAuthHeaders = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -72,7 +69,6 @@ export const addToCart = createAsyncThunk(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// UPDATE CART ITEM QUANTITY
 // Route: PUT /carts/update-item
 // ═══════════════════════════════════════════════════════════════════════════════
 export const updateCartItem = createAsyncThunk(
@@ -94,7 +90,6 @@ export const updateCartItem = createAsyncThunk(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DELETE CART ITEM
 // Route: DELETE /carts/delete-item
 // ═══════════════════════════════════════════════════════════════════════════════
 export const deleteCartItem = createAsyncThunk(

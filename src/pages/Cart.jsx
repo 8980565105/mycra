@@ -103,7 +103,6 @@ export default function Cart() {
                 </div>
               </div>
             )}
-
             <CouponCard
               appliedCoupon={appliedCoupon}
               setAppliedCoupon={setAppliedCoupon}

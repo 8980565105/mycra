@@ -7,6 +7,7 @@ export const ROUTES = {
     forgotPassword: "/auth/forgot-password",
     resetPassword: "/auth/reset-password",
     googleLogin: "/auth/google-login",
+    changePassword: "/auth/change-password",
   },
   navbar: {
     getAll: "/navbar",
@@ -104,6 +105,9 @@ export const ROUTES = {
   user: {
     updateOneProfile: "/users/me",
     updateProfile: (id) => `/users/${id}`,
+    addresses: "/users/me/addresses",
+    addressById: (id) => `/users/me/addresses/${id}`,
+    setDefaultAddress: (id) => `/users/me/addresses/${id}/default`,
   },
   collections: {
     getAll: "/categories",
@@ -126,10 +130,31 @@ export const ROUTES = {
   store: {
     getinfo: "/stores/info",
   },
-
   settings: {
     public: "/settings/public",
     get: "/settings",
     update: "/settings",
+  },
+  pageVisit: {
+    create: "/page-visit",
+  },
+  wallet: {
+    getBalance: "/wallet/balance",
+    addMoney: "/wallet/add-money",
+    verifyKyc: "/wallet/verify-kyc",
+    adminAll: "/wallet/admin/all",
+    adminAdjust: (userId) => `/wallet/admin/adjust/${userId}`,
+    adminVerifyKyc: (userId) => `/wallet/admin/verify-kyc/${userId}`,
+  },
+  kyc: {
+    validatePan: "/kyc/validate-pan",
+    generateOtp: "/kyc/generate-otp",
+    verifyOtp: "/kyc/verify-otp",
+  },
+  transection: {
+    getAll: "/transactions",
+    getById: (id) => `/transactions/${id}`,
+    adminAll: "/transactions/admin/all",
+    adminUpdateStatus: (id) => `/transactions/admin/status/${id}`,
   },
 };

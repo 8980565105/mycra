@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-
 import Slider from "react-slick";
 import FlowerIcon from "../icons/FlowerIcon";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import SectionHeading from "../ui/SectionHeading";
 import Row from "../ui/Row.jsx";
 import { useSelector } from "react-redux";
 import { getImageUrl } from "../utils/helper.js";
@@ -36,7 +34,6 @@ const TrendingClothes = () => {
   const trendingProducts = products.filter(
     (product) =>
       product.status === "active" &&
-      // product.category?.status === "active" &&
       product.variants?.some((variant) => variant.is_trending),
   );
 
@@ -62,32 +59,25 @@ const TrendingClothes = () => {
 
   return (
     <Section className="mb-[25px] md:mb-[50px]">
-      {/* <Row>
-        <SectionHeading page="Home" order={5} />
-      </Row> */}
+      <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
+        <div className="w-[18px] md:w-[50px] border-t border-black"></div>
 
-       <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
-          <div className="w-[18px] md:w-[50px] border-t border-black"></div>
-
-          <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
-            <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
-              Tranding Product
-            </h2>
-            <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
-          </div>
-
-          <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+        <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
+          <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
+            Tranding Product
+          </h2>
+          <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
         </div>
+        <div className="w-[18px] md:w-[50px] border-t border-black"></div>
+      </div>
 
       <Row>
-        {/* Desktop Grid */}
         <div className="hidden custom-lg:grid grid-cols-3 gap-8">
           {trendingProductsLimited.map((product) => (
             <TrendingCloth key={product._id} product={product} desktop />
           ))}
         </div>
 
-        {/* Mobile & Tablet Slider */}
         <div className="custom-lg:hidden w-full relative">
           <Slider ref={sliderRef} {...sliderSettings}>
             {trendingProducts.map((product) => (

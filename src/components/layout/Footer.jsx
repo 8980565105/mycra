@@ -39,26 +39,27 @@ const getSocialIcon = (platform) => {
 export default function Footer() {
   const dispatch = useDispatch();
   const { footers = [], loading } = useSelector((state) => state.footer);
-  const { info: storeInfo } = useSelector((state) => state.store);
-  const socialLinks = storeInfo?.social_links || [];
+  // const { info: storeInfo } = useSelector((state) => state.store);
+  const settings = useSelector((state) => state.settings.data);
+
+  const socialLinks = settings?.social_links || [];
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const contentRef = useRef(null);
-  const contactEmail = storeInfo?.email || "info@gmail.com";
-  const contactPhone = storeInfo?.phone || "+1 [155] 000-01000";
+  const contactEmail = settings?.email || "info@gmail.com";
+  const contactPhone = settings?.phone || "+1 [155] 000-01000";
   const footertext =
-    storeInfo?.theme?.footerText ||
+    settings?.footer_text ||
     "Become a MYcra member and get 10% off your next purchase!";
   const copyright =
-    storeInfo?.theme?.copyrightText ||
-    "2026 MYcra Fashion Ltd. All Rights Reserved";
+    settings?.copyright_text || "2026 MYcra Fashion Ltd. All Rights Reserved";
   const contactAddress =
     [
-      storeInfo?.address?.street,
-      storeInfo?.address?.city,
-      storeInfo?.address?.state,
-      storeInfo?.address?.country,
-      storeInfo?.address?.zip_code,
+      settings?.address?.street,
+      settings?.address?.city,
+      settings?.address?.state,
+      settings?.address?.country,
+      settings?.address?.zip_code,
     ]
       .filter(Boolean)
       .join(", ") || "215, Dhara Arcade near Lajamani Chowk, Surat";
@@ -83,7 +84,7 @@ export default function Footer() {
   const supportLinks = reversedFooters.slice(4, 9);
   const BASE = process.env.REACT_APP_API_URL_IMAGE;
   const dynamicLogoUrl = (() => {
-    const logoPath = storeInfo?.theme?.logoUrl || storeInfo?.logo;
+    const logoPath = settings?.mobilelogoUrl;
     if (!logoPath) return null;
     if (logoPath.startsWith("http")) return logoPath;
     return `${BASE}${logoPath}`;
@@ -132,14 +133,14 @@ export default function Footer() {
                   className="h-10 custom-lg:h-14"
                 />
               </Link>
-              <div className="flex items-center gap-[20px] text-sm text-[var(--secondary-color)]">
+              <div className="flex items-center gap-[20px] text-sm">
                 <div className="w-[20px]">
                   <MapPin className="mt-1" size={22} />
                 </div>
 
                 <p>{contactAddress}</p>
               </div>
-              <div className="flex items-start gap-5 text-sm text-[var(--secondary-color)]">
+              <div className="flex items-start gap-5 text-sm">
                 <div className="w-[20px]">
                   <TfiEmail className="mt-1" size={20} />
                 </div>
@@ -150,7 +151,7 @@ export default function Footer() {
                   {contactEmail}
                 </Link>
               </div>
-              <div className="flex items-start gap-5 text-sm text-[var(--secondary-color)]">
+              <div className="flex items-start gap-5 text-sm">
                 <div className="w-[20px]">
                   <BsTelephone className="mt-1" size={20} />
                 </div>
@@ -158,7 +159,7 @@ export default function Footer() {
               </div>
             </div>
             <div>
-              <h2 className="font-regular text-20px text-[var(--secondary-color)]  mb-[35px] tracking-[3%]">
+              <h2 className="font-regular text-20px mb-[35px] tracking-[3%]">
                 NAVIGATION LINKS
                 <span className="theme-border-block w-[45px]"></span>
               </h2>
@@ -167,7 +168,7 @@ export default function Footer() {
                   navigationLinks?.map((item) => (
                     <li
                       key={item._id}
-                      className="text-[var(--secondary-color)] hover:text-[var(--primary-color)] hover:underline"
+                      className="hover:text-[var(--primary-color)] hover:underline"
                     >
                       <Link to={item.url}>{item.label}</Link>
                     </li>
@@ -175,7 +176,7 @@ export default function Footer() {
               </ul>
             </div>
             <div>
-              <h2 className="font-regular text-20px text-[var(--secondary-color)]  mb-[35px] tracking-[3%]">
+              <h2 className="font-regular text-20px mb-[35px] tracking-[3%]">
                 CUSTOMER SUPPORT
                 <span className="theme-border-block w-[45px]"></span>
               </h2>
@@ -184,7 +185,7 @@ export default function Footer() {
                   supportLinks?.map((item) => (
                     <li
                       key={item._id}
-                      className="text-[var(--secondary-color)] hover:text-[var(--primary-color)] hover:underline"
+                      className="hover:text-[var(--primary-color)] hover:underline"
                     >
                       <Link to={item.url}>{item.label}</Link>
                     </li>
@@ -192,7 +193,7 @@ export default function Footer() {
               </ul>
             </div>
             <div>
-              <h2 className="font-regular text-20px text-[var(--secondary-color)]  mb-[35px] tracking-[3%]">
+              <h2 className="font-regular text-20px mb-[35px] tracking-[3%]">
                 JOIN NOW !<span className="theme-border-block w-[45px]"></span>
               </h2>
               <p className="text-sm mb-3 text-light">{footertext}</p>
@@ -232,10 +233,7 @@ export default function Footer() {
               </div>
             </div>
           </Row>
-
-          <Section
-            className="bg-theme"
-          >
+          <Section className="bg-theme">
             <Row>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[50px] md:gap-[30px] items-center">
                 <div className="flex flex-col text-center md:text-right items-center md:items-end">
@@ -243,8 +241,8 @@ export default function Footer() {
                     DOWNLOAD OUR APP
                   </h3>
                   <div className="grid grid-cols-2 gap-3 w-full max-w-[360px]">
-                    <Link
-                      to="https://play.google.com/store/games?hl=en_IN&pli=1"
+                    <a
+                      href="https://play.google.com/store/games?hl=en_IN&pli=1"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -253,10 +251,9 @@ export default function Footer() {
                         alt="Google Play"
                         className="cursor-pointer"
                       />
-                    </Link>
-
-                    <Link
-                      to="https://www.apple.com/in/app-store/"
+                    </a>
+                    <a
+                      href="https://www.apple.com/in/app-store/"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -265,10 +262,9 @@ export default function Footer() {
                         alt="App Store"
                         className="cursor-pointer"
                       />
-                    </Link>
+                    </a>
                   </div>
                 </div>
-
                 <div className="flex flex-col items-center md:items-start">
                   <h3 className="font-medium text-black text-[22px] mb-[28px] leading">
                     FOLLOW US

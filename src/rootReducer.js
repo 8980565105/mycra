@@ -3,7 +3,7 @@ import userReducer from "./features/user/userSlice";
 import navbarReducer from "./features/navbar/navbarSlice";
 import footerReducer from "./features/footer/footerSlice";
 import productsReducer from "./features/products/productsSlice";
-import discountsReducer from "./features/discounts/discountsSlice";
+// import discountsReducer from "./features/discounts/discountsSlice";
 import couponsReducer from "./features/coupons/couponsSlice";
 import categoriesReducer from "./features/categories/categoriesSlice";
 import subcategoriesReducer from "./features/subcategories/subcategoriesSlice";
@@ -23,8 +23,10 @@ import reviewsReducer from "./features/reivews/reviewsSlice";
 import addressReducer from "./features/address/addressSlice";
 import offersReducer from "./features/offers/offersSlice";
 import faqsReducer from "./features/faqs/faqsSlice";
-import storeReducer from "./features/store/storeSlice";
+// import storeReducer from "./features/store/storeSlice";
 import settingReducer from "./features/setting/settingSlice";
+import walletReducer from "./features/wallet/walletSlice";
+import transectionReducer from "./features/transection/transectionSlice";
 
 export const rootReducer = {
   auth: authReducer,
@@ -33,7 +35,7 @@ export const rootReducer = {
   footer: footerReducer,
   contact: contactReducer,
   products: productsReducer,
-  discounts: discountsReducer,
+  // discounts: discountsReducer,
   categories: categoriesReducer,
   subcategories: subcategoriesReducer,
   coupons: couponsReducer,
@@ -52,6 +54,8 @@ export const rootReducer = {
   address: addressReducer,
   offers: offersReducer,
   faqs: faqsReducer,
-  store: storeReducer,
+  // store: storeReducer,
   settings: settingReducer,
+  wallet: walletReducer,
+  transection: transectionReducer,
 };

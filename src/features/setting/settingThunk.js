@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-
 export const fetchSettings = createAsyncThunk(
   "settings/fetchSettings",
   async (_, { rejectWithValue }) => {
@@ -16,12 +15,13 @@ export const fetchSettings = createAsyncThunk(
   },
 );
 
+
 // ✅ Public (no auth) — Footer mate
 export const fetchPublicSettings = createAsyncThunk(
   "settings/fetchPublicSettings",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get(ROUTES.settings.public); 
+      const res = await api.get(ROUTES.settings.public);
       if (res.data.success) return res.data.data;
       return rejectWithValue(res.data.message || "Failed to fetch settings");
     } catch (err) {

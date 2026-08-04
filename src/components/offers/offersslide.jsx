@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Section from "../ui/Section";
 import Row from "../ui/Row";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { fetchDiscounts } from "../../features/discounts/discountsThunk";
+// import { fetchDiscounts } from "../../features/discounts/discountsThunk";
 import { fetchProducts } from "../../features/products/productsThunk";
 import ProductCard from "../productcard/ProductCard"; // ✅ Import
 import FlowerIcon from "../icons/FlowerIcon";
@@ -15,13 +15,12 @@ export default function OfferSlider({ setShowLoginPopup }) {
   const [visibleCount, setVisibleCount] = useState(20);
   const [activeOffer, setActiveOffer] = useState("all");
 
-  const { discounts = [] } = useSelector((state) => state.discounts);
+  // const { discounts = [] } = useSelector((state) => state.discounts);
   const { products = [], loading: productLoading } = useSelector(
     (state) => state.products,
   );
 
   useEffect(() => {
-    dispatch(fetchDiscounts());
     dispatch(fetchProducts());
   }, [dispatch]);
 

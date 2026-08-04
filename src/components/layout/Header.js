@@ -43,6 +43,10 @@ import jewelleryImg from "../../assets/jewellery.png";
 import cropImg from "../../assets/Crop Tops.png";
 import ForgetForm from "../../pages/ForgetForm";
 import toast from "react-hot-toast";
+import SearchBar from "../search/searchbar";
+import { fetchProducts } from "../../features/products/productsThunk";
+import { fetchWishlistByUser } from "../../features/wishlist/wishlistThunk";
+import { fetchCart } from "../../features/cart/cartThunk";
 
 const STATIC_CATEGORIES = [
   { _id: "static-1", name: "Saree", image_url: shoppingImg, isStatic: true },
@@ -79,28 +83,7 @@ const FIXED_NAV_ITEMS = [
   },
 ];
 
-const FALLBACK_EXTRA_ITEMS = [
-  // {
-  //   name: "Collections",
-  //   path: "/collections",
-  //   icon: <CollectionsIcon className="w-5 h-5" />,
-  // },
-  // {
-  //   name: "Offers",
-  //   path: "/offer",
-  //   icon: <HandCoins className="w-5 h-5" />,
-  // },
-  // {
-  //   name: "About",
-  //   path: "/about",
-  //   icon: <SearchX className="w-5 h-5" />,
-  // },
-  // {
-  //   name: "Contact",
-  //   path: "/contact-us",
-  //   icon: <Contact className="w-5 h-5" />,
-  // },
-];
+const FALLBACK_EXTRA_ITEMS = [];
 
 const SKIP_LABELS = ["home", "shop"];
 
@@ -143,7 +126,10 @@ const Header = () => {
 
   const cart = useSelector((state) => state.cart.cart);
   const wishlist = useSelector((state) => state.wishlist.items);
-  const { info: storeInfo } = useSelector((state) => state.store);
+  // const { info: storeInfo } = useSelector((state) => state.store);
+  const settings = useSelector((state) => state.settings.data);
+  const userId = useSelector((state) => state.auth.user?._id);
+
   const cartCount =
     cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
   const wishlistCount = wishlist?.length || 0;
@@ -174,9 +160,23 @@ const Header = () => {
 
   useEffect(() => {
     dispatch(fetchNavbar({ status: "active" }));
+    dispatch(fetchProducts());
     dispatch(fetchCategories());
     dispatch(fetchsubCategories());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (userId) {
+      dispatch(fetchWishlistByUser(userId));
+    }
+  }, [dispatch, userId]);
+
+  useEffect(() => {
+    const cart_id = localStorage.getItem("cart_id");
+    if (cart_id) {
+      dispatch(fetchCart(cart_id));
+    }
+  }, [dispatch, user]);
 
   const handleShopMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -250,14 +250,27 @@ const Header = () => {
   const BASE = process.env.REACT_APP_API_URL_IMAGE;
 
   const dynamicLogoUrl = (() => {
-    const logoPath = storeInfo?.theme?.logoUrl;
+    const logoPath = settings?.logourl;
     if (!logoPath) return null;
     if (logoPath.startsWith("http")) return logoPath;
     return `${BASE}${logoPath}`;
   })();
+  const dynamicMobileLogoUrl = (() => {
+    const mobilelogoPath = settings?.mobilelogoUrl;
+
+    if (!mobilelogoPath) return null;
+    if (mobilelogoPath.startsWith("http")) return mobilelogoPath;
+    return `${BASE}${mobilelogoPath}`;
+  })();
 
   return (
-    <header className="w-full mb-[5px] md:mb-[10px] bg-theme box-shadow sticky top-0 z-50">
+    <header
+      className={`w-full bg-theme box-shadow sticky top-0 z-50 ${
+        isLoginOpen || isRegisterOpen || isForgetOpen
+          ? "bg-theme"
+          : "bg-theme backdrop-blur-md"
+      }`}
+    >
       <Row className="h-[70px] custom-lg:h-[100px] flex items-center justify-between gap-[10px]">
         <button
           className="custom-lg:hidden text-light transition-colors duration-300 border rounded-[3px] p-[5px] border-[#D2AF9F]"
@@ -268,7 +281,12 @@ const Header = () => {
 
         <div className="flex items-center">
           <Link to="/">
-            <img src={dynamicLogoUrl || HeaderLogo} alt="Logo" />
+            <img
+              src={dynamicLogoUrl || HeaderLogo}
+              alt="Logo"
+              className="hidden lg:block"
+            />
+            <img src={dynamicMobileLogoUrl} alt="Logo" className="lg:hidden" />
           </Link>
         </div>
 
@@ -293,12 +311,12 @@ const Header = () => {
                         className={`relative cursor-pointer transition-all duration-300 pb-[10px] flex items-center
                           ${
                             isShopActive
-                              ? "text-[var(--secondary-color)] font-medium"
-                              : "text-[var(--primary-color)] hover:text-[var(--secondary-color)]"
+                              ? "text-[var(--primary-color)] font-medium"
+                              : "text-black hover:text-[var(--primary-color)]"
                           }
                           after:content-['•••'] after:absolute after:left-[52%] after:-bottom-[4px]
                           after:-translate-x-1/2 after:text-[20px] after:tracking-[3px]
-                          after:font-bold after:text-[var(--secondary-color)]
+                          after:font-bold after:text-[var(--primary-color)]
                           after:h-[14px] after:leading-[14px]
                           after:transition-opacity after:duration-300
                           ${isShopActive ? "after:opacity-100" : "after:opacity-0"}`}
@@ -470,12 +488,12 @@ const Header = () => {
                         `relative cursor-pointer transition-all duration-300 pb-[10px]
                         ${
                           isActive
-                            ? "text-[var(--secondary-color)] font-medium after:opacity-100"
-                            : "text-[var(--primary-color)] hover:text-[var(--secondary-color)] after:opacity-0"
+                            ? "text-[var(--primary-color)] font-medium after:opacity-100"
+                            : "text-black hover:text-[var(--primary-color)] after:opacity-0"
                         }
                         after:content-['•••'] after:absolute after:left-[52%] after:-bottom-[4px]
                         after:-translate-x-1/2 after:text-[20px] after:tracking-[3px]
-                        after:font-bold after:text-[var(--secondary-color)]
+                        after:font-bold after:text-[var(--primary-color)]
                         after:h-[14px] after:leading-[14px]
                         after:transition-opacity after:duration-300`
                       }
@@ -492,7 +510,7 @@ const Header = () => {
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <div className="relative hidden custom-lg:block group">
             <Button
               variant="common"
@@ -525,7 +543,6 @@ const Header = () => {
                 </>
               )}
             </Button>
-
             <div className="absolute right-0 mt-2 w-[280px] bg-white rounded-[10px] form-shadow z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
               <div className="p-[17px] text-light text-p flex justify-between border-b border-[#989696]">
                 {!token ? (
@@ -582,32 +599,32 @@ const Header = () => {
             </div>
           </div>
 
+          <SearchBar onNavigate={navigate} />
           <button
             onClick={() => openProtectedLink("/wishlist")}
-            className="relative text-[var(--primary-color)] hover:text-[var(--secondary-color)]"
+            className="relative text-black hover:text-[var(--primary-color)]"
           >
             <Heart className="w-5 h-5" />
             {wishlistCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-[var(--primary-color)] text-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 bg-[var(--secondary-color)] text-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
                 {wishlistCount}
               </span>
             )}
           </button>
 
           <button
-            className="relative text-[var(--primary-color)] hover:text-[var(--secondary-color)]"
+            className="relative text-black hover:text-[var(--primary-color)]"
             onClick={() => openProtectedLink("/cart")}
           >
             <FontAwesomeIcon icon={faCartShopping} className="w-5 h-5" />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-[var(--primary-color)] text-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 bg-[var(--secondary-color)] text-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
                 {cartCount}
               </span>
             )}
           </button>
         </div>
       </Row>
-
       {isMenuOpen && (
         <div
           className="fixed inset-0 bg-black/60 z-40"
@@ -626,15 +643,12 @@ const Header = () => {
         >
           <XCircleIcon size={22} />
         </button>
-
         <div className="flex h-full flex-col overflow-y-auto no-scrollbar">
           <img src={bannerImg} className="w-full" alt="Banner" />
-
           <nav className="py-3">
             {navItems.map((item, i) => {
               if (item.name === "Home") return null;
               const isOdd = i % 2 !== 0;
-
               if (item.isMegaMenu) {
                 return (
                   <div key={i}>
@@ -660,7 +674,6 @@ const Header = () => {
                         />
                       </button>
                     </div>
-
                     {isMobileMegaMenuOpen && (
                       <div className="bg-white border-t border-[#D2AF9F]">
                         <div className="flex flex-col w-full">
@@ -684,7 +697,6 @@ const Header = () => {
                               ))}
                             </div>
                           </div>
-
                           <div className="p-4 bg-white">
                             {activeParent ? (
                               <div>
@@ -792,9 +804,12 @@ const Header = () => {
                 </button>
               </div>
               <div className="py-4 px-4 cursor-pointer">
-                <Link to="/cart" className="flex items-center gap-[15px]">
+                <button
+                  onClick={() => openProtectedLink("/cart")}
+                  className="flex items-center gap-[15px]"
+                >
                   <FontAwesomeIcon icon={faGift} /> Coupons
-                </Link>
+                </button>
               </div>
             </div>
           </nav>

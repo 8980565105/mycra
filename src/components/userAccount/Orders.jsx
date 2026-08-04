@@ -46,7 +46,7 @@ export default function Orders() {
   const dispatch = useDispatch();
   useEffect(() => {
     if (reviewSuccess) {
-      toast("Review submitted successfully!", { position: "top-center" });
+      toast.success("Review submitted successfully!", { position: "top-center" });
       setIsReviewOpen(false);
       setReviewData({ rating: 5, title: "", comment: "", product_id: "" });
       dispatch(resetReviewStatus());
@@ -54,7 +54,7 @@ export default function Orders() {
   }, [reviewSuccess, dispatch]);
   const openReviewModal = (order) => {
     if (order.status !== "completed") {
-      toast("You can only review completed orders.", {
+      toast.error("You can only review completed orders.", {
         position: "top-center",
       });
       return;
@@ -154,7 +154,7 @@ export default function Orders() {
       dispatch(fetchUserOrders({ page, limit }));
       closeModal();
     } catch (error) {
-      Toaster("Failed to cancel order: " + error);
+      toast.error("Failed to cancel order: " + error);
     }
   };
   const openViewModal = (order) => {

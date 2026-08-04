@@ -4,7 +4,7 @@ import LoginSlider from "../components/login/loginSlider";
 import { FaPlay } from "react-icons/fa";
 import SocialButtons from "../components/login/SocialButtons";
 import defaultimg from "../assets/default-avatar.png";
-import { Pencil, X } from "lucide-react";
+import { Eye, EyeOff, Pencil, X } from "lucide-react";
 import Button from "../components/ui/Button";
 import { useDispatch, useSelector } from "react-redux";
 import { registerUser } from "../features/auth/authThunk";
@@ -17,7 +17,10 @@ const RegistrationForm = ({ onClose }) => {
   const [preview, setPreview] = useState(user?.profile_picture || defaultimg);
   const fileInputRef = useRef(null);
   const [isAccountDetails, setIsAccountDetails] = useState(false);
-  const { info: storeInfo } = useSelector((state) => state.store);
+  // const { info: storeInfo } = useSelector((state) => state.store);
+      const settings = useSelector((state) => state.settings.data);
+  
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -81,7 +84,7 @@ const RegistrationForm = ({ onClose }) => {
   const BASE = process.env.REACT_APP_API_URL_IMAGE;
 
   const dynamicLogoUrl = (() => {
-    const logoPath = storeInfo?.theme?.logoUrl;
+    const logoPath = settings?.theme?.logoUrl;
     if (!logoPath) return null;
     if (logoPath.startsWith("http")) return logoPath;
     return `${BASE}${logoPath}`;
@@ -112,9 +115,13 @@ const RegistrationForm = ({ onClose }) => {
                 className="mx-auto mb-6"
               />
 
-              <h3 className="mb-11 text-[var(--secondary-color)]">Welcome to {storeInfo?.name || "maycra store"}</h3>
-              
-              <h3 className="text-[var(--primary-color)] text-bold text-[26px]">Sign Up</h3>
+              <h3 className="mb-11 text-[var(--secondary-color)]">
+                Welcome to {settings?.name || "maycra store"}
+              </h3>
+
+              <h3 className="text-[var(--primary-color)] text-bold text-[26px]">
+                Sign Up
+              </h3>
             </div>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
@@ -140,7 +147,7 @@ const RegistrationForm = ({ onClose }) => {
                   className="input-common w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
                 />
               </div>
-              <div>
+              {/* <div>
                 <input
                   type="password"
                   name="password"
@@ -150,6 +157,29 @@ const RegistrationForm = ({ onClose }) => {
                   required
                   className="input-common w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
                 />
+              </div> */}
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="input-common w-full border light-border rounded-md px-5 py-3 pr-12 focus:outline-none focus:ring-2"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <Eye size={18} />
+                  ) : (
+                    <EyeOff size={18} />
+                  )}
+                </button>
               </div>
 
               <div>
@@ -235,7 +265,7 @@ const RegistrationForm = ({ onClose }) => {
             </form>
 
             <div className="mt-4 sm:mt-10 space-x-4">
-              <SocialButtons />
+              <SocialButtons onClose={onClose} />
             </div>
           </div>
 

@@ -184,7 +184,7 @@ const PasswordField = ({ name, placeholder, value, onChange }) => {
         onClick={() => setShow((v) => !v)}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
       >
-        {show ? <EyeOff size={18} /> : <Eye size={18} />}
+        {show ? <Eye size={18} /> : <EyeOff size={18} />}
       </button>
     </div>
   );
@@ -248,7 +248,8 @@ const ForgetForm = ({ onClose, onSwitch }) => {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { info: storeInfo } = useSelector((state) => state.store);
+  // const { info: storeInfo } = useSelector((state) => state.store);
+    const settings = useSelector((state) => state.settings.data);
 
   // ✅ Handle OTP sent success
   useEffect(() => {
@@ -267,7 +268,6 @@ const ForgetForm = ({ onClose, onSwitch }) => {
     }
   }, [otpError]);
 
-  // ✅ Handle reset success - AUTO LOGIN
   useEffect(() => {
     if (resetSuccess) {
       console.log("✅ Password reset successfully!");
@@ -277,18 +277,15 @@ const ForgetForm = ({ onClose, onSwitch }) => {
         position: "top-center",
       });
 
-      // Clear the reset state
       dispatch(clearPasswordResetState());
 
-      // Close modal and redirect after 1.5 seconds
       setTimeout(() => {
         onClose();
-        window.location.href = "/"; // Force redirect to home
+        window.location.href = "/";
       }, 1500);
     }
   }, [resetSuccess, token, dispatch, onClose]);
 
-  // ✅ Handle reset error
   useEffect(() => {
     if (resetError) {
       console.error("❌ Reset Error:", resetError);
@@ -296,7 +293,6 @@ const ForgetForm = ({ onClose, onSwitch }) => {
     }
   }, [resetError]);
 
-  // Cleanup on unmount
   useEffect(() => () => dispatch(clearPasswordResetState()), [dispatch]);
 
   const handleSendOtp = async (e) => {
@@ -363,7 +359,7 @@ const ForgetForm = ({ onClose, onSwitch }) => {
   const BASE = process.env.REACT_APP_API_URL_IMAGE;
 
   const dynamicLogoUrl = (() => {
-    const logoPath = storeInfo?.theme?.logoUrl;
+    const logoPath = settings?.theme?.logoUrl;
     if (!logoPath) return null;
     if (logoPath.startsWith("http")) return logoPath;
     return `${BASE}${logoPath}`;
@@ -395,7 +391,7 @@ const ForgetForm = ({ onClose, onSwitch }) => {
                 className="mx-auto mb-6"
               />
               <h3 className="mb-11 text-[var(--secondary-color)]">
-                Welcome to {storeInfo?.name || "maycra store"}
+                Welcome to {settings?.name || "maycra store"}
               </h3>
 
               {/* <p className="text-light text-[14px] mb-6">

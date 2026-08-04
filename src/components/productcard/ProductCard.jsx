@@ -7,7 +7,6 @@ import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-// import { fetchProductReviews } from "../../features/reivews/reviewsThunk";
 import { Star } from "lucide-react";
 import {
   addToCart,
@@ -15,137 +14,129 @@ import {
   fetchCart,
 } from "../../features/cart/cartThunk";
 import toast from "react-hot-toast";
-
+import { fetchProductReviews } from "../../features/reivews/reviewsThunk";
 function CountdownTimer({ endDate }) {
   const calcTimeLeft = useCallback(() => {
     const diff = new Date(endDate).getTime() - Date.now();
     if (diff <= 0) return null;
-
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff / (1000 * 60)) % 60);
     const seconds = Math.floor((diff / 1000) % 60);
-
     return {
       hours,
       minutes: String(minutes).padStart(2, "0"),
       seconds: String(seconds).padStart(2, "0"),
     };
   }, [endDate]);
-
   const [timeLeft, setTimeLeft] = useState(calcTimeLeft);
-
   useEffect(() => {
     const interval = setInterval(() => {
       const t = calcTimeLeft();
       setTimeLeft(t);
       if (!t) clearInterval(interval);
     }, 1000);
-
     return () => clearInterval(interval);
   }, [calcTimeLeft]);
 
   if (!timeLeft) return null;
-
   return (
     <span className="text-theme text-[12px] md:text-[15px] font-bold">
       Ends in {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
     </span>
   );
 }
-
 export default function ProductCard({ product, setShowLoginPopup }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const { token } = useSelector((state) => state.auth);
   const cart = useSelector((state) => state.cart.cart);
-
   const reviewsState = useSelector((state) => state.reviews);
   const productReviewData = reviewsState?.productReviews?.[product?._id];
-
   const [addingToCart, setAddingToCart] = useState(false);
   const [selectedColor, setSelectedColor] = useState(null);
-
-  const getDiscountedPrice = (product) => {
-    const originalPrice = product?.variants?.[0]?.price || 0;
-    const discount = product?.discount?.value || 0;
-    const discountType = product?.discount?.type || "none";
-
-    let discountedPrice = originalPrice;
-
-    if (discountType === "percentage") {
-      discountedPrice = originalPrice - (originalPrice * discount) / 100;
-    } else if (discountType === "flat") {
-      discountedPrice = originalPrice - discount;
+  const cartItems = useSelector((state) => state.cart.items) || [];
+  const isInCart = (productId, variantId) => {
+    if (!productId || !variantId) return false;
+    return cartItems.some(
+      (ci) =>
+        (ci.product_id?._id || ci.product_id) === productId &&
+        (ci.variant_id?._id || ci.variant_id) === variantId,
+    );
+  };
+  useEffect(() => {
+    const cartId = localStorage.getItem("cart_id");
+    if (cartId) {
+      dispatch(fetchCart(cartId));
     }
-
+  }, [dispatch]);
+  useEffect(() => {
+    if (product?._id && !productReviewData) {
+      dispatch(
+        fetchProductReviews({ productId: product._id, page: 1, limit: 50 }),
+      );
+    }
+  }, [product?._id, productReviewData, dispatch]);
+  const getDiscountedPrice = (product) => {
+    const variant = product?.variants?.[0] || {};
+    const originalPrice = Number(variant?.price) || 0;
+    const offerPrice =
+      variant?.offerprice !== undefined && variant?.offerprice !== null
+        ? Number(variant.offerprice)
+        : originalPrice;
+    const hasOffer = offerPrice > 0 && offerPrice < originalPrice;
+    const discountPercent = hasOffer
+      ? Math.round(((originalPrice - offerPrice) / originalPrice) * 100)
+      : 0;
     return {
       originalPrice,
-      discountedPrice,
-      discountValue: discount,
-      discountType,
+      discountedPrice: hasOffer ? offerPrice : originalPrice,
+      hasOffer,
+      discountPercent,
     };
   };
-
+  const price = getDiscountedPrice(product);
   const { productReviews } = useSelector((state) => state.reviews);
-
   const reviewData = useMemo(() => {
     const reviews = productReviews?.[product?._id]?.reviews || [];
-
     if (reviews.length === 0) return { average: 0, total: 0 };
-
     const total = reviews.length;
-
     const sum = reviews.reduce(
       (acc, curr) => acc + (Number(curr.rating) || 0),
       0,
     );
-
     return {
       average: (sum / total).toFixed(1),
       total,
     };
   }, [productReviews, product?._id]);
-
   const [currentIndex, setCurrentIndex] = useState(0);
-
   const firstVariantImages = Array.isArray(product?.variants?.[0]?.images)
     ? product.variants[0].images
     : [];
   const mainImages = Array.isArray(product?.images) ? product.images : [];
   const allImages =
     firstVariantImages.length > 0 ? firstVariantImages : mainImages;
-
   const displayedImage = getImageUrl(allImages[currentIndex]);
   const hasMultipleImages = allImages.length > 1;
-
   const { handleAddToWishlist } = useAddToWishlist(setShowLoginPopup);
-
   const wishlistProductIds = useSelector((state) => state.wishlist.productIds);
   const isWishlisted = wishlistProductIds.includes(product._id);
-
   const uniqueColors = (() => {
     const seen = new Set();
     const result = [];
-
     (product?.variants || []).forEach((variant) => {
       const firstColor = Array.isArray(variant?.color)
         ? variant.color[0]
         : variant?.color;
-
       if (!firstColor) return;
-
       const colorCode = firstColor?.code || firstColor;
       const colorName = firstColor?.name || "";
       if (seen.has(colorCode)) return;
       seen.add(colorCode);
-
       result.push({ code: colorCode, name: colorName });
     });
-
     return result;
   })();
-
   const getVariantForColor = (product, colorCode) => {
     return (
       product?.variants?.find((v) =>
@@ -153,13 +144,11 @@ export default function ProductCard({ product, setShowLoginPopup }) {
       ) || product?.variants?.[0]
     );
   };
-
   const handleAddToCart = async (product) => {
     if (!token) {
       setShowLoginPopup(true);
       return;
     }
-
     const selectedColorCode = selectedColor;
     const variant = selectedColorCode
       ? getVariantForColor(product, selectedColorCode)
@@ -169,33 +158,30 @@ export default function ProductCard({ product, setShowLoginPopup }) {
       toast.error("Variant not found!");
       return;
     }
-
     if (variant?.stock_quantity === 0) {
       toast.error("This variant is out of stock!");
       return;
     }
-
+    const alreadyInCart = isInCart(product._id, variant._id);
+    if (alreadyInCart) {
+      toast.success("Already added in cart", { position: "top-center" });
+      return;
+    }
     setAddingToCart(true);
-
     try {
       let cartId = cart?._id || localStorage.getItem("cart_id");
-
       if (!cartId) {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
-
         if (!user?._id) {
           toast.error("Please login again");
           setShowLoginPopup(true);
           return;
         }
-
         const newCart = await dispatch(
           createCart({ user_id: user._id }),
         ).unwrap();
-
         cartId = newCart._id;
       }
-
       await dispatch(
         addToCart({
           cart_id: cartId,
@@ -204,11 +190,8 @@ export default function ProductCard({ product, setShowLoginPopup }) {
           quantity: 1,
         }),
       ).unwrap();
-
       await dispatch(fetchCart(cartId));
-
       navigate("/cart");
-
       toast.success("Added to cart successfully!");
     } catch (err) {
       console.error(err);
@@ -217,7 +200,6 @@ export default function ProductCard({ product, setShowLoginPopup }) {
       setAddingToCart(false);
     }
   };
-
   const discount = product?.discount || {};
   const hasDiscount = discount?.value > 0;
   const endsWithin24h =
@@ -226,7 +208,6 @@ export default function ProductCard({ product, setShowLoginPopup }) {
   const currentSelectedColor = selectedColor || uniqueColors[0]?.code;
   const currentVariant = getVariantForColor(product, currentSelectedColor);
   const isOutOfStock = currentVariant?.stock_quantity === 0;
-
   return (
     <>
       <Link to={`/products/${product._id}`}>
@@ -242,21 +223,8 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                 alt={product.subtitle || product.name}
                 className="w-full h-full transition duration-300 object-cover"
               />
-
-              <div className="absolute bottom-1 left-1 flex flex-col space-y-2">
-                {reviewData.total > 0 && (
-                  <span className="flex items-center gap-[5px] bg-white/50 text-black px-2 py-[3px] rounded-[2px] text-[12px] font-medium">
-                    {reviewData.average}{" "}
-                    <Star
-                      size={12}
-                      fill="currentColor"
-                      className="text-yellow-500"
-                    />
-                  </span>
-                )}
-              </div>
+             
             </div>
-
             <div className="absolute top-3 right-3 flex flex-col space-y-2">
               <button
                 onClick={(e) => {
@@ -271,18 +239,23 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                   ${isWishlisted ? "invert brightness-0 contrast-200" : ""}`}
                 />
               </button>
-
+              
               <button
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   handleAddToCart(product);
                 }}
-                className="h-[26px] w-[26px] sm:h-[40px] sm:w-[40px] bg-white flex items-center justify-center rounded-full hover:bg-[var(--primary-color)]"
+                className={`w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center rounded-full border transition-all duration-200
+    ${
+      isInCart(product._id, currentVariant?._id)
+        ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
+        : "bg-white text-black hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] hover:text-white"
+    }`}
               >
                 <FontAwesomeIcon
                   icon={faCartShopping}
-                  className="w-[16px] h-[16px] sm:w-[26px] sm:h-[24px] hover:invert over:brightness-0 hover:contrast-200"
+                  className="w-[12px] h-[12px] sm:w-[12px] sm:h-[12px] lg:w-[20px] lg:h-[20px]"
                 />
               </button>
             </div>
@@ -311,7 +284,6 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                 Sale
               </div>
             )}
-
             <div className="flex items-center gap-2 justify-left mb-1">
               {hasDiscount && (
                 <div className="flex items-center gap-2 justify-left mb-1">
@@ -320,7 +292,6 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                       ? `${discount?.value || 0}% OFF`
                       : `₹${discount?.value || 0} OFF`}
                   </span>
-
                   {endsWithin24h ? (
                     <CountdownTimer endDate={discount.end_date} />
                   ) : (
@@ -331,41 +302,24 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                 </div>
               )}
             </div>
-
             <p className="sec-text-color text-14 mb-2 lowercase capitalize line-clamp-1">
               {product.name}
             </p>
-
-            <div className="flex flex-wrap items-center gap-[5px] text-p mb-[5px]">
-              <p className="text-p text-black">
-                ₹{" "}
-                {getDiscountedPrice(product).discountedPrice.toLocaleString(
-                  "en-IN",
-                  {
-                    maximumFractionDigits: 0,
-                  },
-                )}
-              </p>
-              {getDiscountedPrice(product).discountValue > 0 && (
-                <p className="line-through text-[#BCBCBC]">
-                  ₹
-                  {getDiscountedPrice(product).originalPrice.toLocaleString(
-                    "en-IN",
-                    {
-                      maximumFractionDigits: 0,
-                    },
-                  )}
-                </p>
-              )}
-              {getDiscountedPrice(product).discountValue > 0 && (
-                <p className="text-theme text-p">
-                  {getDiscountedPrice(product).discountType === "percentage"
-                    ? `${getDiscountedPrice(product).discountValue}% Off`
-                    : `₹${getDiscountedPrice(product).discountValue} Off`}
-                </p>
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <span className="text-[20px] font-semibold text-black">
+                ₹{price.discountedPrice.toLocaleString("en-IN")}
+              </span>
+              {price.hasOffer && (
+                <>
+                  <span className="text-[15px] text-[#9CA3AF] line-through">
+                    ₹{price.originalPrice.toLocaleString("en-IN")}
+                  </span>
+                  <span className="text-[15px] font-medium text-pink-600">
+                    {price.discountPercent}%
+                  </span>
+                </>
               )}
             </div>
-
             <div className="flex gap-[5px]">
               {uniqueColors.map((clr, idx) => {
                 const clrVariant = getVariantForColor(product, clr.code);
@@ -393,20 +347,57 @@ export default function ProductCard({ product, setShowLoginPopup }) {
             {isOutOfStock && (
               <p className="text-theme text-[11px] mt-1">Out of Stock</p>
             )}
-            {product.rating !== undefined && product.rating !== null && (
-              <div className="flex gap-[6px] mt-1">
+            {reviewData.total > 0 && (
+              <div className="flex gap-[3px] mt-1">
                 {Array(5)
                   .fill()
-                  .map((_, i) => (
-                    <span
-                      key={i}
-                      className={`text-sm ${
-                        i < product.rating ? "text-theme" : "sec-text-color"
-                      }`}
-                    >
-                      ★
-                    </span>
-                  ))}
+                  .map((_, i) => {
+                    const rating = Number(reviewData.average);
+                    const diff = rating - i;
+                    if (diff >= 1) {
+                      return (
+                        <Star
+                          key={i}
+                          size={14}
+                          className="text-theme"
+                          fill="currentColor"
+                        />
+                      );
+                    }
+                    if (diff > 0 && diff < 1) {
+                      return (
+                        <span
+                          key={i}
+                          className="relative inline-block"
+                          style={{ width: 14, height: 14 }}
+                        >
+                          <Star
+                            size={14}
+                            className="text-theme absolute top-0 left-0"
+                            fill="none"
+                          />
+                          <span
+                            className="absolute top-0 left-0 overflow-hidden"
+                            style={{ width: "50%", height: "100%" }}
+                          >
+                            <Star
+                              size={14}
+                              className="text-theme"
+                              fill="currentColor"
+                            />
+                          </span>
+                        </span>
+                      );
+                    }
+                    return (
+                      <Star
+                        key={i}
+                        size={14}
+                        className="text-theme"
+                        fill="none"
+                      />
+                    );
+                  })}
               </div>
             )}
           </div>

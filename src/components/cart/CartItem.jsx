@@ -10,7 +10,7 @@ import {
 import { updateLocalQuantity } from "../../features/cart/cartSlice";
 import { Link } from "react-router-dom";
 import { getImageUrl } from "../utils/helper";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function CartItem() {
   const { items = [], loading } = useSelector((state) => state.cart);
@@ -33,16 +33,13 @@ export default function CartItem() {
     if (!cart_id) return;
     const newQuantity = item.quantity + 1;
 
-    // Optimistic update — UI instantly updates, no reload
     dispatch(updateLocalQuantity({ item_id: item._id, quantity: newQuantity }));
 
-    // Sync to backend silently — NO fetchCart after this
     dispatch(
       updateCartItem({ cart_id, item_id: item._id, quantity: newQuantity }),
     )
       .unwrap()
       .catch(() => {
-        // Revert on failure
         dispatch(
           updateLocalQuantity({ item_id: item._id, quantity: item.quantity }),
         );
@@ -54,10 +51,8 @@ export default function CartItem() {
     if (!cart_id || item.quantity <= 1) return;
     const newQuantity = item.quantity - 1;
 
-    // Optimistic update — UI instantly updates, no reload
     dispatch(updateLocalQuantity({ item_id: item._id, quantity: newQuantity }));
 
-    // Sync to backend silently — NO fetchCart after this
     dispatch(
       updateCartItem({ cart_id, item_id: item._id, quantity: newQuantity }),
     )
@@ -71,9 +66,8 @@ export default function CartItem() {
 
   const handleDelete = (item_id) => {
     const cart_id = localStorage.getItem("cart_id");
-    if (!cart_id) return Toaster("No cart found!");
+    if (!cart_id) return toast.error("No cart found!");
 
-    // fetchCart is fine here — delete kare to refresh jaruri se
     dispatch(deleteCartItem({ cart_id, item_id }))
       .unwrap()
       .then(() => dispatch(fetchCart(cart_id)));
@@ -91,7 +85,6 @@ export default function CartItem() {
 
   return (
     <div className="w-full">
-      {/* Desktop View */}
       <table className="w-full hidden custom-lg:table">
         <thead className="table-header-group">
           <tr className="border-b border-black font-18">
@@ -134,7 +127,7 @@ export default function CartItem() {
                 {item.product_id?.name}
               </td>
               <td className="px-3 xl:px-6 pt-[40px] pb-[20px]">
-                <div className="inline-flex items-center gap-[10px] px-[8px] py-[5px] light-border border text-black rounded-[20px] leading">
+                <div className="inline-flex items-center gap-[10px] px-[8px] py-[5px] light-border border text-black rounded-[5px] leading">
                   <button onClick={() => handleDecrease(item)}>
                     <Minus size={14} />
                   </button>

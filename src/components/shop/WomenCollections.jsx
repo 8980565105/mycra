@@ -20,7 +20,7 @@ import { fetchColors } from "../../features/colors/colorsThunk";
 import { fetchBrands } from "../../features/brands/brandsThunk";
 import { fetchtypes } from "../../features/types/typeThunk";
 import { fetchFabrics } from "../../features/fabrics/fabricsThunk";
-import { fetchDiscounts } from "../../features/discounts/discountsThunk";
+// import { fetchDiscounts } from "../../features/discounts/discountsThunk";
 import { fetchProductLabels } from "../../features/productLabels/productlabelsThunk";
 
 const SortByIcon = (props) => (
@@ -383,6 +383,7 @@ export default function WomenCollections() {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [showLoginPopup, setShowLoginPopup] = useState(false);
 
@@ -413,9 +414,7 @@ export default function WomenCollections() {
     dispatch(fetchBrands());
     dispatch(fetchtypes());
     dispatch(fetchFabrics());
-    dispatch(fetchDiscounts());
     dispatch(fetchProductLabels());
-    // dispatch(fetchsubCategories());
   }, [dispatch]);
 
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -472,7 +471,10 @@ export default function WomenCollections() {
   };
 
   const handleClearAllFilters = () => {
-    setSelectedCategories([]);
+    // setSelectedCategories([]);
+    if (selectedCategories.length !== 0) {
+      setSelectedCategories([]);
+    }
     setSelectedSizes([]);
     setSelectedColors([]);
     setSelectedBrands([]);
@@ -486,60 +488,80 @@ export default function WomenCollections() {
     navigate("/shop", { replace: true });
   };
 
+  // useEffect(() => {
+  //   if (isUpdatingFromState.current) return;
+  //   isUpdatingFromURL.current = true;
+  //   const params = new URLSearchParams(location.search);
+  //   const getArray = (key) =>
+  //     params.get(key) ? params.get(key).split(",") : [];
+  //   const categoryFromURL = params.get("category");
+  //   const filterFromURL = params.get("filter");
+  //   if (categoryFromURL) {
+  //     const newCats = categoryFromURL.split(",");
+  //     // setSelectedCategories(newCats);
+  //     if (JSON.stringify(selectedCategories) !== JSON.stringify(newCats)) {
+  //       setSelectedCategories(newCats);
+  //     }
+  //   } else {
+  //     setSelectedCategories([]);
+  //   }
+  //   setSelectedSizes(getArray("size"));
+  //   setSelectedColors(getArray("color"));
+  //   setSelectedBrands(getArray("brand"));
+  //   setSelectedTypes(getArray("type"));
+  //   setSelectedFabrics(getArray("fabric"));
+
+  //   const discountIds = getArray("discount");
+  //   if (discountIds.length > 0) {
+  //     const discountObjects = discountIds.map((name) => {
+  //       const found = allDiscounts.find((d) => d.name === name);
+  //       return { id: found?._id || name, name };
+  //     });
+  //     setSelectedDiscounts(discountObjects);
+  //   } else {
+  //     setSelectedDiscounts([]);
+  //   }
+
+  //   const labelIds = getArray("label");
+  //   if (labelIds.length > 0) {
+  //     const labelObjects = labelIds.map((name) => {
+  //       const found = allLabels.find((l) => l.name === name);
+  //       return { id: found?._id || name, name };
+  //     });
+  //     setSelectedLabels(labelObjects);
+  //   } else {
+  //     setSelectedLabels([]);
+  //   }
+  //   if (params.get("min")) setMinPrice(Number(params.get("min")));
+  //   if (params.get("max")) setMaxPrice(Number(params.get("max")));
+
+  //   if (filterFromURL === "bestseller") {
+  //     setIsBestSeller(true);
+  //   } else {
+  //     setIsBestSeller(false);
+  //   }
+
+  //   setTimeout(() => {
+  //     isUpdatingFromURL.current = false;
+  //   }, 0);
+  // }, [location.search, allDiscounts, allLabels]);
   useEffect(() => {
     if (isUpdatingFromState.current) return;
-    isUpdatingFromURL.current = true;
+
     const params = new URLSearchParams(location.search);
-    const getArray = (key) =>
-      params.get(key) ? params.get(key).split(",") : [];
-    const categoryFromURL = params.get("category");
-    const filterFromURL = params.get("filter");
-    if (categoryFromURL) {
-      const newCats = categoryFromURL.split(",");
-      setSelectedCategories(newCats);
-    } else {
-      setSelectedCategories([]);
-    }
-    setSelectedSizes(getArray("size"));
-    setSelectedColors(getArray("color"));
-    setSelectedBrands(getArray("brand"));
-    setSelectedTypes(getArray("type"));
-    setSelectedFabrics(getArray("fabric"));
 
-    const discountIds = getArray("discount");
-    if (discountIds.length > 0) {
-      const discountObjects = discountIds.map((name) => {
-        const found = allDiscounts.find((d) => d.name === name);
-        return { id: found?._id || name, name };
-      });
-      setSelectedDiscounts(discountObjects);
-    } else {
-      setSelectedDiscounts([]);
-    }
+    const newCats = params.get("category")
+      ? params.get("category").split(",")
+      : [];
 
-    const labelIds = getArray("label");
-    if (labelIds.length > 0) {
-      const labelObjects = labelIds.map((name) => {
-        const found = allLabels.find((l) => l.name === name);
-        return { id: found?._id || name, name };
-      });
-      setSelectedLabels(labelObjects);
-    } else {
-      setSelectedLabels([]);
-    }
-    if (params.get("min")) setMinPrice(Number(params.get("min")));
-    if (params.get("max")) setMaxPrice(Number(params.get("max")));
+    setSelectedCategories((prev) => {
+      if (JSON.stringify(prev) === JSON.stringify(newCats)) {
+        return prev;
+      }
 
-    if (filterFromURL === "bestseller") {
-      setIsBestSeller(true);
-    } else {
-      setIsBestSeller(false);
-    }
-
-    setTimeout(() => {
-      isUpdatingFromURL.current = false;
-    }, 0);
-  }, [location.search, allDiscounts, allLabels]);
+      return newCats;
+    });
+  }, [location.search]);
 
   useEffect(() => {
     if (isUpdatingFromURL.current) return;
@@ -560,12 +582,17 @@ export default function WomenCollections() {
     if (maxPrice !== 5000) params.set("max", maxPrice);
     const newUrl = `/shop${params.toString() ? `?${params.toString()}` : ""}`;
     const currentUrl = location.pathname + location.search;
-    if (newUrl !== currentUrl) {
+    // if (newUrl !== currentUrl) {
+    //   navigate(newUrl, { replace: true });
+    // }
+    const currentSearch = location.pathname + location.search;
+
+    if (currentSearch !== newUrl) {
       navigate(newUrl, { replace: true });
     }
-    setTimeout(() => {
-      isUpdatingFromState.current = false;
-    }, 0);
+    // setTimeout(() => {
+    isUpdatingFromState.current = false;
+    // }, 0);
   }, [
     selectedCategories,
     selectedSizes,
@@ -703,12 +730,12 @@ export default function WomenCollections() {
       const fabrics = productFabricNames(p);
       if (!selectedFabrics.some((f) => fabrics.includes(f))) return false;
     }
-    if (selectedDiscounts.length > 0) {
-      const productDiscId = String(
-        p?.discount_id?._id || p?.discount_id || p?.discount || "",
-      );
-      if (!selectedDiscounts.some((d) => d.id === productDiscId)) return false;
-    }
+    // if (selectedDiscounts.length > 0) {
+    //   const productDiscId = String(
+    //     p?.discount_id?._id || p?.discount_id || p?.discount || "",
+    //   );
+    //   if (!selectedDiscounts.some((d) => d.id === productDiscId)) return false;
+    // }
     if (selectedLabels.length > 0) {
       const productLabelIds = (p?.variants || [])
         .flatMap((v) => v?.labels || [])

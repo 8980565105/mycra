@@ -34,13 +34,11 @@ const cartSlice = createSlice({
   extraReducers: (builder) => {
     builder
 
-      // ── createCart ────────────────────────────────────────────────────────────
       .addCase(createCart.fulfilled, (state, action) => {
         state.cart = action.payload;
         state.items = action.payload?.items || [];
       })
 
-      // ── fetchCart ─────────────────────────────────────────────────────────────
       .addCase(fetchCart.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -55,7 +53,6 @@ const cartSlice = createSlice({
         state.error = action.payload;
       })
 
-      // ── addToCart ─────────────────────────────────────────────────────────────
       .addCase(addToCart.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -70,7 +67,6 @@ const cartSlice = createSlice({
         state.error = action.payload;
       })
 
-      // ── updateCartItem ────────────────────────────────────────────────────────
       .addCase(updateCartItem.fulfilled, (state, action) => {
         const updatedItem = action.payload?.item;
         if (!updatedItem) return;
@@ -78,7 +74,6 @@ const cartSlice = createSlice({
         if (existing) existing.quantity = updatedItem.quantity;
       })
 
-      // ── deleteCartItem ────────────────────────────────────────────────────────
       .addCase(deleteCartItem.pending, (state, action) => {
         state.deletingItemId = action.meta.arg?.item_id;
       })
