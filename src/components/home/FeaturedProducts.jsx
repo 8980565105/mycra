@@ -186,14 +186,36 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
     arrows: false,
   };
 
+  // const filteredProducts =
+  //   activeCategory && products.length > 0
+  //     ? products.filter((p) => {
+  //         const hasFeaturedVariant = p?.variants?.some(
+  //           (v) => v?.is_featured === true,
+  //         );
+
+  //         if (!hasFeaturedVariant) return false;
+
+  //         const productCatId = p.category_id || "";
+
+  //         if (productCatId === activeCategory) return true;
+
+  //         const selectedTab = tabItems.find((t) => t._id === activeCategory);
+
+  //         if (
+  //           selectedTab &&
+  //           selectedTab.parent_id &&
+  //           productCatId === selectedTab.parent_id
+  //         ) {
+  //           return true;
+  //         }
+
+  //         return false;
+  //       })
+  //     : [];
   const filteredProducts =
     activeCategory && products.length > 0
       ? products.filter((p) => {
-          const hasFeaturedVariant = p?.variants?.some(
-            (v) => v?.is_featured === true,
-          );
-
-          if (!hasFeaturedVariant) return false;
+          if (p?.is_featured !== true) return false;
 
           const productCatId = p.category_id || "";
 
@@ -212,6 +234,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
           return false;
         })
       : [];
+
   const limitedProducts = filteredProducts.slice(0, 8);
   const handleAddToCart = async (product) => {
     if (!token) {

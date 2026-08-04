@@ -31,10 +31,13 @@ const TrendingClothes = () => {
   const sliderRef = useRef(null);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
+  // const trendingProducts = products.filter(
+  //   (product) =>
+  //     product.status === "active" &&
+  //     product.variants?.some((variant) => variant.is_trending),
+  // );
   const trendingProducts = products.filter(
-    (product) =>
-      product.status === "active" &&
-      product.variants?.some((variant) => variant.is_trending),
+    (product) => product.status === "active" && product.is_trending === true,
   );
 
   useEffect(() => {
