@@ -148,7 +148,7 @@ const updateWarehouse = async (req, res) => {
     const warehouse = await Warehouse.findByIdAndUpdate(
       req.params.id,
       { name, status },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!warehouse) {
       return sendResponse(res, false, null, "Warehouse not found");
@@ -171,7 +171,7 @@ const updateWarehouseStatus = async (req, res) => {
     const warehouse = await Warehouse.findByIdAndUpdate(
       id,
       { status },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!warehouse) {

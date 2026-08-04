@@ -11,11 +11,24 @@ const slideSchema = new mongoose.Schema({
   order: { type: Number, default: 1 },
 });
 
+const itemSchema = new mongoose.Schema({
+  image_url: { type: String },
+  title: { type: String },
+  description: { type: String },
+  order: { type: Number, default: 1 },
+});
+
+const faqItemSchema = new mongoose.Schema({
+  question: { type: String },
+  answer: { type: String },
+  order: { type: Number, default: 1 },
+});
+
 const sectionSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ["hero_slider", "content", "feature"],
+      enum: ["hero_slider", "content", "feature", "banner", "faqs"],
       default: "content",
       required: true,
     },
@@ -23,12 +36,15 @@ const sectionSchema = new mongoose.Schema(
     description: { type: String },
     image_url: { type: String },
     background_image_url: { type: String },
+    rs: { type: Number, default: 0 },
     order: { type: Number, default: 1 },
     is_button: { type: Boolean, default: false },
     button_name: { type: String },
     button_link: { type: String },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     slides: [slideSchema],
+    items: [itemSchema],
+    faqs: [faqItemSchema],
   },
   { timestamps: true },
 );

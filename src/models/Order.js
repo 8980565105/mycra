@@ -42,11 +42,11 @@ const orderSchema = new mongoose.Schema(
       ref: "Coupon",
       required: false,
     },
-    discount_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Discount",
-      default: null,
-    },
+    // discount_id: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Discount",
+    //   default: null,
+    // },
 
     order_number: { type: String, unique: true },
 

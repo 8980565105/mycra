@@ -8,6 +8,25 @@ const typeSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
 
+    // subCategoryId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "SubCategory",
+    //   default: null,
+    //   index: true,
+    // },
+    subCategoryId: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "SubCategory",
+        index: true,
+      },
+    ],
+    allowedAttributes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Attribute",
+      },
+    ],
     storeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",

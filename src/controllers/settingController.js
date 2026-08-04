@@ -29,13 +29,15 @@ const updateUserSettings = async (req, res) => {
     let setting = await Setting.findOne(query);
 
     if (setting) {
-      setting = await Setting.findOneAndUpdate(query, data, { new: true });
+      setting = await Setting.findOneAndUpdate(query, data, {
+        returnDocument: "after",
+      });
       sendResponse(res, true, setting, "Settings updated successfully");
     } else {
       setting = new Setting({
         ...data,
         user: userId,
-        storeId: storeId, 
+        storeId: storeId,
       });
       await setting.save();
       sendResponse(res, true, setting, "Settings created successfully");

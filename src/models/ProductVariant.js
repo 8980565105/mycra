@@ -11,27 +11,41 @@ const productVariantSchema = new mongoose.Schema(
     brand_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Brand",
-      required: true,
+      required: false,
     },
     fabric_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Fabric",
-      required: true,
+      required: false,
     },
     type_id: { type: mongoose.Schema.Types.ObjectId, ref: "Type" },
 
     color_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Color",
-      required: true,
+      required: false,
     },
     size_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Size",
-      required: true,
+      required: false,
     },
+    attributes: [
+      {
+        attributeId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Attribute",
+        },
+        valueId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "AttributeValue",
+        },
+        customValue: { type: String, default: null },
+      },
+    ],
 
     price: { type: Number, required: true },
+    offerprice: { type: Number, required: true, default: 0 },
     stock_quantity: { type: Number, required: true },
 
     sku: { type: String, required: true, unique: true },

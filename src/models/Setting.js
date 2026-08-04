@@ -15,11 +15,11 @@ const settingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
       default: null,
-      index: true,
     },
 
     site_name: { type: String },
-    logo_url: { type: String },
+    logourl: { type: String },
+    mobilelogoUrl: { type: String },
     favicon_url: { type: String },
     primary_color: { type: String },
     secondary_color: { type: String },

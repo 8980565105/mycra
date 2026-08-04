@@ -2,20 +2,10 @@ const { default: slugify } = require("slugify");
 const Type = require("../models/Type");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
-
-// ═══════════════════════════════════════════════════════════════════
-// PUBLIC — Frontend mate (domain thhi storeId resolve)
-// ═══════════════════════════════════════════════════════════════════
+const { default: mongoose } = require("mongoose");
 const getPublicTypes = async (req, res) => {
   try {
-    if (!req.storeFilter || !req.storeFilter.storeId) {
-      return res.json({ success: true, data: [] });
-    }
-
-    const types = await Type.find({
-      status: "active",
-      storeId: req.storeFilter.storeId,
-    }).sort({ createdAt: -1 });
+    const types = await Type.find({ status: "active" }).sort({ createdAt: -1 });
 
     res.json({ success: true, data: types });
   } catch (err) {
@@ -23,7 +13,6 @@ const getPublicTypes = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
 const getTypes = async (req, res) => {
   try {
     let {
@@ -32,18 +21,110 @@ const getTypes = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
+      role,
+      store,
     } = req.query;
     const download = isDownload.toLowerCase() === "true";
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-    const query = {};
-    if (search) query.name = { $regex: search, $options: "i" };
+    const matchStage = {};
     if (status && ["active", "inactive"].includes(status))
-      query.status = status;
+      matchStage.status = status;
 
-    applyOwnershipFilter(req, query);
+    // if (req.query.subCategoryId || req.query.subCategory) {
+    //   const subCatId = req.query.subCategoryId || req.query.subCategory;
+    //   if (mongoose.Types.ObjectId.isValid(subCatId)) {
+    //     matchStage.subCategoryId = new mongoose.Types.ObjectId(subCatId);
+    //   }
+    // }
+
+    if (req.query.subCategoryId || req.query.subCategory) {
+      const subCatId = req.query.subCategoryId || req.query.subCategory;
+      if (mongoose.Types.ObjectId.isValid(subCatId)) {
+        matchStage.subCategoryId = {
+          $in: [new mongoose.Types.ObjectId(subCatId)],
+        };
+      }
+    }
+    applyOwnershipFilter(req, matchStage);
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      { $unwind: { path: "$createdBy", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "storeId",
+          foreignField: "_id",
+          as: "storeId",
+        },
+      },
+      { $unwind: { path: "$storeId", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "subcategories",
+          localField: "subCategoryId",
+          foreignField: "_id",
+          as: "subCategoryId",
+        },
+      },
+
+      { $unwind: { path: "$subCategoryId", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "attributes",
+          localField: "allowedAttributes",
+          foreignField: "_id",
+          as: "allowedAttributes",
+        },
+      },
+    ];
+
+    if (role && ["admin", "store_owner"].includes(role)) {
+      pipeline.push({
+        $match: { "createdBy.role": role },
+      });
+    }
+    if (store) {
+      pipeline.push({
+        $match: {
+          createdBy: {
+            $exists: true,
+          },
+        },
+      });
+
+      pipeline.push({
+        $match: {
+          "createdBy._id": new mongoose.Types.ObjectId(store),
+        },
+      });
+    }
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "createdBy.name": { $regex: search, $options: "i" } },
+            { "createdBy.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push({ $sort: { createdAt: -1 } });
 
     if (download) {
-      const types = await Type.find(query).sort({ createdAt: -1 });
+      const types = await Type.aggregate(pipeline);
       return sendResponse(
         res,
         true,
@@ -52,14 +133,14 @@ const getTypes = async (req, res) => {
       );
     }
 
-    page = parseInt(page);
-    limit = parseInt(limit);
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Type.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
 
-    const total = await Type.countDocuments(query);
-    const types = await Type.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ createdAt: -1 });
+    pipeline.push({ $skip: (page - 1) * limit });
+    pipeline.push({ $limit: limit });
+
+    const types = await Type.aggregate(pipeline);
 
     sendResponse(res, true, {
       types,
@@ -74,7 +155,9 @@ const getTypes = async (req, res) => {
 
 const getTypeById = async (req, res) => {
   try {
-    const type = await Type.findById(req.params.id);
+    const type = await Type.findById(req.params.id)
+      .populate("subCategoryId")
+      .populate("allowedAttributes");
     if (!type) return sendResponse(res, false, null, "Type not found");
     sendResponse(res, true, type, "Type retrieved successfully");
   } catch (err) {
@@ -82,12 +165,10 @@ const getTypeById = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// CREATE — storeId auto set thay
-// ═══════════════════════════════════════════════════════════════════
 const createType = async (req, res) => {
   try {
-    const { name, description, status } = req.body;
+    const { name, description, status, subCategoryId, allowedAttributes } =
+      req.body;
     if (!name) return sendResponse(res, false, null, "Name is required");
 
     const storeId =
@@ -97,8 +178,14 @@ const createType = async (req, res) => {
       name,
       description: description || "",
       status: status || "active",
+      subCategoryId: Array.isArray(subCategoryId)
+        ? subCategoryId
+        : subCategoryId
+          ? [subCategoryId]
+          : [],
+      allowedAttributes: allowedAttributes || [],
       createdBy: req.user._id,
-      storeId, 
+      storeId,
     });
 
     const savedType = await type.save();
@@ -108,11 +195,35 @@ const createType = async (req, res) => {
   }
 };
 
+// const updateType = async (req, res) => {
+//   try {
+//     const updatedType = await Type.findByIdAndUpdate(req.params.id, req.body, {
+//       returnDocument: "after",
+//     })
+//       .populate("subCategoryId")
+//       .populate("allowedAttributes");
+//     if (!updatedType) return sendResponse(res, false, null, "Type not found");
+//     sendResponse(res, true, updatedType, "Type updated successfully");
+//   } catch (err) {
+//     sendResponse(res, false, null, err.message);
+//   }
+// };
+
 const updateType = async (req, res) => {
   try {
-    const updatedType = await Type.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const updateData = { ...req.body };
+    if (updateData.subCategoryId && !Array.isArray(updateData.subCategoryId)) {
+      updateData.subCategoryId = [updateData.subCategoryId];
+    }
+    const updatedType = await Type.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      {
+        returnDocument: "after",
+      },
+    )
+      .populate("subCategoryId")
+      .populate("allowedAttributes");
     if (!updatedType) return sendResponse(res, false, null, "Type not found");
     sendResponse(res, true, updatedType, "Type updated successfully");
   } catch (err) {
@@ -128,7 +239,11 @@ const updateTypeStatus = async (req, res) => {
     if (!["active", "inactive"].includes(status))
       return sendResponse(res, false, null, "Invalid status value");
 
-    const type = await Type.findByIdAndUpdate(id, { status }, { new: true });
+    const type = await Type.findByIdAndUpdate(
+      id,
+      { status },
+      { returnDocument: "after" },
+    );
     if (!type) return sendResponse(res, false, null, "Type not found");
 
     sendResponse(res, true, type, "Type status updated successfully");

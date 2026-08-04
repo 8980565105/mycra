@@ -1,43 +1,50 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { OAuth2Client } = require("google-auth-library");
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const User = require("../models/User");
 const Store = require("../models/Store");
 const nodemailer = require("nodemailer");
 const escapeHtml = require("escape-html");
 const { sendResponse } = require("../utils/response");
+const trackLogin = require("../middlewares/trackLogin");
 
 const otpStore = {};
 
-// ─── Email ────────────────────────────────────────────────────────────────────
 const createTransporter = () => {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   if (!user || !pass) return null;
+
+  const port = parseInt(process.env.SMTP_PORT) || 465;
+  const isSecure = port === 465;
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: false,
+    port: port,
+    secure: isSecure, // true for 465, false for other ports
     auth: { user, pass },
     tls: { rejectUnauthorized: false },
   });
 };
 
-const sendOtpEmail = async (toEmail, otp, storeName = "MyApp") => {
+const sendOtpEmail = async (toEmail, otp, storeName = "MyApp", subject = null) => {
   const transporter = createTransporter();
   if (!transporter)
     throw new Error("SMTP not configured. Set SMTP_USER and SMTP_PASS in .env");
 
   const safeStoreName = escapeHtml(storeName);
   const safeOtp = escapeHtml(otp);
+  const emailSubject = subject || `OTP Verification — ${safeStoreName}`;
 
   await transporter.sendMail({
     from: `"${safeStoreName}" <${process.env.SMTP_USER}>`,
     to: toEmail,
-    subject: `Password Reset OTP — ${safeStoreName}`,
+    subject: emailSubject,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;border:1px solid #eee;border-radius:8px;">
         <h2 style="color:#333;">${safeStoreName}</h2>
-        <p style="color:#555;">Your OTP for password reset:</p>
+        <p style="color:#555;">Your OTP code is:</p>
         <div style="font-size:40px;font-weight:bold;letter-spacing:10px;color:#e91e8c;margin:24px 0;text-align:center;">${safeOtp}</div>
         <p style="color:#888;font-size:13px;">Expires in <strong>10 minutes</strong>. Do not share it.</p>
         <hr style="border:none;border-top:1px solid #eee;margin:24px 0;"/>
@@ -62,7 +69,7 @@ const cleanDomain = (raw) => {
     const withProto = raw.startsWith("http") ? raw : `http://${raw}`;
     const parsed = new URL(withProto);
     if (parsed.hostname === "localhost") {
-      return `localhost:${parsed.port || "3000"}`;
+      return `localhost:${parsed.port}`;
     }
     return parsed.host
       .replace(/^www\./i, "")
@@ -77,53 +84,26 @@ const cleanDomain = (raw) => {
   }
 };
 
-const findUserForOtp = async (email, rawDomain) => {
-  const domain = cleanDomain(rawDomain);
+const findUserForOtp = async (email, storeId) => {
   console.log(`\n[OTP] ─────────────────────────────────`);
-  console.log(`[OTP] email   = "${email}"`);
-  console.log(`[OTP] rawDomain = "${rawDomain}"`);
-  console.log(`[OTP] cleanedDomain = "${domain}"`);
+  console.log(`[OTP] email = "${email}", storeId = "${storeId || ""}"`);
 
-  if (domain) {
-    const store = await Store.findOne({ domain })
-      .select("_id name domain")
-      .lean();
-    // console.log(
-    //   `[OTP] Store DB lookup (domain="${domain}"):`,
-    //   store ? `FOUND → "${store.name}" (id=${store._id})` : "NOT FOUND",
-    // );
-
+  if (storeId) {
+    const store = await Store.findById(storeId).select("_id name").lean();
     if (store) {
       const user = await User.findOne({ email, storeId: store._id });
-      console.log(
-        `[OTP] User in store:`,
-        user ? `FOUND → role=${user.role}` : "NOT FOUND",
-      );
-
       if (user) {
         const otpKey = `${email}__${store._id.toString()}`;
-        console.log(`[OTP] otpKey = "${otpKey}"`);
         return { user, storeName: store.name, otpKey };
       }
-    } else {
-      const allDomains = await Store.find({}).select("domain name").lean();
-      console.log(
-        `[OTP] All stores in DB:`,
-        allDomains.map((s) => `"${s.domain}" (${s.name})`),
-      );
     }
   }
 
-  const user = await User.findOne({
-    email,
-    role: { $in: ["admin", "store_owner"] },
-  });
+  const user = await User.findOne({ email }).populate("storeId");
   if (user) {
-    const otpKey = `${email}__${user.storeId?.toString() || "global"}`;
-    console.log(
-      `[OTP] Fallback user found: role=${user.role}, otpKey="${otpKey}"`,
-    );
-    return { user, storeName: process.env.STORE_NAME || "MyApp", otpKey };
+    const storeName = user.storeId?.name || process.env.STORE_NAME || "MyApp";
+    const otpKey = `${email}__${user.storeId?._id?.toString() || "global"}`;
+    return { user, storeName, otpKey };
   }
 
   console.log(`[OTP] ❌ No user found for email="${email}"`);
@@ -132,27 +112,20 @@ const findUserForOtp = async (email, rawDomain) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password, domain: rawDomain } = req.body;
+    const { email, password, storeId: bodyStoreId } = req.body;
+    const storeId = bodyStoreId || req.headers["x-store-id"];
+
     if (!email || !password)
       return sendResponse(res, false, null, "Email and password are required");
 
     let user = null;
 
-    if (rawDomain) {
-      const domain = cleanDomain(rawDomain);
-      const store = await Store.findOne({ domain });
-      if (store) {
-        user = await User.findOne({ email, storeId: store._id }).populate(
-          "storeId",
-        );
-      }
+    if (storeId) {
+      user = await User.findOne({ email, storeId }).populate("storeId");
     }
 
     if (!user) {
-      user = await User.findOne({
-        email,
-        role: { $in: ["admin", "store_owner"] },
-      }).populate("storeId");
+      user = await User.findOne({ email }).populate("storeId");
     }
 
     if (!user) return sendResponse(res, false, null, "Invalid credentials");
@@ -164,6 +137,9 @@ const login = async (req, res) => {
 
     const token = generateToken(user);
     const userObj = user.toObject();
+
+    await trackLogin(req, user._id);
+
     delete userObj.password;
 
     console.log(`[Login] ✅ ${user.email} (${user.role})`);
@@ -263,16 +239,6 @@ const register = async (req, res) => {
     }
 
     if (role === "store_owner") {
-      if (!storeName || !storeEmail)
-        return sendResponse(
-          res,
-          false,
-          null,
-          "Store name and email are required",
-        );
-      if (!storeWebsite)
-        return sendResponse(res, false, null, "Store website is required");
-
       const emailTaken = await User.findOne({
         email,
         role: { $in: ["admin", "store_owner"] },
@@ -285,93 +251,65 @@ const register = async (req, res) => {
           "A store owner with this email already exists",
         );
 
-      const finalDomain = cleanDomain(storeWebsite);
-      const parsedTheme = parseIfString(storeTheme) || {};
-      const parsedStoreAddr = parseIfString(storeAddress);
-      const cleanStoreAddr = isEmptyObj(parsedStoreAddr) ? {} : parsedStoreAddr;
-
-      const store = await Store.create({
-        name: (typeof storeName === "string" ? storeName.trim() : ""),
-        email: (typeof storeEmail === "string" ? storeEmail.toLowerCase().trim() : ""),
-        phone: storePhone || "",
-        gst_number: storegstno,
-        website: storeWebsite || "",
-        domain: finalDomain,
-        logo: storeLogo || "",
-        banner: storeBanner || "",
-        description: storeDescription || "",
-        theme: {
-          primaryColor: parsedTheme.primaryColor || "#000000",
-          secondaryColor: parsedTheme.secondaryColor || "#ffffff",
-          buttonColor: parsedTheme.buttonColor || "#007bff",
-          faviconUrl: parsedTheme.faviconUrl || "",
-          logoUrl: parsedTheme.logoUrl || "",
-          fontFamily: parsedTheme.fontFamily || "Roboto",
-        },
-        address: cleanStoreAddr,
-        status: "active",
-      });
-
       const user = await User.create({
         name,
         email,
         password,
-        domain: finalDomain,
-        role,
-        storeId: store._id,
+        domain: "",
+        role: "store_owner",
+        storeId: null,
+        onboardingStatus: "not_started",
         mobile_number: mobile_number || null,
         gender: gender || undefined,
         date_of_birth: date_of_birth || null,
         address: cleanAddress,
         profile_picture,
       });
+
       const token = generateToken(user);
       const userObj = user.toObject();
       delete userObj.password;
-      userObj.storeId = store;
-      console.log(
-        `[Register] Store owner: ${user.email}, store: ${store.name}, domain: ${finalDomain}`,
-      );
+      console.log(`[Register] Store owner account created: ${user.email}`);
       return sendResponse(
         res,
         true,
         { token, user: userObj },
-        "Store owner registered successfully",
+        "Seller account created successfully. Please complete seller onboarding.",
       );
     }
 
-    const finalDomain = cleanDomain(domain || "");
-    if (!finalDomain)
-      return sendResponse(
-        res,
-        false,
-        null,
-        "Domain is required for store user registration",
-      );
+    const targetStoreId = req.body.storeId || req.headers["x-store-id"] || null;
+    let store = null;
+    if (targetStoreId) {
+      store = await Store.findById(targetStoreId);
+    }
 
-    const store = await Store.findOne({ domain: finalDomain });
-    if (!store)
+    if (targetStoreId && !store) {
       return res.status(404).json({
         success: false,
-        message: `Store not found for domain: ${finalDomain}`,
+        message: `Store not found for storeId: ${targetStoreId}`,
       });
+    }
 
-    const alreadyInStore = await User.findOne({ email, storeId: store._id });
+    const alreadyInStore = await User.findOne({
+      email,
+      storeId: store ? store._id : null,
+    });
     if (alreadyInStore)
       return sendResponse(
         res,
         false,
         null,
-        "You are already registered in this store. Please login.",
+        "You are already registered. Please login.",
       );
 
     const user = await User.create({
       name,
       email,
       password,
-      domain: finalDomain,
+      domain: store?.domain || "",
       role,
-      storeId: store._id,
+      storeId: store ? store._id : null,
       mobile_number: mobile_number || null,
       gender: gender || undefined,
       date_of_birth: date_of_birth || null,
@@ -382,7 +320,7 @@ const register = async (req, res) => {
     const userObj = user.toObject();
     delete userObj.password;
     console.log(
-      `[Register] Store user: ${user.email}, store: ${store.name}, domain: ${finalDomain}`,
+      `[Register] Store user: ${user.email}, storeId: ${user.storeId}`,
     );
     return sendResponse(
       res,
@@ -434,7 +372,7 @@ const forgotPassword = async (req, res) => {
     otpStore[otpKey] = { otp, expiresAt: Date.now() + 10 * 60 * 1000 };
     console.log(`[ForgotPassword] ✅ OTP="${otp}" stored at key="${otpKey}"`);
 
-    await sendOtpEmail(email, otp, storeName);
+    await sendOtpEmail(email, otp, storeName, `Password Reset OTP — ${storeName}`);
     console.log(`[ForgotPassword] ✅ Email sent to "${email}"`);
 
     return res.status(200).json({
@@ -566,7 +504,12 @@ const googleLogin = async (req, res) => {
         role: { $in: ["admin", "store_owner"] },
       });
       if (!user)
-        return sendResponse(res, false, null, "No account found for this email");
+        return sendResponse(
+          res,
+          false,
+          null,
+          "No account found for this email",
+        );
     }
 
     if (!user.is_active)
@@ -590,12 +533,221 @@ const googleLogin = async (req, res) => {
   }
 };
 
+// const changePassword = async (req, res) => {
+//   try {
+//     const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+//     if (!currentPassword || !newPassword || !confirmNewPassword) {
+//       return sendResponse(
+//         res,
+//         false,
+//         null,
+//         "Current password, new password and confirm password are required",
+//       );
+//     }
+
+//     if (newPassword !== confirmNewPassword) {
+//       return sendResponse(
+//         res,
+//         false,
+//         null,
+//         "New password and confirm password do not match",
+//       );
+//     }
+
+//     if (newPassword.length < 6) {
+//       return sendResponse(
+//         res,
+//         false,
+//         null,
+//         "New password must be at least 6 characters long",
+//       );
+//     }
+
+//     const user = await User.findById(req.user._id);
+//     if (!user) return sendResponse(res, false, null, "User not found");
+
+//     // Google-only accounts have a random unusable password set at signup.
+//     // If you want to block password-change entirely for such accounts,
+//     // check a flag like user.googleId here instead of comparing.
+//     const isMatch = await bcrypt.compare(currentPassword, user.password);
+//     if (!isMatch)
+//       return sendResponse(res, false, null, "Current password is incorrect");
+
+//     const isSamePassword = await bcrypt.compare(newPassword, user.password);
+//     if (isSamePassword)
+//       return sendResponse(
+//         res,
+//         false,
+//         null,
+//         "New password must be different from current password",
+//       );
+
+//     // Let the pre('save') hook hash it — do NOT hash it here again.
+//     user.password = newPassword;
+//     await user.save();
+
+//     return sendResponse(res, true, null, "Password changed successfully");
+//   } catch (err) {
+//     return sendResponse(
+//       res,
+//       false,
+//       null,
+//       "Failed to change password: " + err.message,
+//     );
+//   }
+// };
+
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        "Current password, new password and confirm password are required",
+      );
+    }
+    if (newPassword !== confirmNewPassword) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        "New password and confirm password do not match",
+      );
+    }
+    if (newPassword.length < 6) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        "New password must be at least 6 characters long",
+      );
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) return sendResponse(res, false, null, "User not found");
+    console.log(
+      "[ChangePassword] userId:",
+      user._id.toString(),
+      "email:",
+      user.email,
+      "storeId:",
+      user.storeId,
+    );
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    console.log("[ChangePassword] currentPassword match:", isMatch);
+    if (!isMatch)
+      return sendResponse(res, false, null, "Current password is incorrect");
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        "New password must be different from current password",
+      );
+    }
+    const oldHash = user.password;
+    user.password = newPassword;
+    const saved = await user.save({ validateBeforeSave: true }).catch((err) => {
+      console.error("[ChangePassword] SAVE ERROR:", err.message);
+      throw err;
+    });
+    console.log("[ChangePassword] Old hash:", oldHash);
+    console.log("[ChangePassword] New hash:", saved.password);
+    console.log("[ChangePassword] Hash changed:", oldHash !== saved.password);
+    const verifyFromDB = await User.findById(user._id).select("+password");
+    console.log(
+      "[ChangePassword] Verify from DB after save:",
+      verifyFromDB.password === saved.password,
+    );
+    return sendResponse(res, true, null, "Password changed successfully");
+  } catch (err) {
+    console.error("[ChangePassword] CATCH ERROR:", err);
+    return sendResponse(
+      res,
+      false,
+      null,
+      "Failed to change password: " + err.message,
+    );
+  }
+};
+const sendRegistrationOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return sendResponse(res, false, null, "Email is required");
+
+    const existingUser = await User.findOne({ email, role: "store_owner" });
+    if (existingUser) {
+      return sendResponse(res, false, null, "A seller account with this email already exists");
+    }
+
+    const otp = generateOtp();
+    const otpKey = `reg_${email.toLowerCase().trim()}`;
+    otpStore[otpKey] = { otp, expiresAt: Date.now() + 10 * 60 * 1000 };
+
+    console.log(`-----------------------------------------`);
+    console.log(`🔑 [REGISTRATION EMAIL OTP] For ${email}: ${otp}`);
+    console.log(`-----------------------------------------`);
+
+    // Try sending email, but catch error so API returns success & OTP box opens
+    try {
+      await sendOtpEmail(email, otp, "Seller Registration", "Seller Registration Verification OTP");
+    } catch (mailErr) {
+      console.error("⚠️ Nodemailer Email Error (Invalid SMTP Credentials):", mailErr.message);
+    }
+
+    return sendResponse(
+      res,
+      true,
+      { otp },
+      "OTP sent to your email address (check backend log / toast in dev mode)"
+    );
+  } catch (err) {
+    return sendResponse(res, false, null, err.message);
+  }
+};
+
+const verifyRegistrationOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return sendResponse(res, false, null, "Email and OTP are required");
+    }
+
+    const otpKey = `reg_${email.toLowerCase().trim()}`;
+    const record = otpStore[otpKey];
+
+    if (!record) {
+      return sendResponse(res, false, null, "No OTP request found. Please request a new OTP.");
+    }
+
+    if (Date.now() > record.expiresAt) {
+      delete otpStore[otpKey];
+      return sendResponse(res, false, null, "OTP has expired. Please request a new one.");
+    }
+
+    if (String(otp).trim() !== String(record.otp).trim()) {
+      return sendResponse(res, false, null, "Invalid OTP. Please check and try again.");
+    }
+
+    delete otpStore[otpKey];
+    return sendResponse(res, true, { verified: true }, "Email verified successfully!");
+  } catch (err) {
+    return sendResponse(res, false, null, err.message);
+  }
+};
 
 module.exports = {
   login,
+  changePassword,
   register,
   registerStoreOwner,
   forgotPassword,
   resetPassword,
   googleLogin,
+  sendRegistrationOtp,
+  verifyRegistrationOtp,
 };

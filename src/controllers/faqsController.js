@@ -112,6 +112,7 @@ const createfaqs = async (req, res) => {
     });
 
     const saved = await newFaq.save();
+
     sendResponse(res, true, saved, "FAQ created successfully");
   } catch (err) {
     if (err.code === 11000) {
@@ -124,7 +125,7 @@ const createfaqs = async (req, res) => {
 const updatefaqs = async (req, res) => {
   try {
     const updated = await Faq.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+      returnDocument: "after",
     });
     if (!updated) return sendResponse(res, false, null, "FAQ not found");
     sendResponse(res, true, updated, "FAQ updated successfully");
@@ -142,7 +143,11 @@ const updatefaqsStatus = async (req, res) => {
       return sendResponse(res, false, null, "Invalid status value");
     }
 
-    const updated = await Faq.findByIdAndUpdate(id, { status }, { new: true });
+    const updated = await Faq.findByIdAndUpdate(
+      id,
+      { status },
+      { returnDocument: "after" },
+    );
     if (!updated) return sendResponse(res, false, null, "FAQ not found");
     sendResponse(res, true, updated, "FAQ status updated successfully");
   } catch (err) {
@@ -181,9 +186,7 @@ const bulkDeletefaqs = async (req, res) => {
 const saveFaqBanner = async (req, res) => {
   try {
     const storeId =
-      req.user.role === "admin"
-        ? req.body.storeId || null
-        : req.user.storeId;
+      req.user.role === "admin" ? req.body.storeId || null : req.user.storeId;
 
     let image = "";
 
@@ -208,7 +211,6 @@ const saveFaqBanner = async (req, res) => {
     await faq.save();
 
     res.json({ success: true, data: faq });
-
   } catch (err) {
     res.json({ success: false, message: err.message });
   }
@@ -228,7 +230,6 @@ const getFaqBanner = async (req, res) => {
       success: true,
       data: faq?.banner || null,
     });
-
   } catch (err) {
     res.json({ success: false, message: err.message });
   }
@@ -237,7 +238,7 @@ const getFaqBanner = async (req, res) => {
 module.exports = {
   saveFaqBanner,
   getFaqBanner,
-  getPublicFaqs, 
+  getPublicFaqs,
   getfaqs,
   createfaqs,
   updatefaqs,

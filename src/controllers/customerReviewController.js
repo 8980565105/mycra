@@ -21,13 +21,13 @@ const resolveStoreId = async (req) => {
   try {
     if (req.user?.storeId) return req.user.storeId;
 
-    const domain = extractDomain(req);
-    if (domain) {
-      const storeId = await resolveStoreByDomain(domain);
-      if (storeId) return storeId;
-    }
+    const storeId =
+      req.query?.storeId ||
+      req.headers?.["x-store-id"] ||
+      req.body?.storeId ||
+      null;
 
-    return null;
+    return storeId;
   } catch (e) {
     console.error("resolveStoreId error:", e.message);
     return null;
@@ -177,7 +177,7 @@ const updateReview = async (req, res) => {
     const updatedReview = await CustomerReview.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!updatedReview)
       return sendResponse(res, false, null, "Review not found");
@@ -209,7 +209,7 @@ const updateReviewStatus = async (req, res) => {
     const updated = await CustomerReview.findByIdAndUpdate(
       id,
       { is_approved },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     sendResponse(res, true, updated, "Review status updated successfully");
@@ -240,7 +240,7 @@ const deleteReview = async (req, res) => {
 const bulkDeleteReviews = async (req, res) => {
   try {
     const { ids } = req.body;
-    if (!Array.isArray(ids) || ids.length === 0) 
+    if (!Array.isArray(ids) || ids.length === 0)
       return sendResponse(res, false, null, "No IDs provided");
 
     const result = await CustomerReview.deleteMany({ _id: { $in: ids } });

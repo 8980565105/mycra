@@ -13,10 +13,16 @@ const {
   bulkDeleteStores,
   getMyStore,
   updateMyStore,
-  getStoreByDomain,
+  sendStoreOtp,
+  verifyStoreOtp,
+  // getStoreByDomain,
+  getStoreDashboard,
 } = require("../controllers/storeController");
 
-router.get("/info", getStoreByDomain);
+// router.get("/info", getStoreByDomain);
+router.post("/send-otp", sendStoreOtp);
+router.post("/verify-otp", verifyStoreOtp);
+
 router.use(authMiddleware);
 
 router.get("/my", authorizeMinRole("store_owner"), getMyStore);
@@ -28,5 +34,6 @@ router.post("/", authorizeMinRole("store_owner"), createStore);
 router.put("/:id", authorizeMinRole("store_owner"), updateStore);
 router.delete("/:id", authorizeMinRole("store_owner"), deleteStore);
 router.post("/bulk-delete", authorizeMinRole("store_owner"), bulkDeleteStores);
+router.get("/:id/dashboard", authorizeMinRole("admin"), getStoreDashboard);
 
 module.exports = router;

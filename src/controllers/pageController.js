@@ -1,6 +1,5 @@
 const Page = require("../models/Page");
 const { sendResponse } = require("../utils/response");
-
 // ─────────────────────────────────────────────────────────
 // Helper: Role based store filter
 // ─────────────────────────────────────────────────────────
@@ -14,7 +13,6 @@ const buildStoreFilter = (req) => {
   }
   return {};
 };
-
 // ═══════════════════════════════════════════════════════
 // GET /pages
 // ═══════════════════════════════════════════════════════
@@ -27,23 +25,18 @@ const getPages = async (req, res) => {
       status,
       isDownload = "false",
     } = req.query;
-
     const download = isDownload.toLowerCase() === "true";
     page = parseInt(page);
     limit = parseInt(limit);
-
     const query = { ...buildStoreFilter(req) };
-
     if (search) query.page_name = { $regex: search, $options: "i" };
     if (status && ["active", "inactive"].includes(status)) {
       query.status = status;
     }
-
     if (download) {
       const pages = await Page.find(query).sort({ order: 1 });
       return sendResponse(res, true, { pages }, "All pages for download");
     }
-
     const total = await Page.countDocuments(query);
     const pages = await Page.find(query)
       .sort({ order: 1 })
@@ -68,22 +61,15 @@ const getPageBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
     if (!slug) return sendResponse(res, false, null, "Slug is required");
-
     const query = { slug, status: "active" };
-
-    if (req.storeFilter?.storeId) {
-      query.storeId = req.storeFilter.storeId;
-    }
 
     const page = await Page.findOne(query);
     if (!page) return sendResponse(res, false, null, "Page not found");
-
     sendResponse(res, true, page, "Page retrieved by slug");
   } catch (err) {
     sendResponse(res, false, null, err.message);
   }
 };
-
 // ═══════════════════════════════════════════════════════
 // GET /pages/:id
 // ═══════════════════════════════════════════════════════
@@ -97,27 +83,23 @@ const getPageById = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-
 // ═══════════════════════════════════════════════════════
 // POST /pages — Create
 // ═══════════════════════════════════════════════════════
 const createPage = async (req, res) => {
   try {
     const data = { ...req.body };
-
     if (req.user.role === "admin") {
       data.storeId = data.storeId || null;
     } else {
       data.storeId = req.user.storeId;
     }
-
     if (!data.slug && data.page_name) {
       data.slug = data.page_name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "");
     }
-
     if (data.storeId) {
       const existing = await Page.findOne({
         slug: data.slug,
@@ -139,10 +121,11 @@ const createPage = async (req, res) => {
           sec.description?.trim() ||
           sec.image_url?.trim() ||
           sec.background_image_url?.trim() ||
-          (Array.isArray(sec.slides) && sec.slides.length > 0),
+          (Array.isArray(sec.slides) && sec.slides.length > 0) ||
+          (Array.isArray(sec.items) && sec.items.length > 0) ||
+          (Array.isArray(sec.faqs) && sec.faqs.length > 0),
       );
     }
-
     const page = new Page(data);
     const saved = await page.save();
     sendResponse(res, true, saved, "Page created successfully");
@@ -158,7 +141,6 @@ const createPage = async (req, res) => {
     sendResponse(res, false, null, err.message || "Failed to create page");
   }
 };
-
 // ═══════════════════════════════════════════════════════
 // PUT /pages/:id — Update
 // ═══════════════════════════════════════════════════════
@@ -205,12 +187,13 @@ const updatePage = async (req, res) => {
           sec.description?.trim() ||
           sec.image_url?.trim() ||
           sec.background_image_url?.trim() ||
-          (Array.isArray(sec.slides) && sec.slides.length > 0),
+          (Array.isArray(sec.slides) && sec.slides.length > 0) ||
+          (Array.isArray(sec.items) && sec.items.length > 0),
       );
     }
 
     const updated = await Page.findOneAndUpdate(filter, data, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 
@@ -228,7 +211,6 @@ const updatePage = async (req, res) => {
     sendResponse(res, false, null, err.message || "Failed to update page");
   }
 };
-
 // ═══════════════════════════════════════════════════════
 // PUT /pages/:id/status
 // ═══════════════════════════════════════════════════════
@@ -240,7 +222,7 @@ const updatePageStatus = async (req, res) => {
     }
 
     const filter = { _id: req.params.id, ...buildStoreFilter(req) };
-    const page = await Page.findOneAndUpdate(filter, { status }, { new: true });
+    const page = await Page.findOneAndUpdate(filter, { status }, {  returnDocument: 'after'  });
     if (!page) return sendResponse(res, false, null, "Page not found");
 
     sendResponse(res, true, page, "Status updated");
@@ -248,7 +230,6 @@ const updatePageStatus = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-
 // ═══════════════════════════════════════════════════════
 // DELETE /pages/:id
 // ═══════════════════════════════════════════════════════
@@ -262,14 +243,14 @@ const deletePage = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-
 // ═══════════════════════════════════════════════════════
 // POST /pages/bulk-delete
 // ═══════════════════════════════════════════════════════
 const bulkDeletePages = async (req, res) => {
   try {
     const { ids } = req.body;
-    if (!Array.isArray(ids) || ids.length === 0) return sendResponse(res, false, null, "No IDs provided");
+    if (!Array.isArray(ids) || ids.length === 0)
+      return sendResponse(res, false, null, "No IDs provided");
 
     const filter = {
       _id: { $in: ids },
@@ -287,7 +268,6 @@ const bulkDeletePages = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-
 module.exports = {
   getPages,
   getPageById,

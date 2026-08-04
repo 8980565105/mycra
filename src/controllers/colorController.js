@@ -1,26 +1,51 @@
-
 const Color = require("../models/Color");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
+const { default: mongoose } = require("mongoose");
 
+// const getPublicColors = async (req, res) => {
+//   try {
+//     const colors = await Color.find({ status: "active" }).sort({ name: 1 });
 
+//     res.json({ success: true, data: colors });
+//   } catch (err) {
+//     sendResponse(res, false, null, err.message);
+//   }
+// };
 const getPublicColors = async (req, res) => {
   try {
-    if (!req.storeFilter || !req.storeFilter.storeId) {
-      return res.json({ success: true, data: [] });
-    }
+    const colors = await Color.aggregate([
+      {
+        $match: {
+          status: "active",
+        },
+      },
+      {
+        $group: {
+          _id: {
+            name: "$name",
+            code: "$code",
+          },
+          color: { $first: "$$ROOT" },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$color",
+        },
+      },
+      {
+        $sort: {
+          name: 1,
+        },
+      },
+    ]);
 
-    const colors = await Color.find({
-      status: "active",
-      storeId: req.storeFilter.storeId,
-    }).sort({ name: 1 });
-
-    res.json({ success: true, data: colors });
+    sendResponse(res, true, colors, "Colors retrieved successfully");
   } catch (err) {
     sendResponse(res, false, null, err.message);
   }
 };
-
 
 const getColors = async (req, res) => {
   try {
@@ -30,33 +55,98 @@ const getColors = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
+      role,
+      store,
     } = req.query;
 
     const download = isDownload.toString().toLowerCase() === "true";
-
-    const query = {};
-    if (search) query.name = { $regex: search, $options: "i" };
-    if (status && ["active", "inactive"].includes(status)) {
-      query.status = status;
-    }
-
-    applyOwnershipFilter(req, query);
-
-    if (download) {
-      const colors = await Color.find(query).sort({ name: 1 });
-      return sendResponse(res, true, { colors }, "All colors retrieved for download");
-    }
-
     page = parseInt(page);
     limit = parseInt(limit);
 
-    const total = await Color.countDocuments(query);
+    const matchStage = {};
+    if (status && ["active", "inactive"].includes(status))
+      matchStage.status = status;
 
-    const findQuery = Color.find(query).sort({ name: 1 });
-    if (limit > 0) {
-      findQuery.skip((page - 1) * limit).limit(limit);
+    applyOwnershipFilter(req, matchStage);
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      { $unwind: { path: "$createdBy", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "storeId",
+          foreignField: "_id",
+          as: "storeId",
+        },
+      },
+      { $unwind: { path: "$storeId", preserveNullAndEmptyArrays: true } },
+    ];
+
+    if (role && ["admin", "store_owner"].includes(role)) {
+      pipeline.push({
+        $match: { "createdBy.role": role },
+      });
     }
-    const colors = await findQuery;
+
+    if (store) {
+      pipeline.push({
+        $match: {
+          createdBy: {
+            $exists: true,
+          },
+        },
+      });
+
+      pipeline.push({
+        $match: {
+          "createdBy._id": new mongoose.Types.ObjectId(store),
+        },
+      });
+    }
+
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "createdBy.name": { $regex: search, $options: "i" } },
+            { "createdBy.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push({ $sort: { name: 1 } });
+
+    if (download) {
+      const colors = await Color.aggregate(pipeline);
+      return sendResponse(
+        res,
+        true,
+        { colors },
+        "All colors retrieved for download",
+      );
+    }
+
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Color.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
+
+    if (limit > 0) {
+      pipeline.push({ $skip: (page - 1) * limit });
+      pipeline.push({ $limit: limit });
+    }
+
+    const colors = await Color.aggregate(pipeline);
 
     sendResponse(res, true, {
       colors,
@@ -68,7 +158,6 @@ const getColors = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-
 const getColorById = async (req, res) => {
   try {
     const color = await Color.findById(req.params.id);
@@ -92,7 +181,7 @@ const createColor = async (req, res) => {
       code,
       status: status || "active",
       createdBy: req.user._id,
-      storeId, 
+      storeId,
     });
     const savedColor = await color.save();
     sendResponse(res, true, savedColor, "Color created successfully");
@@ -106,7 +195,7 @@ const updateColor = async (req, res) => {
     const updatedColor = await Color.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!updatedColor) return sendResponse(res, false, null, "Color not found");
     sendResponse(res, true, updatedColor, "Color updated successfully");
@@ -123,7 +212,11 @@ const updateColorStatus = async (req, res) => {
     if (!["active", "inactive"].includes(status))
       return sendResponse(res, false, null, "Invalid status value");
 
-    const color = await Color.findByIdAndUpdate(id, { status }, { new: true });
+    const color = await Color.findByIdAndUpdate(
+      id,
+      { status },
+      { returnDocument: "after" },
+    );
     if (!color) return sendResponse(res, false, null, "Color not found");
 
     sendResponse(res, true, color, "Color status updated successfully");
@@ -149,7 +242,12 @@ const bulkDeleteColors = async (req, res) => {
       return sendResponse(res, false, null, "No IDs provided");
 
     const result = await Color.deleteMany({ _id: { $in: ids } });
-    sendResponse(res, true, { deletedCount: result.deletedCount }, "Colors deleted successfully");
+    sendResponse(
+      res,
+      true,
+      { deletedCount: result.deletedCount },
+      "Colors deleted successfully",
+    );
   } catch (err) {
     sendResponse(res, false, null, err.message);
   }

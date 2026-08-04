@@ -4,20 +4,15 @@ const { sendResponse } = require("../utils/response");
 const ProductVariant = require("../models/ProductVariant");
 const mongoose = require("mongoose");
 
-// ─────────────────────────────────────────────────────────────────
-// Helper: ownership check — storeId based
-// ─────────────────────────────────────────────────────────────────
 const isOwnerOrAdmin = (req, product) => {
   if (req.user.role === "admin") return true;
   return product.storeId?.toString() === req.user.storeId?.toString();
 };
 
-// ─────────────────────────────────────────────────────────────────
-// Helper: build aggregation pipeline
-// ─────────────────────────────────────────────────────────────────
 const buildPipeline = ({
   productMatch,
   variantMatch,
+  search,
   page,
   limit,
   download,
@@ -26,23 +21,13 @@ const buildPipeline = ({
     { $match: productMatch },
     {
       $lookup: {
-        from: "categories",
+        from: "subcategories",
         localField: "category_id",
         foreignField: "_id",
         as: "category",
       },
     },
     { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-    {
-      $lookup: {
-        from: "discounts",
-        localField: "discount_id",
-        foreignField: "_id",
-        as: "discount",
-      },
-    },
-    { $unwind: { path: "$discount", preserveNullAndEmptyArrays: true } },
-
     {
       $lookup: {
         from: "users",
@@ -52,6 +37,21 @@ const buildPipeline = ({
       },
     },
     { $unwind: { path: "$createdByUser", preserveNullAndEmptyArrays: true } },
+  ];
+
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { "createdByUser.name": { $regex: search, $options: "i" } },
+          { "createdByUser.email": { $regex: search, $options: "i" } },
+        ],
+      },
+    });
+  }
+
+  pipeline.push(
     {
       $lookup: {
         from: "productvariants",
@@ -133,7 +133,7 @@ const buildPipeline = ({
     },
     { $match: { "variants.0": { $exists: true } } },
     { $sort: { createdAt: -1 } },
-  ];
+  );
 
   if (!download) {
     pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
@@ -142,9 +142,6 @@ const buildPipeline = ({
   return pipeline;
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// PUBLIC — Frontend mate (domain thhi storeId resolve)
-// ═══════════════════════════════════════════════════════════════════
 const getPublicProducts = async (req, res) => {
   try {
     let {
@@ -169,16 +166,10 @@ const getPublicProducts = async (req, res) => {
     const productMatch = { status: "active" };
     if (search) productMatch.name = { $regex: search, $options: "i" };
 
-    if (!req.storeFilter || !req.storeFilter.storeId) {
-      return res.json({
-        success: true,
-        data: { products: [], total: 0, page, pages: 0 },
-      });
-    }
-    productMatch.storeId = new mongoose.Types.ObjectId(req.storeFilter.storeId);
-
     if (categories) {
-      const categoryArray = Array.isArray(categories) ? categories : String(categories).split(",");
+      const categoryArray = Array.isArray(categories)
+        ? categories
+        : String(categories).split(",");
       productMatch.category_id = {
         $in: categoryArray.map((id) => new mongoose.Types.ObjectId(id)),
       };
@@ -186,31 +177,43 @@ const getPublicProducts = async (req, res) => {
 
     const variantMatch = {};
     if (brands) {
-      const brandsArray = Array.isArray(brands) ? brands : (typeof brands === "string" ? brands.split(",") : []);
+      const brandsArray = Array.isArray(brands)
+        ? brands
+        : typeof brands === "string"
+          ? brands.split(",")
+          : [];
       variantMatch.brand_id = {
         $in: brandsArray.map((id) => new mongoose.Types.ObjectId(id)),
       };
     }
     if (sizes) {
-      const sizesArray = Array.isArray(sizes) ? sizes : String(sizes).split(",");
+      const sizesArray = Array.isArray(sizes)
+        ? sizes
+        : String(sizes).split(",");
       variantMatch.size_id = {
         $in: sizesArray.map((id) => new mongoose.Types.ObjectId(id)),
       };
     }
     if (types) {
-      const typesArray = Array.isArray(types) ? types : String(types).split(",");
+      const typesArray = Array.isArray(types)
+        ? types
+        : String(types).split(",");
       variantMatch.type_id = {
         $in: typesArray.map((id) => new mongoose.Types.ObjectId(id)),
       };
     }
     if (fabrics) {
-      const fabricsArray = Array.isArray(fabrics) ? fabrics : String(fabrics).split(",");
+      const fabricsArray = Array.isArray(fabrics)
+        ? fabrics
+        : String(fabrics).split(",");
       variantMatch.fabric_id = {
         $in: fabricsArray.map((id) => new mongoose.Types.ObjectId(id)),
       };
     }
     if (colors) {
-      const colorsArray = Array.isArray(colors) ? colors : String(colors).split(",");
+      const colorsArray = Array.isArray(colors)
+        ? colors
+        : String(colors).split(",");
       variantMatch.color_id = {
         $in: colorsArray.map((id) => new mongoose.Types.ObjectId(id)),
       };
@@ -228,6 +231,7 @@ const getPublicProducts = async (req, res) => {
       limit,
       download,
     });
+
     const products = await Product.aggregate(pipeline);
 
     const countPipeline = [
@@ -268,7 +272,6 @@ const getPublicProducts = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
 const getProducts = async (req, res) => {
   try {
     let {
@@ -277,6 +280,8 @@ const getProducts = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
+      role,
+      store,
     } = req.query;
 
     const download = isDownload.toString().toLowerCase() === "true";
@@ -284,7 +289,6 @@ const getProducts = async (req, res) => {
     limit = parseInt(limit);
 
     const productMatch = { ...req.storeFilter };
-    if (search) productMatch.name = { $regex: search, $options: "i" };
     if (status) productMatch.status = status;
 
     const variantMatch = {};
@@ -292,14 +296,97 @@ const getProducts = async (req, res) => {
     const pipeline = buildPipeline({
       productMatch,
       variantMatch,
+      search,
       page,
       limit,
       download,
     });
+
+    if (role && ["admin", "store_owner"].includes(role)) {
+      // pipeline.push({
+      //   $match: { "createdBy.role": role },
+      // });
+      pipeline.push({
+        $match: {
+          "createdByUser.role": role,
+        },
+      });
+    }
+    if (store) {
+      pipeline.push({
+        $match: {
+          createdBy: {
+            $exists: true,
+          },
+        },
+      });
+
+      pipeline.push({
+        $match: {
+          "createdByUser._id": new mongoose.Types.ObjectId(store),
+        },
+      });
+    }
+    if (search) {
+      countPipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "createdByUser.name": { $regex: search, $options: "i" } },
+            { "createdByUser.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
     const products = await Product.aggregate(pipeline);
 
     const countPipeline = [
       { $match: productMatch },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdByUser",
+        },
+      },
+      { $unwind: { path: "$createdByUser", preserveNullAndEmptyArrays: true } },
+    ];
+
+    // if (role && ["admin", "store_owner"].includes(role)) {
+    //   pipeline.push({
+    //     $match: { "createdBy.role": role },
+    //   });
+    // }
+    // if (store) {
+    //   pipeline.push({
+    //     $match: {
+    //       createdBy: {
+    //         $exists: true,
+    //       },
+    //     },
+    //   });
+
+    //   pipeline.push({
+    //     $match: {
+    //       "createdBy._id": new mongoose.Types.ObjectId(store),
+    //     },
+    //   });
+    // }
+    // if (search) {
+    //   countPipeline.push({
+    //     $match: {
+    //       $or: [
+    //         { name: { $regex: search, $options: "i" } },
+    //         { "createdByUser.name": { $regex: search, $options: "i" } },
+    //         { "createdByUser.email": { $regex: search, $options: "i" } },
+    //       ],
+    //     },
+    //   });
+    // }
+
+    countPipeline.push(
       {
         $lookup: {
           from: "productvariants",
@@ -316,7 +403,8 @@ const getProducts = async (req, res) => {
       },
       { $match: { "variants.0": { $exists: true } } },
       { $count: "total" },
-    ];
+    );
+
     const countResult = await Product.aggregate(countPipeline);
     const totalCount = countResult[0]?.total || 0;
 
@@ -344,8 +432,7 @@ const getPublicProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate("category_id", "name")
-      .populate("discount_id")
-      // .populate("offer_ids") // ✅ populate offers
+      // .populate("discount_id")
       .lean();
 
     if (!product) return sendResponse(res, false, null, "Product not found");
@@ -376,8 +463,7 @@ const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate("category_id", "name")
-      .populate("discount_id")
-      // .populate("offer_ids") // ✅ populate offers
+      // .populate("discount_id")
       .lean();
 
     if (!product) return sendResponse(res, false, null, "Product not found");
@@ -414,11 +500,13 @@ const createProduct = async (req, res) => {
   try {
     const {
       name,
+      tag,
       description,
+      mainCategory_id,
       category_id,
+      type_id,
       status,
-      discount_id,
-      // offer_ids,
+      // discount_id,
       variants,
     } = req.body;
 
@@ -436,12 +524,13 @@ const createProduct = async (req, res) => {
 
     const product = new Product({
       name,
+      tag,
       slug: slugify(name, { lower: true, strict: true }),
       description,
+      mainCategory_id: mainCategory_id || null,
       category_id,
-      discount_id: discount_id || null,
-      // ✅ Save offer_ids array (filter empty strings)
-      // offer_ids: Array.isArray(offer_ids) ? offer_ids.filter((id) => id) : [],
+      type_id: type_id || null,
+      // discount_id: discount_id || null,
       status: status || "active",
       images: productImages,
       createdBy: req.user._id,
@@ -452,20 +541,42 @@ const createProduct = async (req, res) => {
 
     let savedVariants = [];
     if (Array.isArray(variants) && variants.length > 0) {
-      const variantDocs = variants.map((v, idx) => ({
-        ...v,
-        product_id: savedProduct._id,
-        status: v.status || "active",
-        images: Array.isArray(v.images) ? v.images : [],
-        labels: Array.isArray(v.labels) ? v.labels : [],
-        sku: v.sku || `SKU-${Date.now()}-${idx}`,
-        description: v.description || "",
-        price: Number(v.price),
-        stock_quantity: Number(v.stock_quantity),
-        is_featured: !!v.is_featured,
-        is_best_seller: !!v.is_best_seller,
-        is_trending: !!v.is_trending,
-      }));
+      const variantDocs = variants.map((v, idx) => {
+        // Convert dynamicAttributes object { attrId: valId } to Schema array [{ attributeId, valueId }]
+        let formattedAttributes = [];
+        if (v.dynamicAttributes && typeof v.dynamicAttributes === "object") {
+          formattedAttributes = Object.entries(v.dynamicAttributes)
+            .filter(([_, valId]) => valId)
+            .map(([attrId, valId]) => ({
+              attributeId: attrId,
+              valueId: valId,
+            }));
+        } else if (Array.isArray(v.attributes)) {
+          formattedAttributes = v.attributes;
+        }
+
+        return {
+          ...v,
+          brand_id: v.brand_id || null,
+          fabric_id: v.fabric_id || null,
+          type_id: v.type_id || null,
+          color_id: v.color_id || null,
+          size_id: v.size_id || null,
+          attributes: formattedAttributes,
+          product_id: savedProduct._id,
+          status: v.status || "active",
+          images: Array.isArray(v.images) ? v.images : [],
+          labels: Array.isArray(v.labels) ? v.labels : [],
+          sku: v.sku || `SKU-${Date.now()}-${idx}`,
+          description: v.description || "",
+          price: Number(v.price),
+          offerprice: Number(v.offerprice),
+          stock_quantity: Number(v.stock_quantity),
+          is_featured: !!v.is_featured,
+          is_best_seller: !!v.is_best_seller,
+          is_trending: !!v.is_trending,
+        };
+      });
       savedVariants = await ProductVariant.insertMany(variantDocs);
     }
 
@@ -495,19 +606,16 @@ const updateProduct = async (req, res) => {
       return sendResponse(res, false, null, "Forbidden: Not your product");
     }
 
-    // ✅ Update offer_ids array
-    // if (Array.isArray(offer_ids)) {
-    //   productData.offer_ids = offer_ids.filter((oid) => oid);
-    // }
-
     const updatedProduct = await Product.findByIdAndUpdate(id, productData, {
-      new: true,
+      returnDocument: "after",
     });
 
     if (Array.isArray(variants)) {
       for (const v of variants) {
         if (v._id) {
-          await ProductVariant.findByIdAndUpdate(v._id, v, { new: true });
+          await ProductVariant.findByIdAndUpdate(v._id, v, {
+            returnDocument: "after",
+          });
         } else {
           const newVariant = new ProductVariant({ ...v, product_id: id });
           await newVariant.save();
@@ -547,7 +655,7 @@ const updateProductStatus = async (req, res) => {
     const updated = await Product.findByIdAndUpdate(
       id,
       { status },
-      { new: true },
+      { returnDocument: "after" },
     );
     sendResponse(res, true, updated, `Product status updated to ${status}`);
   } catch (err) {

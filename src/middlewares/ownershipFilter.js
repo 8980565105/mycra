@@ -1,18 +1,11 @@
-const { resolveStoreByDomain } = require("../config/domainResolver");
-
-const extractDomain = (req) => {
-  try {
-    const origin = req.headers.origin || "";
-    if (origin) {
-      const url = new URL(origin);
-      return url.host; 
-    }
-
-    const host = req.headers.host || "";
-    return host.toLowerCase();
-  } catch {
-    return req.headers.host?.toLowerCase() || "";
-  }
+const extractStoreId = (req) => {
+  return (
+    req.query.storeId ||
+    req.headers["x-store-id"] ||
+    req.body.storeId ||
+    req.user?.storeId ||
+    null
+  );
 };
 
 const injectOwnershipFilter = async (req, res, next) => {
@@ -42,16 +35,14 @@ const injectOwnershipFilter = async (req, res, next) => {
       return next();
     }
 
-    const domain = extractDomain(req);
-    const storeId = await resolveStoreByDomain(domain);
-    if (!storeId) {
-      return res.status(404).json({
-        success: false,
-        message: `No store found for domain: ${domain}`,
-      });
+    const storeId = extractStoreId(req);
+    if (storeId) {
+      req.storeFilter = { storeId };
+      req.ownershipQuery = { storeId };
+    } else {
+      req.storeFilter = {};
+      req.ownershipQuery = {};
     }
-    req.storeFilter = { storeId };
-    req.ownershipQuery = { storeId };
     next();
   } catch (err) {
     res.status(500).json({
@@ -64,33 +55,40 @@ const injectOwnershipFilter = async (req, res, next) => {
 
 const injectPublicStoreFilter = async (req, res, next) => {
   try {
-    const domain = extractDomain(req);
-    const storeId = await resolveStoreByDomain(domain);
-
-    if (!storeId) {
-      req.storeFilter = null;
-      req.ownershipQuery = {};
-    } else {
+    const storeId = extractStoreId(req);
+    if (storeId) {
       req.storeFilter = { storeId };
       req.ownershipQuery = { storeId };
+    } else {
+      req.storeFilter = {};
+      req.ownershipQuery = {};
     }
     next();
   } catch (err) {
-    req.storeFilter = null;
+    req.storeFilter = {};
     req.ownershipQuery = {};
     next();
   }
 };
 
 const applyOwnershipFilter = (req, baseQuery = {}) => {
-  if (!req.user) return baseQuery;
-  if (req.user.role === "admin") return baseQuery;
+  if (!req.user) {
+    const storeId = extractStoreId(req);
+    if (storeId) baseQuery.storeId = storeId;
+    return baseQuery;
+  }
+  if (req.user.role === "admin") {
+    const storeId = req.query.storeId || req.headers["x-store-id"];
+    if (storeId) baseQuery.storeId = storeId;
+    return baseQuery;
+  }
   if (req.user.role === "store_owner") {
     baseQuery.storeId = req.user.storeId;
     return baseQuery;
   }
-  if (req.storeFilter?.storeId) {
-    baseQuery.storeId = req.storeFilter.storeId;
+  const storeId = extractStoreId(req);
+  if (storeId) {
+    baseQuery.storeId = storeId;
   }
   return baseQuery;
 };
@@ -98,14 +96,21 @@ const applyOwnershipFilter = (req, baseQuery = {}) => {
 const ownershipMiddleware = (field = "storeId") => {
   return async (req, res, next) => {
     req.ownershipQuery = {};
-    if (!req.user) return next();
-    if (req.user.role === "admin") return next();
+    if (!req.user) {
+      const storeId = extractStoreId(req);
+      if (storeId) req.ownershipQuery[field] = storeId;
+      return next();
+    }
+    if (req.user.role === "admin") {
+      const storeId = req.query.storeId || req.headers["x-store-id"];
+      if (storeId) req.ownershipQuery[field] = storeId;
+      return next();
+    }
     if (req.user.role === "store_owner") {
       req.ownershipQuery[field] = req.user.storeId;
       return next();
     }
-    const domain = extractDomain(req);
-    const storeId = await resolveStoreByDomain(domain);
+    const storeId = extractStoreId(req);
     if (storeId) req.ownershipQuery[field] = storeId;
     next();
   };
@@ -116,4 +121,5 @@ module.exports = {
   injectPublicStoreFilter,
   applyOwnershipFilter,
   ownershipMiddleware,
+  extractStoreId,
 };

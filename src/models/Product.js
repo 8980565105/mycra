@@ -4,23 +4,34 @@ const slugify = require("slugify");
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
+    tag: { type: String, default: null },
     description: { type: String },
 
+    mainCategory_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
     category_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "subCategory",
+      ref: "SubCategory",
       required: true,
+    },
+    type_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Type",
+      default: null,
     },
 
     images: [{ type: String }],
 
     slug: { type: String, required: true },
 
-    discount_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Discount",
-      default: null,
-    },
+    // discount_id: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Discount",
+    //   default: null,
+    // },
 
     status: {
       type: String,
@@ -46,7 +57,6 @@ productSchema.pre("save", function (next) {
   if (this.isModified("name") || !this.slug) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
-  // next();
 });
 
 productSchema.index({ name: 1, storeId: 1 }, { unique: true });

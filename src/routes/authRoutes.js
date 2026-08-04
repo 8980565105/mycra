@@ -7,6 +7,9 @@ const {
   forgotPassword,
   resetPassword,
   googleLogin,
+  changePassword,
+  sendRegistrationOtp,
+  verifyRegistrationOtp,
 } = require("../controllers/authController");
 const { authMiddleware } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/upload");
@@ -17,7 +20,11 @@ router.post(
   register,
 );
 
+router.post("/send-registration-otp", sendRegistrationOtp);
+router.post("/verify-registration-otp", verifyRegistrationOtp);
 router.post("/register-store-owner", registerStoreOwner);
+router.put("/change-password", authMiddleware, changePassword);
+
 
 router.post("/login", login);
 router.post("/forgot-password", forgotPassword);

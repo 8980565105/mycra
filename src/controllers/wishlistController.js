@@ -211,7 +211,6 @@ const getWishlistByUser = async (req, res) => {
     const wishlist = await Wishlist.findOne({ user_id: req.params.user_id })
       .populate({
         path: "items.product_id",
-        populate: { path: "discount_id", select: "type value" },
       })
       .populate("items.variant_id");
 
@@ -225,7 +224,7 @@ const getWishlistByUser = async (req, res) => {
 
 const deleteWishlistItem = async (req, res) => {
   try {
-    const { id } = req.params; // item._id
+    const { id } = req.params; 
 
     const wishlist = await Wishlist.findOne({ "items._id": id });
     if (!wishlist)

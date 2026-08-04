@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 const {
@@ -17,8 +16,8 @@ const {
   authorizeMinRole,
 } = require("../middlewares/authMiddleware");
 const {
-  injectPublicStoreFilter, 
-  injectOwnershipFilter, 
+  injectPublicStoreFilter,
+  injectOwnershipFilter,
 } = require("../middlewares/ownershipFilter");
 const upload = require("../middlewares/upload");
 

@@ -29,7 +29,7 @@ categorySchema.pre("validate", function (next) {
   if (!this.slug && this.name) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
-  // next();
+
 });
 categorySchema.index({ name: 1, storeId: 1 }, { unique: true });
 

@@ -13,7 +13,6 @@ const footerRoutes = require("./src/routes/footerRoutes");
 const brandRoutes = require("./src/routes/brandRoutes");
 const typeRoutes = require("./src/routes/typeRoutes");
 const fabricRoutes = require("./src/routes/fabricRoutes");
-const discountRoutes = require("./src/routes/discountRoutes");
 const categoryRoutes = require("./src/routes/categoryRoutes");
 const subcategoryRoutes = require("./src/routes/subcategoryRoutes");
 const productLabelRoutes = require("./src/routes/productLabelRoutes");
@@ -32,7 +31,14 @@ const sizeRoutes = require("./src/routes/sizeRoutes");
 const uploadsRoutes = require("./src/routes/upload");
 const storeRoutes = require("./src/routes/storeRoutes");
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
+const walletRoutes = require("./src/routes/walletRoutes");
+const transectionRoutes = require("./src/routes/transectionRoutes");
+const kycRoutes = require("./src/routes/kycRoutes");
+const sellerRoutes = require("./src/routes/sellerRoutes");
+const businessRoutes = require("./src/routes/businessRoutes");
+const attributeRoutes = require("./src/routes/attributeRoutes");
 const faqs = require("./src/routes/faqsRoute");
+const pageVisitRoutes = require("./src/routes/pageRoutes");
 const helmet = require("helmet");
 
 const mongoose = require("mongoose");
@@ -109,8 +115,6 @@ app.use(
   }),
 );
 
-
-
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -136,7 +140,8 @@ app.use(
   }),
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // app.use("/api/", limiter);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", authRoutes, authLimiter);
@@ -149,11 +154,11 @@ app.use("/api/footer", footerRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/types", typeRoutes);
 app.use("/api/fabrics", fabricRoutes);
-app.use("/api/discounts", discountRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/subcategories", subcategoryRoutes);
 app.use("/api/product-labels", productLabelRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/attributes", attributeRoutes);
 app.use("/api/products/:product_id/variants", productVariantRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/warehouses", warehouseRoutes);
@@ -168,6 +173,12 @@ app.use("/api/sizes", sizeRoutes);
 app.use("/api/uploads", uploadsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/faqs", faqs);
+app.use("/api", pageVisitRoutes);
+app.use("/api/wallet", walletRoutes);
+app.use("/api/transactions", transectionRoutes);
+app.use("/api/kyc", kycRoutes);
+app.use("/api/seller", sellerRoutes);
+app.use("/api/business", businessRoutes);
 
 app.use(errorHandler);
 

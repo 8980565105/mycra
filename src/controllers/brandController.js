@@ -2,23 +2,49 @@ const { default: slugify } = require("slugify");
 const Brand = require("../models/Brand");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
+const { default: mongoose } = require("mongoose");
 
 const getPublicBrands = async (req, res) => {
   try {
-    if (!req.storeFilter || !req.storeFilter.storeId) {
-      return res.json({ success: true, data: [] });
-    }
-
-    const brands = await Brand.find({
-      status: "active",
-      storeId: req.storeFilter.storeId,
-    }).sort({ name: 1 });
+    const brands = await Brand.find({ status: "active" }).sort({ name: 1 });
 
     res.json({ success: true, data: brands });
   } catch (err) {
     sendResponse(res, false, null, err.message);
   }
 };
+
+// const getPublicBrands = async (req, res) => {
+//   try {
+//     const brands = await Brand.aggregate([
+//       {
+//         $match: {
+//           status: "active",
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: "$name",
+//           brand: { $first: "$$ROOT" },
+//         },
+//       },
+//       {
+//         $replaceRoot: {
+//           newRoot: "$brand",
+//         },p
+//       },
+//       {
+//         $sort: {
+//           name: 1,
+//         },
+//       },
+//     ]);
+
+//     sendResponse(res, true, brands, "Brands retrieved successfully");
+//   } catch (err) {
+//     sendResponse(res, false, null, err.message);
+//   }
+// };
 
 const getBrands = async (req, res) => {
   try {
@@ -28,19 +54,79 @@ const getBrands = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
+      role,
+      store
     } = req.query;
     const download = isDownload.toLowerCase() === "true";
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-    const query = {};
-    if (search) query.name = { $regex: search, $options: "i" };
-    if (status && ["active", "inactive"].includes(status)) {
-      query.status = status;
+    const matchStage = {};
+    if (status && ["active", "inactive"].includes(status))
+      matchStage.status = status;
+
+    applyOwnershipFilter(req, matchStage);
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      { $unwind: { path: "$createdBy", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "storeId",
+          foreignField: "_id",
+          as: "storeId",
+        },
+      },
+      { $unwind: { path: "$storeId", preserveNullAndEmptyArrays: true } },
+    ];
+
+    if (role && ["admin", "store_owner"].includes(role)) {
+      pipeline.push({
+        $match: { "createdBy.role": role },
+      });
     }
 
-    applyOwnershipFilter(req, query);
+     if (store) {
+      pipeline.push({
+        $match: {
+          createdBy: {
+            $exists: true,
+          },
+        },
+      });
+
+      pipeline.push({
+        $match: {
+          "createdBy._id": new mongoose.Types.ObjectId(store),
+        },
+      });
+    }
+
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "createdBy.name": { $regex: search, $options: "i" } },
+            { "createdBy.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push({ $sort: { name: 1 } });
 
     if (download) {
-      const brands = await Brand.find(query).sort({ name: 1 });
+      const brands = await Brand.aggregate(pipeline);
       return sendResponse(
         res,
         true,
@@ -49,14 +135,14 @@ const getBrands = async (req, res) => {
       );
     }
 
-    page = parseInt(page);
-    limit = parseInt(limit);
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Brand.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
 
-    const total = await Brand.countDocuments(query);
-    const brands = await Brand.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ name: 1 });
+    pipeline.push({ $skip: (page - 1) * limit });
+    pipeline.push({ $limit: limit });
+
+    const brands = await Brand.aggregate(pipeline);
 
     sendResponse(res, true, {
       brands,
@@ -99,7 +185,7 @@ const createBrand = async (req, res) => {
     description: description || "",
     status: status || "active",
     createdBy: req.user._id,
-    storeId, // ✅ KEY
+    storeId,
   };
 
   try {
@@ -124,7 +210,7 @@ const updateBrand = async (req, res) => {
     const updatedBrand = await Brand.findByIdAndUpdate(
       req.params.id,
       updateData,
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!updatedBrand) return sendResponse(res, false, null, "Brand not found");
@@ -142,7 +228,11 @@ const updateBrandStatus = async (req, res) => {
     if (!["active", "inactive"].includes(status))
       return sendResponse(res, false, null, "Invalid status value");
 
-    const brand = await Brand.findByIdAndUpdate(id, { status }, { new: true });
+    const brand = await Brand.findByIdAndUpdate(
+      id,
+      { status },
+      { returnDocument: "after" },
+    );
     if (!brand) return sendResponse(res, false, null, "Brand not found");
 
     sendResponse(res, true, brand, "Brand status updated successfully");

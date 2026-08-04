@@ -1,27 +1,18 @@
-
 const { default: slugify } = require("slugify");
 const Fabric = require("../models/Fabric");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
-
+const { default: mongoose } = require("mongoose");
 
 const getPublicFabrics = async (req, res) => {
   try {
-    if (!req.storeFilter || !req.storeFilter.storeId) {
-      return res.json({ success: true, data: [] });
-    }
-
-    const fabrics = await Fabric.find({
-      status: "active",
-      storeId: req.storeFilter.storeId,
-    }).sort({ name: 1 });
+    const fabrics = await Fabric.find({ status: "active" }).sort({ name: 1 });
 
     res.json({ success: true, data: fabrics });
   } catch (err) {
     sendResponse(res, false, null, err.message);
   }
 };
-
 
 const getFabrics = async (req, res) => {
   try {
@@ -31,19 +22,78 @@ const getFabrics = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
+      role,
+      store,
     } = req.query;
     const download = isDownload.toLowerCase() === "true";
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-    const query = {};
-    if (search) query.name = { $regex: search, $options: "i" };
-    if (status && ["active", "inactive"].includes(status)) {
-      query.status = status;
+    const matchStage = {};
+    if (status && ["active", "inactive"].includes(status))
+      matchStage.status = status;
+
+    applyOwnershipFilter(req, matchStage);
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      { $unwind: { path: "$createdBy", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "storeId",
+          foreignField: "_id",
+          as: "storeId",
+        },
+      },
+      { $unwind: { path: "$storeId", preserveNullAndEmptyArrays: true } },
+    ];
+
+    if (role && ["admin", "store_owner"].includes(role)) {
+      pipeline.push({
+        $match: { "createdBy.role": role },
+      });
+    }
+if (store) {
+      pipeline.push({
+        $match: {
+          createdBy: {
+            $exists: true,
+          },
+        },
+      });
+
+      pipeline.push({
+        $match: {
+          "createdBy._id": new mongoose.Types.ObjectId(store),
+        },
+      });
     }
 
-    applyOwnershipFilter(req, query);
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "createdBy.name": { $regex: search, $options: "i" } },
+            { "createdBy.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push({ $sort: { name: 1 } });
 
     if (download) {
-      const fabrics = await Fabric.find(query).sort({ name: 1 });
+      const fabrics = await Fabric.aggregate(pipeline);
       return sendResponse(
         res,
         true,
@@ -52,14 +102,14 @@ const getFabrics = async (req, res) => {
       );
     }
 
-    page = parseInt(page);
-    limit = parseInt(limit);
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Fabric.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
 
-    const total = await Fabric.countDocuments(query);
-    const fabrics = await Fabric.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ name: 1 });
+    pipeline.push({ $skip: (page - 1) * limit });
+    pipeline.push({ $limit: limit });
+
+    const fabrics = await Fabric.aggregate(pipeline);
 
     sendResponse(res, true, {
       fabrics,
@@ -88,9 +138,7 @@ const createFabric = async (req, res) => {
     if (!name) return sendResponse(res, false, null, "Name is required");
 
     const storeId =
-      req.user.role === "admin"
-        ? req.body.storeId || null
-        : req.user.storeId;
+      req.user.role === "admin" ? req.body.storeId || null : req.user.storeId;
 
     const existing = await Fabric.findOne({ name, storeId });
     if (existing) {
@@ -102,7 +150,9 @@ const createFabric = async (req, res) => {
       );
     }
 
-    const image_url = req.file ? `/uploads/${req.file.filename}` : image || null;
+    const image_url = req.file
+      ? `/uploads/${req.file.filename}`
+      : image || null;
 
     const fabric = new Fabric({
       name,
@@ -142,9 +192,10 @@ const updateFabric = async (req, res) => {
     const updatedFabric = await Fabric.findByIdAndUpdate(
       req.params.id,
       updateData,
-      { new: true },
+      { returnDocument: "after" },
     );
-    if (!updatedFabric) return sendResponse(res, false, null, "Fabric not found");
+    if (!updatedFabric)
+      return sendResponse(res, false, null, "Fabric not found");
     sendResponse(res, true, updatedFabric, "Fabric updated successfully");
   } catch (err) {
     sendResponse(res, false, null, err.message);
@@ -160,7 +211,11 @@ const updateFabricStatus = async (req, res) => {
       return sendResponse(res, false, null, "Invalid status value");
     }
 
-    const fabric = await Fabric.findByIdAndUpdate(id, { status }, { new: true });
+    const fabric = await Fabric.findByIdAndUpdate(
+      id,
+      { status },
+      { returnDocument: "after" },
+    );
     if (!fabric) return sendResponse(res, false, null, "Fabric not found");
 
     sendResponse(res, true, fabric, "Fabric status updated successfully");
@@ -172,7 +227,8 @@ const updateFabricStatus = async (req, res) => {
 const deleteFabric = async (req, res) => {
   try {
     const deletedFabric = await Fabric.findByIdAndDelete(req.params.id);
-    if (!deletedFabric) return sendResponse(res, false, null, "Fabric not found");
+    if (!deletedFabric)
+      return sendResponse(res, false, null, "Fabric not found");
     sendResponse(res, true, null, "Fabric deleted successfully");
   } catch (err) {
     sendResponse(res, false, null, err.message);
@@ -182,9 +238,7 @@ const deleteFabric = async (req, res) => {
 const bulkDeleteFabrics = async (req, res) => {
   try {
     const { ids } = req.body;
-    // if (!ids || !ids.length)
-    if(!Array.isArray(ids) || ids.length === 0)
-  
+    if (!Array.isArray(ids) || ids.length === 0)
       return sendResponse(res, false, null, "No IDs provided");
 
     const result = await Fabric.deleteMany({ _id: { $in: ids } });

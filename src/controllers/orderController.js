@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Discount = require("../models/Discount");
+// const Discount = require("../models/Discount");
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const Packing = require("../models/paking");
@@ -89,15 +89,15 @@ const getTrackingUrl = (partner, awb) => {
   return urls[safeString(partner)] || "";
 };
 
-const isDiscountValid = (discount) => {
-  const now = new Date();
-  return (
-    discount &&
-    discount.status === "active" &&
-    discount.start_date <= now &&
-    discount.end_date >= now
-  );
-};
+// const isDiscountValid = (discount) => {
+//   const now = new Date();
+//   return (
+//     discount &&
+//     discount.status === "active" &&
+//     discount.start_date <= now &&
+//     discount.end_date >= now
+//   );
+// };
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 1. GET ALL ORDERS  — admin & store_owner only (authenticated)
@@ -118,6 +118,8 @@ const getOrders = async (req, res) => {
       endDate,
       minPrice,
       maxPrice,
+      role,
+      store,
     } = req.query;
 
     page = parseInt(page, 10);
@@ -126,7 +128,8 @@ const getOrders = async (req, res) => {
     if (isNaN(page) || page < 1) page = 1;
     if (isNaN(limit) || limit < 1) limit = 10;
     const download = safeString(isDownload).toLowerCase() === "true";
-    const role = req.user?.role;
+    // const role = req.user?.role;
+    const userRole = req.user?.role;
     if (role === "store_user") {
       return sendResponse(
         res,
@@ -137,6 +140,21 @@ const getOrders = async (req, res) => {
     }
 
     const orderMatch = {};
+
+    if (role === "admin") {
+      orderMatch.store_owner_id = null;
+    }
+
+    if (role === "store_owner") {
+      orderMatch.store_owner_id = {
+        $ne: null,
+      };
+    }
+
+    // Store Filter
+    if (store) {
+      orderMatch.store_owner_id = new mongoose.Types.ObjectId(store);
+    }
 
     const safeSearch = safeString(search);
     if (safeSearch) {
@@ -164,7 +182,7 @@ const getOrders = async (req, res) => {
       orderMatch.status = safeStatus;
     }
 
-    if (user && role === "admin") {
+    if (user && userRole === "admin") {
       const userArray = safeObjectIdArray(user);
       if (userArray.length > 0) {
         orderMatch.user_id = { $in: userArray };
@@ -214,7 +232,7 @@ const getOrders = async (req, res) => {
       }
     }
 
-    if (role === "store_owner") {
+    if (userRole === "store_owner") {
       const ownerProducts = await Product.find(
         { createdBy: req.user._id },
         { _id: 1 },
@@ -293,6 +311,20 @@ const getOrders = async (req, res) => {
                 ],
               },
             },
+            {
+              $lookup: {
+                from: "users",
+                localField: "store_owner_id",
+                foreignField: "_id",
+                as: "storeOwner",
+              },
+            },
+            {
+              $unwind: {
+                path: "$storeOwner",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
             { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
             { $unwind: { path: "$variant", preserveNullAndEmptyArrays: true } },
             { $match: Object.keys(itemMatch).length ? itemMatch : {} },
@@ -310,6 +342,21 @@ const getOrders = async (req, res) => {
       { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
       { $sort: { createdAt: -1 } },
     ];
+
+    // if (role && ["admin", "store_owner"].includes(role)) {
+    //   pipeline.push({
+    //     $match: {
+    //       "storeOwner.role": role,
+    //     },
+    //   });
+    // }
+    // if (store) {
+    //   pipeline.push({
+    //     $match: {
+    //       "storeOwner._id": new mongoose.Types.ObjectId(store),
+    //     },
+    //   });
+    // }
 
     if (!download) {
       pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
@@ -504,6 +551,7 @@ const createOrder = async (req, res) => {
       shippingAddress,
       payment_method = "COD",
       transaction_id,
+      shipping = 0,
     } = req.body;
 
     const items = safeArray(req.body.items);
@@ -511,7 +559,7 @@ const createOrder = async (req, res) => {
       return sendResponse(res, false, null, "No items provided");
     }
 
-    let total_price = 0;
+    let subtotal = 0;
     const orderItems = [];
     let store_owner_id = null;
 
@@ -534,18 +582,19 @@ const createOrder = async (req, res) => {
       }
 
       let price = variant.price;
-      const discount_id = variant.product_id.discount_id;
-      if (discount_id) {
-        const discount = await Discount.findById(discount_id);
-        if (isDiscountValid(discount)) {
-          if (discount.type === "percentage")
-            price = price - (price * discount.value) / 100;
-          else if (discount.type === "fixed") price = price - discount.value;
-          if (price < 0) price = 0;
-        }
-      }
+      // const discount_id = variant.product_id.discount_id;
+      // if (discount_id) {
+      //   const discount = await Discount.findById(discount_id);
+      //   if (isDiscountValid(discount)) {
+      //     if (discount.type === "percentage")
+      //       price = price - (price * discount.value) / 100;
+      //     else if (discount.type === "fixed") price = price - discount.value;
+      //     if (price < 0) price = 0;
+      //   }
+      // }
 
-      total_price += price * item.quantity;
+      // total_price += price * item.quantity;
+      subtotal += price * item.quantity;
       variant.stock_quantity -= item.quantity;
       await variant.save();
 
@@ -557,6 +606,12 @@ const createOrder = async (req, res) => {
         price_at_order: price,
       });
     }
+    const safeSubtotal = Number(subtotal.toFixed(2));
+    const safeTaxes = Number((safeSubtotal * 0.1).toFixed(2)); // 10% tax rule
+    const safeShipping = Number(shipping) || 0;
+    const total_price = Number(
+      (safeSubtotal + safeTaxes + safeShipping).toFixed(2),
+    );
 
     const order = new Order({
       user_id,
@@ -1484,16 +1539,16 @@ const updateOrder = async (req, res) => {
         );
 
       let price = variant.price;
-      const discount_id = variant.product_id.discount_id;
-      if (discount_id) {
-        const discount = await Discount.findById(discount_id);
-        if (isDiscountValid(discount)) {
-          if (discount.type === "percentage")
-            price = price - (price * discount.value) / 100;
-          else if (discount.type === "fixed") price = price - discount.value;
-          if (price < 0) price = 0;
-        }
-      }
+      // const discount_id = variant.product_id.discount_id;
+      // if (discount_id) {
+      //   const discount = await Discount.findById(discount_id);
+      //   if (isDiscountValid(discount)) {
+      //     if (discount.type === "percentage")
+      //       price = price - (price * discount.value) / 100;
+      //     else if (discount.type === "fixed") price = price - discount.value;
+      //     if (price < 0) price = 0;
+      //   }
+      // }
 
       total_price += price * item.quantity;
       variant.stock_quantity -= item.quantity;
@@ -1545,7 +1600,7 @@ const updateOrderStatus = async (req, res) => {
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       { status },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!order) return sendResponse(res, false, null, "Order not found");
     sendResponse(res, true, order, "Order status updated successfully");

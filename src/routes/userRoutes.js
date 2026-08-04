@@ -10,7 +10,13 @@ const {
   updateOwnProfile,
   getOwnProfile,
   deleteOwnProfile,
+  getUserTracking,
   updateUserStatus,
+  addAddress,
+  getAddresses,
+  updateAddress,
+  deleteAddress,
+  setDefaultAddress,
 } = require("../controllers/userController");
 const {
   authMiddleware,
@@ -31,8 +37,14 @@ router.put(
   updateOwnProfile,
 );
 router.delete("/me", deleteOwnProfile);
+router.get("/me/addresses", getAddresses);
+router.post("/me/addresses", addAddress);
+router.put("/me/addresses/:addressId", updateAddress);
+router.delete("/me/addresses/:addressId", deleteAddress);
+router.put("/me/addresses/:addressId/default", setDefaultAddress);
 router.get("/", authorizeMinRole("store_owner"), getUsers);
 router.get("/:id", authorizeMinRole("admin"), getUserById);
+router.get("/:id/tracking", authorizeMinRole("admin"), getUserTracking);
 router.post(
   "/",
   authorizeMinRole("admin"),
@@ -56,5 +68,4 @@ router.put(
 router.put("/:id/status", authorizeMinRole("store_owner"), updateUserStatus);
 router.delete("/:id", authorizeMinRole("store_owner"), deleteUser);
 router.post("/bulk-delete", authorizeMinRole("store_owner"), bulkDeleteUsers);
-
 module.exports = router;

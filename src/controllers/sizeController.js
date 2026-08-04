@@ -1,20 +1,11 @@
 const Size = require("../models/Size");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
+const { default: mongoose } = require("mongoose");
 
-// ═══════════════════════════════════════════════════════════════════
-// PUBLIC — Frontend mate (domain thhi storeId resolve)
-// ═══════════════════════════════════════════════════════════════════
 const getPublicSizes = async (req, res) => {
   try {
-    if (!req.storeFilter?.storeId) {
-      return res.json({ success: true, data: [] });
-    }
-
-    const sizes = await Size.find({
-      status: "active",
-      storeId: req.storeFilter.storeId,
-    }).sort({ name: 1 });
+    const sizes = await Size.find({ status: "active" }).sort({ name: 1 });
 
     res.json({ success: true, data: sizes });
   } catch (err) {
@@ -22,7 +13,41 @@ const getPublicSizes = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
+// const getPublicSizes = async (req, res) => {
+//   try {
+//     const sizes = await Size.aggregate([
+//       {
+//         $match: {
+//           status: "active",
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: {
+//             name: "$name",
+//             measurement: "$measurement",
+//           },
+//           size: { $first: "$$ROOT" },
+//         },
+//       },
+//       {
+//         $replaceRoot: {
+//           newRoot: "$size",
+//         },
+//       },
+//       {
+//         $sort: {
+//           name: 1,
+//         },
+//       },
+//     ]);
+
+//     sendResponse(res, true, sizes, "Sizes retrieved successfully");
+//   } catch (err) {
+//     sendResponse(res, false, null, err.message);
+//   }
+// };
+
 const getSizes = async (req, res) => {
   try {
     let {
@@ -31,19 +56,79 @@ const getSizes = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
+      role,
+      store,
     } = req.query;
     const download = isDownload.toLowerCase() === "true";
+    page = Number.parseInt(page);
+    limit = Number.parseInt(limit);
 
-    const query = {};
-    if (search) query.name = { $regex: search, $options: "i" };
-    if (status && ["active", "inactive"].includes(status)) {
-      query.status = status;
+    const matchStage = {};
+    if (status && ["active", "inactive"].includes(status))
+      matchStage.status = status;
+
+    applyOwnershipFilter(req, matchStage);
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      { $unwind: { path: "$createdBy", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "storeId",
+          foreignField: "_id",
+          as: "storeId",
+        },
+      },
+      { $unwind: { path: "$storeId", preserveNullAndEmptyArrays: true } },
+    ];
+
+    if (role && ["admin", "store_owner"].includes(role)) {
+      pipeline.push({
+        $match: { "createdBy.role": role },
+      });
     }
 
-    applyOwnershipFilter(req, query);
+    if (store) {
+      pipeline.push({
+        $match: {
+          createdBy: {
+            $exists: true,
+          },
+        },
+      });
+
+      pipeline.push({
+        $match: {
+          "createdBy._id": new mongoose.Types.ObjectId(store),
+        },
+      });
+    }
+
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "createdBy.name": { $regex: search, $options: "i" } },
+            { "createdBy.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push({ $sort: { name: 1 } });
 
     if (download) {
-      const sizes = await Size.find(query).sort({ name: 1 });
+      const sizes = await Size.aggregate(pipeline);
       return sendResponse(
         res,
         true,
@@ -52,14 +137,14 @@ const getSizes = async (req, res) => {
       );
     }
 
-    page = Number.parseInt(page);
-    limit = Number.parseInt(limit);
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Size.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
 
-    const total = await Size.countDocuments(query);
-    const sizes = await Size.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ name: 1 });
+    pipeline.push({ $skip: (page - 1) * limit });
+    pipeline.push({ $limit: limit });
+
+    const sizes = await Size.aggregate(pipeline);
 
     sendResponse(res, true, {
       sizes,
@@ -126,7 +211,7 @@ const createSize = async (req, res) => {
 const updateSize = async (req, res) => {
   try {
     const updatedSize = await Size.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+      returnDocument: "after",
     });
     if (!updatedSize) return sendResponse(res, false, null, "Size not found");
     sendResponse(res, true, updatedSize, "Size updated successfully");
@@ -144,7 +229,11 @@ const updateSizeStatus = async (req, res) => {
       return sendResponse(res, false, null, "Invalid status value");
     }
 
-    const size = await Size.findByIdAndUpdate(id, { status }, { new: true });
+    const size = await Size.findByIdAndUpdate(
+      id,
+      { status },
+      { returnDocument: "after" },
+    );
     if (!size) return sendResponse(res, false, null, "Size not found");
 
     sendResponse(res, true, size, "Size status updated successfully");

@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 
 const couponSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true }, 
-    code: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    code: { type: String, required: true },
     description: { type: String, required: false },
     discount_type: {
       type: String,
@@ -27,9 +27,15 @@ const couponSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    storeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      default: null,
+    },
   },
   { timestamps: true },
 );
-couponSchema.index({ name: 1, createdBy: 1 }, { unique: true });
+
+couponSchema.index({ code: 1, storeId: 1 }, { unique: true });
 
 module.exports = mongoose.model("Coupon", couponSchema);

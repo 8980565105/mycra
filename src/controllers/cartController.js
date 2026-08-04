@@ -11,71 +11,107 @@ const getCarts = async (req, res) => {
     const userRole = req.user?.role;
     const userId = req.user?._id;
 
-    let query = {};
-
-    if (userRole === "store_owner") {
-      query["items.store_owner_id"] = userId;
-    } else if (userRole === "admin") {
-    } else {
+    if (userRole !== "store_owner" && userRole !== "admin") {
       return sendResponse(res, false, null, "Forbidden: Insufficient role");
-    }
-
-    if (search) {
-      const matchingUsers = await User.find({
-        $or: [
-          { name: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-        ],
-      }).select("_id");
-
-      const userIds = matchingUsers.map((u) => u._id);
-      query.user_id = { $in: userIds };
-    }
-
-    if (download) {
-      let carts = await Cart.find(query)
-        .populate("user_id", "name email")
-        .populate("items.product_id", "name image images")
-        .populate("items.variant_id", "price color size sku image images")
-        .sort({ createdAt: -1 });
-
-      if (userRole === "store_owner") {
-        carts = carts
-          .map((cart) => ({
-            ...cart.toObject(),
-            items: cart.items.filter(
-              (item) => item.store_owner_id?.toString() === userId.toString(),
-            ),
-          }))
-          .filter((cart) => cart.items.length > 0);
-      }
-
-      return sendResponse(res, true, { carts }, "All carts for download");
     }
 
     page = parseInt(page);
     limit = parseInt(limit);
 
-    const total = await Cart.countDocuments(query);
-
-    let carts = await Cart.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .populate("user_id", "name email")
-      .populate("items.product_id", "name image images")
-      .populate("items.variant_id", "price color size sku image images");
+    const pipeline = [{ $unwind: "$items" }];
 
     if (userRole === "store_owner") {
-      carts = carts
-        .map((cart) => ({
-          ...cart.toObject(),
-          items: cart.items.filter(
-            (item) => item.store_owner_id?.toString() === userId.toString(),
-          ),
-        }))
-        .filter((cart) => cart.items.length > 0);
+      pipeline.push({
+        $match: { "items.store_owner_id": new mongoose.Types.ObjectId(userId) },
+      });
     }
+
+    pipeline.push(
+      {
+        $lookup: {
+          from: "users",
+          localField: "user_id",
+          foreignField: "_id",
+          as: "user_id",
+        },
+      },
+      { $unwind: "$user_id" },
+    );
+
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { "user_id.name": { $regex: search, $options: "i" } },
+            { "user_id.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+    pipeline.push(
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.product_id",
+          foreignField: "_id",
+          as: "items.product_id",
+        },
+      },
+      {
+        $unwind: {
+          path: "$items.product_id",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "productvariants",
+          localField: "items.variant_id",
+          foreignField: "_id",
+          as: "items.variant_id",
+        },
+      },
+      {
+        $unwind: {
+          path: "$items.variant_id",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    );
+
+    if (download) {
+      const rows = await Cart.aggregate(pipeline);
+      const grouped = {};
+      rows.forEach((r) => {
+        const key = r._id.toString();
+        if (!grouped[key]) {
+          grouped[key] = { ...r, items: [] };
+        }
+        grouped[key].items.push(r.items);
+      });
+      return sendResponse(
+        res,
+        true,
+        { carts: Object.values(grouped) },
+        "All carts for download",
+      );
+    }
+
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Cart.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
+
+    pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
+
+    const rows = await Cart.aggregate(pipeline);
+
+    const carts = rows.map((r) => ({
+      _id: r._id,
+      user_id: r.user_id,
+      createdAt: r.createdAt,
+      items: [r.items],
+    }));
 
     sendResponse(res, true, {
       carts,
@@ -94,8 +130,7 @@ const getCartById = async (req, res) => {
       .populate("user_id", "name email")
       .populate({
         path: "items.product_id",
-        select: "name price image images discount_id createdBy",
-        populate: { path: "discount_id", select: "type value" },
+        select: "name price image images createdBy",
       })
       .populate("items.variant_id", "color size sku price image images");
 
@@ -150,8 +185,7 @@ const addCartItem = async (req, res) => {
     const populatedCart = await Cart.findById(cart._id)
       .populate({
         path: "items.product_id",
-        select: "name price image images discount_id createdBy",
-        populate: { path: "discount_id", select: "type value" },
+        select: "name price image images createdBy",
       })
       .populate("items.variant_id", "color size sku price image images");
 
@@ -193,8 +227,7 @@ const deleteCartItem = async (req, res) => {
     const populatedCart = await Cart.findById(cart._id)
       .populate({
         path: "items.product_id",
-        select: "name price image images discount_id",
-        populate: { path: "discount_id", select: "type value" },
+        select: "name price image images",
       })
       .populate("items.variant_id", "color size sku price image images");
 
@@ -247,3 +280,4 @@ module.exports = {
   deleteCart,
   bulkDeleteCartItems,
 };
+

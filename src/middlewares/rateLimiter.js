@@ -5,7 +5,7 @@ const limiter = rateLimit({
   max: 100, // દરેક IP માટે 10 મિનિટમાં વધુમાં વધુ 100 રિક્વેસ્ટ
   skip: (req) => req.ip === "127.0.0.1",
   skip: (req) => {
-    req.ip === "localhost:3030";
+    req.ip === "localhost:3000";
   },
   message: {
     status: 429,

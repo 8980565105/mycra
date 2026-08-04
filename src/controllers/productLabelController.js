@@ -2,20 +2,13 @@ const ProductLabel = require("../models/ProductLabel");
 const { default: slugify } = require("slugify");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
+const { default: mongoose } = require("mongoose");
 
-// ═══════════════════════════════════════════════════════════════════
-// PUBLIC — Frontend mate (domain thhi storeId resolve)
-// ═══════════════════════════════════════════════════════════════════
 const getPublicProductLabels = async (req, res) => {
   try {
-    if (!req.storeFilter || !req.storeFilter.storeId) {
-      return res.json({ success: true, data: [] });
-    }
-
-    const labels = await ProductLabel.find({
-      status: "active",
-      storeId: req.storeFilter.storeId,
-    }).sort({ name: 1 });
+    const labels = await ProductLabel.find({ status: "active" }).sort({
+      name: 1,
+    });
 
     res.json({ success: true, data: labels });
   } catch (err) {
@@ -23,7 +16,6 @@ const getPublicProductLabels = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
 const getProductLabels = async (req, res) => {
   try {
     let {
@@ -32,19 +24,78 @@ const getProductLabels = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
+      role,
+      store,
     } = req.query;
     const download = isDownload.toLowerCase() === "true";
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-    const query = {};
-    if (search) query.name = { $regex: search, $options: "i" };
-    if (status && ["active", "inactive"].includes(status)) {
-      query.status = status;
+    const matchStage = {};
+    if (status && ["active", "inactive"].includes(status))
+      matchStage.status = status;
+
+    applyOwnershipFilter(req, matchStage);
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      { $unwind: { path: "$createdBy", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "storeId",
+          foreignField: "_id",
+          as: "storeId",
+        },
+      },
+      { $unwind: { path: "$storeId", preserveNullAndEmptyArrays: true } },
+    ];
+
+    if (role && ["admin", "store_owner"].includes(role)) {
+      pipeline.push({
+        $match: { "createdBy.role": role },
+      });
     }
 
-    applyOwnershipFilter(req, query);
+    if (store) {
+      pipeline.push({
+        $match: {
+          createdBy: {
+            $exists: true,
+          },
+        },
+      });
+
+      pipeline.push({
+        $match: {
+          "createdBy._id": new mongoose.Types.ObjectId(store),
+        },
+      });
+    }
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "createdBy.name": { $regex: search, $options: "i" } },
+            { "createdBy.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push({ $sort: { name: 1 } });
 
     if (download) {
-      const labels = await ProductLabel.find(query).sort({ name: 1 });
+      const labels = await ProductLabel.aggregate(pipeline);
       return sendResponse(
         res,
         true,
@@ -53,14 +104,14 @@ const getProductLabels = async (req, res) => {
       );
     }
 
-    page = parseInt(page);
-    limit = parseInt(limit);
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await ProductLabel.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
 
-    const total = await ProductLabel.countDocuments(query);
-    const labels = await ProductLabel.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ name: 1 });
+    pipeline.push({ $skip: (page - 1) * limit });
+    pipeline.push({ $limit: limit });
+
+    const labels = await ProductLabel.aggregate(pipeline);
 
     sendResponse(res, true, {
       labels,
@@ -84,7 +135,6 @@ const getProductLabelById = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
 const createProductLabel = async (req, res) => {
   try {
     const { name, slug, color, status } = req.body;
@@ -133,7 +183,7 @@ const updateProductLabel = async (req, res) => {
     const updatedLabel = await ProductLabel.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!updatedLabel)
       return sendResponse(res, false, null, "Product label not found");
@@ -155,7 +205,7 @@ const updateProductLabelStatus = async (req, res) => {
     const label = await ProductLabel.findByIdAndUpdate(
       id,
       { status },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!label)
       return sendResponse(res, false, null, "Product label not found");

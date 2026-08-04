@@ -25,6 +25,12 @@ const subcategorySchema = new mongoose.Schema(
       ref: "User",
       required: false,
     },
+    allowedAttributes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Attribute",
+      },
+    ],
   },
   { timestamps: true },
 );
@@ -33,8 +39,9 @@ subcategorySchema.pre("validate", function (next) {
   if (!this.slug && this.name) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
-  // next();
 });
 subcategorySchema.index({ name: 1, storeId: 1 }, { unique: true });
 
-module.exports = mongoose.model("subCategory", subcategorySchema);
+module.exports =
+  mongoose.models.SubCategory ||
+  mongoose.model("SubCategory", subcategorySchema);

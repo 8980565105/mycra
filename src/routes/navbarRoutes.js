@@ -25,21 +25,21 @@ const {
 router.get("/public", injectPublicStoreFilter, getPublicNavbars);
 router.use(authMiddleware);
 router.get("/", injectOwnershipFilter, getNavbars);
-router.get("/:id", authorizeMinRole("store_owner"), getNavbarById);
+router.get("/:id", authorizeMinRole("admin"), getNavbarById);
 router.post(
   "/",
-  authorizeMinRole("store_owner"),
+  authorizeMinRole("admin"),
   upload.single("image"),
   createNavbar,
 );
 router.put(
   "/:id",
-  authorizeMinRole("store_owner"),
+  authorizeMinRole("admin"),
   upload.single("image"),
   updateNavbar,
 );
-router.put("/:id/status", authorizeMinRole("store_owner"), updateNavbarStatus);
-router.delete("/:id", authorizeMinRole("store_owner"), deleteNavbar);
-router.post("/bulk-delete", authorizeMinRole("store_owner"), bulkDeleteNavbars);
+router.put("/:id/status", authorizeMinRole("admin"), updateNavbarStatus);
+router.delete("/:id", authorizeMinRole("admin"), deleteNavbar);
+router.post("/bulk-delete", authorizeMinRole("admin"), bulkDeleteNavbars);
 
 module.exports = router;

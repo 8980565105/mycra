@@ -1,8 +1,7 @@
-
-
 const Coupon = require("../models/Coupon");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
+const { default: mongoose } = require("mongoose");
 
 const generateCouponCode = (length = 8) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -21,35 +20,86 @@ const getCoupons = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
+      role,
+      store,
     } = req.query;
     const download = isDownload.toLowerCase() === "true";
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-    const query = {};
+    const matchStage = {};
+
+    if (!req.user) {
+      matchStage.status = "active";
+    } else {
+      if (status && ["active", "inactive"].includes(status)) {
+        matchStage.status = status;
+      }
+      // ✅ Category/Subcategory ni jem — admin => all, store_owner => potanu j
+      applyOwnershipFilter(req, matchStage);
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdByUser",
+        },
+      },
+      { $unwind: { path: "$createdByUser", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "storeId",
+          foreignField: "_id",
+          as: "storeId",
+        },
+      },
+      { $unwind: { path: "$storeId", preserveNullAndEmptyArrays: true } },
+    ];
+
+    if (role && ["admin", "store_owner"].includes(role)) {
+      pipeline.push({
+        $match: { "createdBy.role": role },
+      });
+    }
+
+    if (store) {
+      pipeline.push({
+        $match: {
+          createdBy: {
+            $exists: true,
+          },
+        },
+      });
+
+      pipeline.push({
+        $match: {
+          "createdBy._id": new mongoose.Types.ObjectId(store),
+        },
+      });
+    }
 
     if (search) {
-      query.$or = [
-        { code: { $regex: search, $options: "i" } },
-        { name: { $regex: search, $options: "i" } },
-      ];
+      pipeline.push({
+        $match: {
+          $or: [
+            { code: { $regex: search, $options: "i" } },
+            { name: { $regex: search, $options: "i" } },
+            { "createdByUser.name": { $regex: search, $options: "i" } },
+            { "createdByUser.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
     }
 
-    const userRole = req.user?.role;
-
-    if (!req.user || userRole === "store_user") {
-      query.status = "active";
-    } else if (userRole === "store_owner") {
-      query.createdBy = req.user.id;
-      if (status && ["active", "inactive"].includes(status)) {
-        query.status = status;
-      }
-    } else if (userRole === "admin") {
-      if (status && ["active", "inactive"].includes(status)) {
-        query.status = status;
-      }
-    }
+    pipeline.push({ $sort: { createdAt: -1 } });
 
     if (download) {
-      const coupons = await Coupon.find(query).sort({ createdAt: -1 });
+      const coupons = await Coupon.aggregate(pipeline);
       return sendResponse(
         res,
         true,
@@ -58,14 +108,14 @@ const getCoupons = async (req, res) => {
       );
     }
 
-    page = parseInt(page);
-    limit = parseInt(limit);
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Coupon.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
 
-    const total = await Coupon.countDocuments(query);
-    const coupons = await Coupon.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ createdAt: -1 });
+    pipeline.push({ $skip: (page - 1) * limit });
+    pipeline.push({ $limit: limit });
+
+    const coupons = await Coupon.aggregate(pipeline);
 
     sendResponse(res, true, {
       coupons,
@@ -92,20 +142,42 @@ const createCoupon = async (req, res) => {
   try {
     let { code } = req.body;
 
+    // ✅ Category/Brand ni jem storeId set karo
+    const storeId =
+      req.user.role === "admin" ? req.body.storeId || null : req.user.storeId;
+
     if (!code) {
       code = generateCouponCode();
       req.body.code = code;
     }
 
-    const existingCoupon = await Coupon.findOne({ code });
+    // ✅ code check — hamna storeId ma j unique check karo (globally nahi)
+    const existingCoupon = await Coupon.findOne({ code, storeId });
     if (existingCoupon) {
-      return sendResponse(res, false, null, "Coupon code already exists");
+      return sendResponse(
+        res,
+        false,
+        null,
+        "Coupon code already exists in this store",
+      );
     }
 
-    const coupon = new Coupon({ ...req.body, createdBy: req.user.id });
+    const coupon = new Coupon({
+      ...req.body,
+      createdBy: req.user.id,
+      storeId,
+    });
     const savedCoupon = await coupon.save();
     sendResponse(res, true, savedCoupon, "Coupon created successfully");
   } catch (err) {
+    if (err.code === 11000) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        "Coupon code already exists in this store",
+      );
+    }
     sendResponse(res, false, null, err.message);
   }
 };
@@ -113,19 +185,28 @@ const createCoupon = async (req, res) => {
 const updateCoupon = async (req, res) => {
   try {
     if (req.body.code) {
+      const coupon = await Coupon.findById(req.params.id);
+      if (!coupon) return sendResponse(res, false, null, "Coupon not found");
+
       const existingCoupon = await Coupon.findOne({
         code: req.body.code,
+        storeId: coupon.storeId,
         _id: { $ne: req.params.id },
       });
       if (existingCoupon) {
-        return sendResponse(res, false, null, "Coupon code already exists");
+        return sendResponse(
+          res,
+          false,
+          null,
+          "Coupon code already exists in this store",
+        );
       }
     }
 
     const updatedCoupon = await Coupon.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!updatedCoupon)
@@ -149,7 +230,7 @@ const updateCouponStatus = async (req, res) => {
     const coupon = await Coupon.findByIdAndUpdate(
       id,
       { status },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!coupon) {

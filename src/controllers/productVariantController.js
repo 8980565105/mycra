@@ -42,7 +42,7 @@ const updateVariant = async (req, res) => {
     const updatedVariant = await ProductVariant.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true },
+      {  returnDocument: 'after'  },
     );
     if (!updatedVariant)
       return sendResponse(res, false, null, "Variant not found");

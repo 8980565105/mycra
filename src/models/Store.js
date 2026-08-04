@@ -34,6 +34,7 @@ const storeSchema = new mongoose.Schema(
       buttonColor: { type: String, default: "#007bff" },
       faviconUrl: { type: String },
       logoUrl: { type: String },
+      mobilelogoUrl: { type: String },
       fontFamily: { type: String, default: "Roboto" },
       footerText: { type: String },
       copyrightText: { type: String },
