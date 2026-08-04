@@ -27,17 +27,14 @@ const productSchema = new mongoose.Schema(
 
     slug: { type: String, required: true },
 
-    // discount_id: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "Discount",
-    //   default: null,
-    // },
-
     status: {
       type: String,
       enum: ["active", "inactive"],
       default: "active",
     },
+    is_featured: { type: Boolean, default: false },
+    is_best_seller: { type: Boolean, default: false },
+    is_trending: { type: Boolean, default: false },
     storeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",

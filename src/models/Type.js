@@ -7,13 +7,6 @@ const typeSchema = new mongoose.Schema(
     slug: { type: String },
     description: { type: String, default: "" },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
-
-    // subCategoryId: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "SubCategory",
-    //   default: null,
-    //   index: true,
-    // },
     subCategoryId: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -46,7 +39,7 @@ typeSchema.pre("save", function (next) {
   if (this.isModified("name")) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
-  // next();
+ 
 });
 
 typeSchema.index({ name: 1, storeId: 1 }, { unique: true });

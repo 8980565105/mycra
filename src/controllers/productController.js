@@ -303,9 +303,7 @@ const getProducts = async (req, res) => {
     });
 
     if (role && ["admin", "store_owner"].includes(role)) {
-      // pipeline.push({
-      //   $match: { "createdBy.role": role },
-      // });
+  
       pipeline.push({
         $match: {
           "createdByUser.role": role,
@@ -354,38 +352,6 @@ const getProducts = async (req, res) => {
       { $unwind: { path: "$createdByUser", preserveNullAndEmptyArrays: true } },
     ];
 
-    // if (role && ["admin", "store_owner"].includes(role)) {
-    //   pipeline.push({
-    //     $match: { "createdBy.role": role },
-    //   });
-    // }
-    // if (store) {
-    //   pipeline.push({
-    //     $match: {
-    //       createdBy: {
-    //         $exists: true,
-    //       },
-    //     },
-    //   });
-
-    //   pipeline.push({
-    //     $match: {
-    //       "createdBy._id": new mongoose.Types.ObjectId(store),
-    //     },
-    //   });
-    // }
-    // if (search) {
-    //   countPipeline.push({
-    //     $match: {
-    //       $or: [
-    //         { name: { $regex: search, $options: "i" } },
-    //         { "createdByUser.name": { $regex: search, $options: "i" } },
-    //         { "createdByUser.email": { $regex: search, $options: "i" } },
-    //       ],
-    //     },
-    //   });
-    // }
-
     countPipeline.push(
       {
         $lookup: {
@@ -432,7 +398,6 @@ const getPublicProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate("category_id", "name")
-      // .populate("discount_id")
       .lean();
 
     if (!product) return sendResponse(res, false, null, "Product not found");
@@ -463,7 +428,6 @@ const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate("category_id", "name")
-      // .populate("discount_id")
       .lean();
 
     if (!product) return sendResponse(res, false, null, "Product not found");
@@ -480,6 +444,8 @@ const getProductById = async (req, res) => {
       .populate("type_id", "name")
       .populate("size_id", "name")
       .populate("color_id", "name code")
+      .populate("attributes.attributeId", "name")
+      .populate("attributes.valueId", "value")
       .lean();
 
     sendResponse(
@@ -506,7 +472,6 @@ const createProduct = async (req, res) => {
       category_id,
       type_id,
       status,
-      // discount_id,
       variants,
     } = req.body;
 
@@ -521,7 +486,6 @@ const createProduct = async (req, res) => {
 
     const storeId =
       req.user.role === "admin" ? req.body.storeId || null : req.user.storeId;
-
     const product = new Product({
       name,
       tag,
@@ -530,19 +494,19 @@ const createProduct = async (req, res) => {
       mainCategory_id: mainCategory_id || null,
       category_id,
       type_id: type_id || null,
-      // discount_id: discount_id || null,
       status: status || "active",
+      is_featured: !!req.body.is_featured,
+      is_best_seller: !!req.body.is_best_seller,
+      is_trending: !!req.body.is_trending,
       images: productImages,
       createdBy: req.user._id,
       storeId,
     });
 
     const savedProduct = await product.save();
-
     let savedVariants = [];
     if (Array.isArray(variants) && variants.length > 0) {
       const variantDocs = variants.map((v, idx) => {
-        // Convert dynamicAttributes object { attrId: valId } to Schema array [{ attributeId, valueId }]
         let formattedAttributes = [];
         if (v.dynamicAttributes && typeof v.dynamicAttributes === "object") {
           formattedAttributes = Object.entries(v.dynamicAttributes)
@@ -551,10 +515,7 @@ const createProduct = async (req, res) => {
               attributeId: attrId,
               valueId: valId,
             }));
-        } else if (Array.isArray(v.attributes)) {
-          formattedAttributes = v.attributes;
         }
-
         return {
           ...v,
           brand_id: v.brand_id || null,
@@ -595,6 +556,7 @@ const createProduct = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════
 // PUT /products/:id
 // ═══════════════════════════════════════════════════════════════════
+
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -607,20 +569,79 @@ const updateProduct = async (req, res) => {
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(id, productData, {
-      returnDocument: "after",
+      new: true,
     });
 
     if (Array.isArray(variants)) {
+      const incomingIds = variants.filter((v) => v._id).map((v) => v._id);
+
+      await ProductVariant.deleteMany({
+        product_id: id,
+        _id: { $nin: incomingIds },
+      });
+
       for (const v of variants) {
+        let formattedAttributes = [];
+        if (v.dynamicAttributes && typeof v.dynamicAttributes === "object") {
+          formattedAttributes = Object.entries(v.dynamicAttributes)
+            .filter(([_, valId]) => valId)
+            .map(([attrId, valId]) => ({
+              attributeId: attrId,
+              valueId: valId,
+            }));
+        } else if (Array.isArray(v.attributes)) {
+          formattedAttributes = v.attributes;
+        }
+        const variantPayload = {
+          brand_id: v.brand_id || null,
+          fabric_id: v.fabric_id || null,
+          type_id: v.type_id || null,
+          color_id: v.color_id || null,
+          size_id: v.size_id || null,
+          attributes: formattedAttributes,
+          status: v.status || "active",
+          images: Array.isArray(v.images) ? v.images : [],
+          labels: Array.isArray(v.labels) ? v.labels : [],
+          sku: v.sku,
+          description: v.description || "",
+          price: Number(v.price),
+          offerprice: Number(v.offerprice),
+          stock_quantity: Number(v.stock_quantity),
+          is_featured: !!v.is_featured,
+          is_best_seller: !!v.is_best_seller,
+          is_trending: !!v.is_trending,
+          variantLabel: v.variantLabel || "",
+        };
         if (v._id) {
-          await ProductVariant.findByIdAndUpdate(v._id, v, {
-            returnDocument: "after",
+          await ProductVariant.findByIdAndUpdate(v._id, variantPayload, {
+            new: true,
           });
         } else {
-          const newVariant = new ProductVariant({ ...v, product_id: id });
-          await newVariant.save();
+          try {
+            const newVariant = new ProductVariant({
+              ...variantPayload,
+              product_id: id,
+              sku:
+                v.sku ||
+                `SKU-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            });
+            await newVariant.save();
+          } catch (err) {
+            if (err.code === 11000) {
+              const retryVariant = new ProductVariant({
+                ...variantPayload,
+                product_id: id,
+                sku: `${v.sku || "SKU"}-${Date.now().toString(36).slice(-4).toUpperCase()}`,
+              });
+              await retryVariant.save();
+            } else {
+              throw err;
+            }
+          }
         }
       }
+    } else {
+      await ProductVariant.deleteMany({ product_id: id });
     }
 
     sendResponse(
@@ -630,6 +651,7 @@ const updateProduct = async (req, res) => {
       "Product and variants updated successfully",
     );
   } catch (err) {
+    console.error("❌ updateProduct error:", err);
     sendResponse(res, false, null, err.message);
   }
 };

@@ -32,13 +32,6 @@ const getTypes = async (req, res) => {
     if (status && ["active", "inactive"].includes(status))
       matchStage.status = status;
 
-    // if (req.query.subCategoryId || req.query.subCategory) {
-    //   const subCatId = req.query.subCategoryId || req.query.subCategory;
-    //   if (mongoose.Types.ObjectId.isValid(subCatId)) {
-    //     matchStage.subCategoryId = new mongoose.Types.ObjectId(subCatId);
-    //   }
-    // }
-
     if (req.query.subCategoryId || req.query.subCategory) {
       const subCatId = req.query.subCategoryId || req.query.subCategory;
       if (mongoose.Types.ObjectId.isValid(subCatId)) {
@@ -47,8 +40,9 @@ const getTypes = async (req, res) => {
         };
       }
     }
-    applyOwnershipFilter(req, matchStage);
-
+    if (req.user.role === "store_owner") {
+      matchStage.$or = [{ storeId: null }, { storeId: req.user.storeId }];
+    }
     const pipeline = [
       { $match: matchStage },
       {
@@ -194,20 +188,6 @@ const createType = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-
-// const updateType = async (req, res) => {
-//   try {
-//     const updatedType = await Type.findByIdAndUpdate(req.params.id, req.body, {
-//       returnDocument: "after",
-//     })
-//       .populate("subCategoryId")
-//       .populate("allowedAttributes");
-//     if (!updatedType) return sendResponse(res, false, null, "Type not found");
-//     sendResponse(res, true, updatedType, "Type updated successfully");
-//   } catch (err) {
-//     sendResponse(res, false, null, err.message);
-//   }
-// };
 
 const updateType = async (req, res) => {
   try {

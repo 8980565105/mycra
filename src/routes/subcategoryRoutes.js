@@ -28,25 +28,25 @@ router.get("/all", injectPublicStoreFilter, getAllsubCategories);
 router.get("/:id", authorizeMinRole("store_owner"), getsubCategoryById);
 router.post(
   "/",
-  authorizeMinRole("store_owner"),
+  authorizeMinRole("admin"),
   upload.single("image"),
   createsubCategory,
 );
 router.put(
   "/:id",
-  authorizeMinRole("store_owner"),
+  authorizeMinRole("admin"),
   upload.single("image"),
   updatesubCategory,
 );
 router.put(
   "/:id/status",
-  authorizeMinRole("store_owner"),
+  authorizeMinRole("admin"),
   updatesubCategoryStatus,
 );
-router.delete("/:id", authorizeMinRole("store_owner"), deletesubCategory);
+router.delete("/:id", authorizeMinRole("admin"), deletesubCategory);
 router.post(
   "/bulk-delete",
-  authorizeMinRole("store_owner"),
+  authorizeMinRole("admin"),
   bulkDeletesubCategories,
 );
 

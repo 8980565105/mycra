@@ -25,10 +25,10 @@ router.get("/public", injectPublicStoreFilter, getPublicTypes);
 router.use(authMiddleware);
 router.get("/", injectOwnershipFilter, getTypes);
 router.get("/:id", getTypeById);
-router.post("/", authorizeMinRole("store_owner"), createType);
-router.put("/:id", authorizeMinRole("store_owner"), updateType);
-router.put("/:id/status", authorizeMinRole("store_owner"), updateTypeStatus);
-router.delete("/:id", authorizeMinRole("store_owner"), deleteType);
-router.post("/bulk-delete", authorizeMinRole("store_owner"), bulkDeleteTypes);
+router.post("/", authorizeMinRole("admin"), createType);
+router.put("/:id", authorizeMinRole("admin"), updateType);
+router.put("/:id/status", authorizeMinRole("admin"), updateTypeStatus);
+router.delete("/:id", authorizeMinRole("admin"), deleteType);
+router.post("/bulk-delete", authorizeMinRole("admin"), bulkDeleteTypes);
 
 module.exports = router;

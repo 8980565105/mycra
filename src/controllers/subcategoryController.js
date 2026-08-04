@@ -17,65 +17,6 @@ const getAllsubCategories = async (req, res) => {
   }
 };
 
-// const getAllsubCategories = async (req, res) => {
-//   try {
-//     const subcategories = await SubCategory.aggregate([
-//       {
-//         $match: {
-//           status: "active",
-//         },
-//       },
-//       {
-//         $lookup: {
-//           from: "categories",
-//           localField: "parent_id",
-//           foreignField: "_id",
-//           as: "parent_id",
-//         },
-//       },
-//       {
-//         $unwind: {
-//           path: "$parent_id",
-//           preserveNullAndEmptyArrays: true,
-//         },
-//       },
-
-//       // Duplicate name remove
-//       {
-//         $group: {
-//           _id: {
-//             name: "$name",
-//           },
-//           subcategory: {
-//             $first: "$$ROOT",
-//           },
-//         },
-//       },
-
-//       {
-//         $replaceRoot: {
-//           newRoot: "$subcategory",
-//         },
-//       },
-
-//       {
-//         $sort: {
-//           name: 1,
-//         },
-//       },
-//     ]);
-
-//     sendResponse(
-//       res,
-//       true,
-//       subcategories,
-//       "SubCategories retrieved successfully"
-//     );
-//   } catch (err) {
-//     sendResponse(res, false, null, err.message);
-//   }
-// };
-
 const getsubCategories = async (req, res) => {
   try {
     let {
@@ -102,7 +43,10 @@ const getsubCategories = async (req, res) => {
       }
     }
 
-    applyOwnershipFilter(req, matchStage);
+    // applyOwnershipFilter(req, matchStage);
+    if (req.user.role === "store_owner") {
+      matchStage.$or = [{ storeId: null }, { storeId: req.user.storeId }];
+    }
 
     const pipeline = [
       { $match: matchStage },
@@ -217,7 +161,15 @@ const getsubCategoryById = async (req, res) => {
 // CREATE — storeId auto set
 // ═══════════════════════════════════════════════════════════════════
 const createsubCategory = async (req, res) => {
-  const { name, slug, parent_id, image, status, description, allowedAttributes } = req.body;
+  const {
+    name,
+    slug,
+    parent_id,
+    image,
+    status,
+    description,
+    allowedAttributes,
+  } = req.body;
 
   if (!name)
     return res
@@ -240,7 +192,9 @@ const createsubCategory = async (req, res) => {
     parent_id,
     image_url,
     description: description || "",
-    allowedAttributes: Array.isArray(allowedAttributes) ? allowedAttributes : [],
+    allowedAttributes: Array.isArray(allowedAttributes)
+      ? allowedAttributes
+      : [],
     status: status || "active",
     createdBy: req.user._id,
     storeId,
