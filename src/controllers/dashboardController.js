@@ -6,12 +6,8 @@ const OrderItem = require("../models/OrderItem");
 const Payment = require("../models/Payment");
 const User = require("../models/User");
 const Store = require("../models/Store");
-const Brand = require("../models/Brand");
 const Type = require("../models/Type");
-const Fabric = require("../models/Fabric");
 const ProductLabel = require("../models/ProductLabel");
-const Color = require("../models/Color");
-const Size = require("../models/Size");
 const Coupon = require("../models/Coupon");
 const { sendResponse } = require("../utils/response");
 const getDashboard = async (req, res) => {
@@ -100,22 +96,10 @@ const getDashboard = async (req, res) => {
     const totalSubCategories = await SubCategory.countDocuments(
       isAdmin ? {} : { createdBy: ownerId },
     );
-    const totalBrands = await Brand.countDocuments(
-      isAdmin ? {} : { createdBy: ownerId },
-    );
     const totalTypes = await Type.countDocuments(
       isAdmin ? {} : { createdBy: ownerId },
     );
-    const totalFabrics = await Fabric.countDocuments(
-      isAdmin ? {} : { createdBy: ownerId },
-    );
     const totalProductLabels = await ProductLabel.countDocuments(
-      isAdmin ? {} : { createdBy: ownerId },
-    );
-    const totalColors = await Color.countDocuments(
-      isAdmin ? {} : { createdBy: ownerId },
-    );
-    const totalSizes = await Size.countDocuments(
       isAdmin ? {} : { createdBy: ownerId },
     );
     const pendingOrders = await Order.countDocuments({
@@ -346,12 +330,8 @@ const getDashboard = async (req, res) => {
       activeStores,
       totalOrders,
       totalUsers,
-      totalBrands,
       totalTypes,
-      totalFabrics,
       totalProductLabels,
-      totalColors,
-      totalSizes,
       totalRevenue,
       activeCoupons,
       salesOverview,

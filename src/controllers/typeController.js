@@ -168,15 +168,34 @@ const createType = async (req, res) => {
     const storeId =
       req.user.role === "admin" ? req.body.storeId || null : req.user.storeId;
 
+    const subCategoryIds = Array.isArray(subCategoryId)
+      ? subCategoryId
+      : subCategoryId
+        ? [subCategoryId]
+        : [];
+
+    if (subCategoryIds.length > 0) {
+      const existingType = await Type.findOne({
+        subCategoryId: { $in: subCategoryIds },
+        storeId: storeId,
+        name: { $regex: `^${name.trim()}$`, $options: "i" },
+      });
+
+      if (existingType) {
+        return sendResponse(
+          res,
+          false,
+          null,
+          "A type with this name already exists in the selected subcategory",
+        );
+      }
+    }
+
     const type = new Type({
       name,
       description: description || "",
       status: status || "active",
-      subCategoryId: Array.isArray(subCategoryId)
-        ? subCategoryId
-        : subCategoryId
-          ? [subCategoryId]
-          : [],
+      subCategoryId: subCategoryIds,
       allowedAttributes: allowedAttributes || [],
       createdBy: req.user._id,
       storeId,
@@ -195,6 +214,25 @@ const updateType = async (req, res) => {
     if (updateData.subCategoryId && !Array.isArray(updateData.subCategoryId)) {
       updateData.subCategoryId = [updateData.subCategoryId];
     }
+
+    if (updateData.name && updateData.subCategoryId?.length > 0) {
+      const existingType = await Type.findOne({
+        _id: { $ne: req.params.id }, 
+        subCategoryId: { $in: updateData.subCategoryId },
+        storeId: updateData.storeId ?? undefined,
+        name: { $regex: `^${updateData.name.trim()}$`, $options: "i" },
+      });
+
+      if (existingType) {
+        return sendResponse(
+          res,
+          false,
+          null,
+          "A type with this name already exists in the selected subcategory",
+        );
+      }
+    }
+
     const updatedType = await Type.findByIdAndUpdate(
       req.params.id,
       updateData,

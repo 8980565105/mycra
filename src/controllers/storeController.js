@@ -6,11 +6,7 @@ const OrderItem = require("../models/OrderItem");
 const User = require("../models/User");
 const Category = require("../models/Category");
 const Subcategory = require("../models/Subcategory");
-const Brand = require("../models/Brand");
 const Type = require("../models/Type");
-const Fabric = require("../models/Fabric");
-const Color = require("../models/Color");
-const Size = require("../models/Size");
 const ProductLabel = require("../models/ProductLabel");
 const ProductVariant = require("../models/ProductVariant");
 const mongoose = require("mongoose");
@@ -305,32 +301,6 @@ const bulkDeleteStores = async (req, res) => {
   }
 };
 
-// const getStoreByDomain = async (req, res) => {
-//   try {
-//     const origin = req.headers.origin || "";
-//     let domain = "";
-//     if (origin) {
-//       const url = new URL(origin);
-//       domain = url.host.toLowerCase();
-//     } else {
-//       domain = (req.headers.host || "").toLowerCase();
-//     }
-
-//     const store = await Store.findOne({ domain, status: "active" });
-
-//     if (!store) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Store not found for this domain",
-//       });
-//     }
-
-//     res.json({ success: true, data: store });
-//   } catch (err) {
-//     res.status(500).json({ success: false, message: err.message });
-//   }
-// };
-
 const getMyStore = async (req, res) => {
   try {
     const storeId = req.user.storeId;
@@ -529,11 +499,11 @@ const getStoreDashboard = async (req, res) => {
       ProductsWise,
       categoryWise,
       subCategoryWise,
-      brandWise,
+      // brandWise,
       typeWise,
-      fabricWise,
-      colorWise,
-      sizeWise,
+      // fabricWise,
+      // colorWise,
+      // sizeWise,
       productLabelWise,
       recentOrderItems,
     ] = await Promise.all([
@@ -550,11 +520,11 @@ const getStoreDashboard = async (req, res) => {
       getMasterListFacet(Product, ownerId),
       getMasterListFacet(Category, ownerId),
       getMasterListFacet(Subcategory, ownerId),
-      getMasterListFacet(Brand, ownerId),
+      // getMasterListFacet(Brand, ownerId),
       getMasterListFacet(Type, ownerId),
-      getMasterListFacet(Fabric, ownerId),
-      getMasterListFacet(Color, ownerId),
-      getMasterListFacet(Size, ownerId),
+      // getMasterListFacet(Fabric, ownerId),
+      // getMasterListFacet(Color, ownerId),
+      // getMasterListFacet(Size, ownerId),
       getMasterListFacet(ProductLabel, ownerId),
 
       Order.aggregate([
@@ -640,11 +610,11 @@ const getStoreDashboard = async (req, res) => {
         ProductsWise,
         categoryWise,
         subCategoryWise,
-        brandWise,
+        // brandWise,
         typeWise,
-        fabricWise,
-        colorWise,
-        sizeWise,
+        // fabricWise,
+        // colorWise,
+        // sizeWise,
         productLabelWise,
         recentOrderItems,
       },

@@ -7,29 +7,7 @@ const productVariantSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
-
-    brand_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Brand",
-      required: false,
-    },
-    fabric_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Fabric",
-      required: false,
-    },
     type_id: { type: mongoose.Schema.Types.ObjectId, ref: "Type" },
-
-    color_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Color",
-      required: false,
-    },
-    size_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Size",
-      required: false,
-    },
     attributes: [
       {
         attributeId: {
@@ -59,9 +37,6 @@ const productVariantSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active",
     },
-    is_featured: { type: Boolean, default: false },
-    is_best_seller: { type: Boolean, default: false },
-    is_trending: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

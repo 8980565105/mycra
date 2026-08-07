@@ -35,7 +35,6 @@ const getCoupons = async (req, res) => {
       if (status && ["active", "inactive"].includes(status)) {
         matchStage.status = status;
       }
-      // ✅ Category/Subcategory ni jem — admin => all, store_owner => potanu j
       applyOwnershipFilter(req, matchStage);
     }
 
@@ -142,7 +141,7 @@ const createCoupon = async (req, res) => {
   try {
     let { code } = req.body;
 
-    // ✅ Category/Brand ni jem storeId set karo
+  
     const storeId =
       req.user.role === "admin" ? req.body.storeId || null : req.user.storeId;
 
@@ -151,7 +150,6 @@ const createCoupon = async (req, res) => {
       req.body.code = code;
     }
 
-    // ✅ code check — hamna storeId ma j unique check karo (globally nahi)
     const existingCoupon = await Coupon.findOne({ code, storeId });
     if (existingCoupon) {
       return sendResponse(

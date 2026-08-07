@@ -51,7 +51,24 @@ const settingSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-settingSchema.index({ storeId: 1 }, { unique: true, sparse: true });
-settingSchema.index({ user: 1 }, { unique: true, sparse: true });
+settingSchema.index(
+  { storeId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { storeId: { $type: "objectId" } },
+  }
+);
+settingSchema.index(
+  { user: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { user: { $type: "objectId" } },
+  }
+);
 
-module.exports = mongoose.model("Setting", settingSchema);
+const Setting = mongoose.model("Setting", settingSchema);
+
+Setting.collection.dropIndex("storeId_1").catch(() => {});
+Setting.collection.dropIndex("user_1").catch(() => {});
+
+module.exports = Setting;

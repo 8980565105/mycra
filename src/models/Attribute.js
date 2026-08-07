@@ -5,11 +5,6 @@ const attributeSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     code: { type: String, required: true, trim: true },
-    inputType: {
-      type: String,
-      enum: ["select", "multi-select", "text", "number"],
-      default: "select",
-    },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     storeId: {
       type: mongoose.Schema.Types.ObjectId,

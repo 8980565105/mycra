@@ -63,14 +63,7 @@ const buildPipeline = ({
               ...variantMatch,
             },
           },
-          {
-            $lookup: {
-              from: "brands",
-              localField: "brand_id",
-              foreignField: "_id",
-              as: "brand",
-            },
-          },
+          
           {
             $lookup: {
               from: "types",
@@ -79,37 +72,10 @@ const buildPipeline = ({
               as: "type",
             },
           },
-          {
-            $lookup: {
-              from: "fabrics",
-              localField: "fabric_id",
-              foreignField: "_id",
-              as: "fabric",
-            },
-          },
-          {
-            $lookup: {
-              from: "colors",
-              localField: "color_id",
-              foreignField: "_id",
-              as: "color",
-            },
-          },
-          {
-            $lookup: {
-              from: "sizes",
-              localField: "size_id",
-              foreignField: "_id",
-              as: "size",
-            },
-          },
+        
           {
             $addFields: {
-              brand_id: { $arrayElemAt: ["$brand", 0] },
               type_id: { $arrayElemAt: ["$type", 0] },
-              fabric_id: { $arrayElemAt: ["$fabric", 0] },
-              color_id: { $arrayElemAt: ["$color", 0] },
-              size_id: { $arrayElemAt: ["$size", 0] },
             },
           },
           {
@@ -120,11 +86,66 @@ const buildPipeline = ({
             },
           },
           {
+            $unwind: {
+              path: "$attributes",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
             $lookup: {
-              from: "labels",
-              localField: "labels",
+              from: "attributes",
+              localField: "attributes.attributeId",
               foreignField: "_id",
-              as: "labelsInfo",
+              as: "attributes.attributeId",
+            },
+          },
+          {
+            $unwind: {
+              path: "$attributes.attributeId",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $lookup: {
+              from: "attributevalues",
+              localField: "attributes.valueId",
+              foreignField: "_id",
+              as: "attributes.valueId",
+            },
+          },
+          {
+            $unwind: {
+              path: "$attributes.valueId",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $group: {
+              _id: "$_id",
+              product_id: { $first: "$product_id" },
+              sku: { $first: "$sku" },
+              price: { $first: "$price" },
+              offerprice: { $first: "$offerprice" },
+              mrp: { $first: "$mrp" },
+              stock_quantity: { $first: "$stock_quantity" },
+              images: { $first: "$images" },
+              type_id: { $first: "$type_id" },
+              type: { $first: "$type" },
+              labels: { $first: "$labels" },
+              labelsInfo: { $first: "$labelsInfo" },
+              is_trending: { $first: "$is_trending" },
+              is_best_seller: { $first: "$is_best_seller" },
+              createdAt: { $first: "$createdAt" },
+              updatedAt: { $first: "$updatedAt" },
+              attributes: {
+                $push: {
+                  $cond: [
+                    { $gt: ["$attributes", null] },
+                    "$attributes",
+                    "$$REMOVE",
+                  ],
+                },
+              },
             },
           },
         ],
@@ -132,6 +153,46 @@ const buildPipeline = ({
       },
     },
     { $match: { "variants.0": { $exists: true } } },
+    {
+      $lookup: {
+        from: "customerreviews",
+        let: { productId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$product_id", "$$productId"] },
+                  { $eq: ["$is_approved", true] },
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              avgRating: { $avg: "$rating" },
+              totalReviews: { $sum: 1 },
+            },
+          },
+        ],
+        as: "reviewStats",
+      },
+    },
+    {
+      $addFields: {
+        averageRating: {
+          $round: [
+            { $ifNull: [{ $arrayElemAt: ["$reviewStats.avgRating", 0] }, 0] },
+            1,
+          ],
+        },
+        totalReviews: {
+          $ifNull: [{ $arrayElemAt: ["$reviewStats.totalReviews", 0] }, 0],
+        },
+      },
+    },
+    { $project: { reviewStats: 0 } },
     { $sort: { createdAt: -1 } },
   );
 
@@ -150,11 +211,7 @@ const getPublicProducts = async (req, res) => {
       search = "",
       isDownload = "false",
       categories,
-      brands,
-      sizes,
       types,
-      fabrics,
-      colors,
       minPrice,
       maxPrice,
     } = req.query;
@@ -174,48 +231,13 @@ const getPublicProducts = async (req, res) => {
         $in: categoryArray.map((id) => new mongoose.Types.ObjectId(id)),
       };
     }
-
     const variantMatch = {};
-    if (brands) {
-      const brandsArray = Array.isArray(brands)
-        ? brands
-        : typeof brands === "string"
-          ? brands.split(",")
-          : [];
-      variantMatch.brand_id = {
-        $in: brandsArray.map((id) => new mongoose.Types.ObjectId(id)),
-      };
-    }
-    if (sizes) {
-      const sizesArray = Array.isArray(sizes)
-        ? sizes
-        : String(sizes).split(",");
-      variantMatch.size_id = {
-        $in: sizesArray.map((id) => new mongoose.Types.ObjectId(id)),
-      };
-    }
     if (types) {
       const typesArray = Array.isArray(types)
         ? types
         : String(types).split(",");
       variantMatch.type_id = {
         $in: typesArray.map((id) => new mongoose.Types.ObjectId(id)),
-      };
-    }
-    if (fabrics) {
-      const fabricsArray = Array.isArray(fabrics)
-        ? fabrics
-        : String(fabrics).split(",");
-      variantMatch.fabric_id = {
-        $in: fabricsArray.map((id) => new mongoose.Types.ObjectId(id)),
-      };
-    }
-    if (colors) {
-      const colorsArray = Array.isArray(colors)
-        ? colors
-        : String(colors).split(",");
-      variantMatch.color_id = {
-        $in: colorsArray.map((id) => new mongoose.Types.ObjectId(id)),
       };
     }
     if (minPrice || maxPrice) {
@@ -257,6 +279,92 @@ const getPublicProducts = async (req, res) => {
     const countResult = await Product.aggregate(countPipeline);
     const totalCount = countResult[0]?.total || 0;
 
+   
+   
+    const priceStatsPipeline = [
+      { $match: productMatch },
+      {
+        $lookup: {
+          from: "productvariants",
+          let: { productId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$product_id", "$$productId"] },
+              },
+            },
+          ],
+          as: "variants",
+        },
+      },
+      { $unwind: "$variants" },
+      {
+        $group: {
+          _id: null,
+          actualMin: { $min: "$variants.price" },
+          actualMax: { $max: "$variants.price" },
+        },
+      },
+    ];
+    const filteredStatsPipeline = [
+      { $match: productMatch },
+      {
+        $lookup: {
+          from: "productvariants",
+          let: { productId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$product_id", "$$productId"] },
+                ...variantMatch,
+              },
+            },
+          ],
+          as: "variants",
+        },
+      },
+      { $unwind: "$variants" },
+      {
+        $group: {
+          _id: null,
+          filteredMin: { $min: "$variants.price" },
+          filteredMax: { $max: "$variants.price" },
+        },
+      },
+    ];
+
+    const [overallStatsRes, filteredStatsRes] = await Promise.all([
+      Product.aggregate(priceStatsPipeline),
+      Product.aggregate(filteredStatsPipeline),
+    ]);
+
+    const actualMin = overallStatsRes[0]?.actualMin ?? 0;
+    const actualMax = overallStatsRes[0]?.actualMax ?? 5000;
+    const filteredMin = filteredStatsRes[0]?.filteredMin ?? actualMin;
+    const filteredMax = filteredStatsRes[0]?.filteredMax ?? actualMax;
+
+
+    const priceRange = filteredMax - filteredMin;
+    let step = 500;
+    if (priceRange > 10000) step = 2000;
+    else if (priceRange > 5000) step = 1000;
+    else if (priceRange > 2000) step = 500;
+    else step = 100;
+
+    const displayMin = Math.max(0, Math.floor(filteredMin / step) * step);
+    const displayMax = Math.ceil(filteredMax / step) * step || (actualMax || 5000);
+
+    const priceMetadata = {
+      actualMin,
+      actualMax,
+      selectedMin: minPrice ? Number(minPrice) : actualMin,
+      selectedMax: maxPrice ? Number(maxPrice) : actualMax,
+      displayMin,
+      displayMax,
+      filteredMin,
+      filteredMax,
+    };
+
     res.json({
       success: true,
       data: {
@@ -264,6 +372,7 @@ const getPublicProducts = async (req, res) => {
         total: totalCount,
         page,
         pages: Math.ceil(totalCount / limit),
+        price: priceMetadata,
       },
     });
   } catch (err) {
@@ -403,11 +512,9 @@ const getPublicProductById = async (req, res) => {
     if (!product) return sendResponse(res, false, null, "Product not found");
 
     const variants = await ProductVariant.find({ product_id: product._id })
-      .populate("brand_id", "name")
-      .populate("fabric_id", "name")
       .populate("type_id", "name")
-      .populate("size_id", "name")
-      .populate("color_id", "name code")
+      .populate("attributes.attributeId", "name code")
+      .populate("attributes.valueId", "value colorHex")
       .lean();
 
     sendResponse(
@@ -439,11 +546,7 @@ const getProductById = async (req, res) => {
     }
 
     const variants = await ProductVariant.find({ product_id: product._id })
-      .populate("brand_id", "name")
-      .populate("fabric_id", "name")
       .populate("type_id", "name")
-      .populate("size_id", "name")
-      .populate("color_id", "name code")
       .populate("attributes.attributeId", "name")
       .populate("attributes.valueId", "value")
       .lean();

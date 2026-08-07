@@ -2,15 +2,12 @@ const Attribute = require("../models/Attribute");
 const AttributeValue = require("../models/AttributeValue");
 const SubCategory = require("../models/Subcategory");
 
-// --- ATTRIBUTES ---
-
 exports.createAttribute = async (req, res) => {
   try {
-    const { name, code, inputType, status, storeId } = req.body;
+    const { name, code, status, storeId } = req.body;
     const attribute = new Attribute({
       name,
       code,
-      inputType,
       status: status || "active",
       storeId: storeId || req.user?.storeId || null,
       createdBy: req.user?._id,
@@ -78,7 +75,6 @@ exports.deleteAttribute = async (req, res) => {
   }
 };
 
-// --- ATTRIBUTE VALUES ---
 
 exports.createAttributeValue = async (req, res) => {
   try {
@@ -140,7 +136,6 @@ exports.deleteAttributeValue = async (req, res) => {
   }
 };
 
-// --- CATEGORY ATTRIBUTES FETCH ---
 
 exports.getCategoryAttributesWithValues = async (req, res) => {
   try {
@@ -162,7 +157,6 @@ exports.getCategoryAttributesWithValues = async (req, res) => {
           _id: attr._id,
           name: attr.name,
           code: attr.code,
-          inputType: attr.inputType,
           values: values.map((v) => ({ _id: v._id, value: v.value, colorHex: v.colorHex })),
         };
       })
@@ -178,16 +172,31 @@ exports.getTypeAttributesWithValues = async (req, res) => {
   try {
     const { typeId } = req.params;
     const Type = require("../models/Type");
-    const typeObj = await Type.findById(typeId).populate("allowedAttributes");
+    
+    const typeIds = typeId.includes(",") ? typeId.split(",") : [typeId];
+    
+    const types = await Type.find({ _id: { $in: typeIds } }).populate("allowedAttributes");
 
-    if (!typeObj) {
-      return res.status(404).json({ success: false, message: "Product Category (Type) not found" });
+    if (!types || types.length === 0) {
+      return res.status(404).json({ success: false, message: "Product Type(s) not found" });
     }
 
-    const attributes = typeObj.allowedAttributes || [];
+    const attributeMap = new Map();
+
+    for (const typeObj of types) {
+      const attributes = typeObj.allowedAttributes || [];
+      for (const attr of attributes) {
+        if (!attr) continue;
+        if (!attributeMap.has(attr._id.toString())) {
+          attributeMap.set(attr._id.toString(), attr);
+        }
+      }
+    }
+
+    const uniqueAttributes = Array.from(attributeMap.values());
+
     const result = await Promise.all(
-      attributes.map(async (attr) => {
-        if (!attr) return null;
+      uniqueAttributes.map(async (attr) => {
         const values = await AttributeValue.find({
           attributeId: attr._id,
           status: "active",
@@ -196,7 +205,49 @@ exports.getTypeAttributesWithValues = async (req, res) => {
           _id: attr._id,
           name: attr.name,
           code: attr.code,
-          inputType: attr.inputType,
+          values: values.map((v) => ({ _id: v._id, value: v.value, colorHex: v.colorHex })),
+        };
+      })
+    );
+
+    res.json({ success: true, data: result.filter(Boolean) });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getMultipleTypeAttributesWithValues = async (req, res) => {
+  try {
+    const { typeIds } = req.body;
+    if (!Array.isArray(typeIds) || typeIds.length === 0) {
+      return res.status(400).json({ success: false, message: "typeIds array is required" });
+    }
+
+    const Type = require("../models/Type");
+    const types = await Type.find({ _id: { $in: typeIds } }).populate("allowedAttributes");
+
+    const attributeMap = new Map();
+
+    for (const typeObj of types) {
+      const attributes = typeObj.allowedAttributes || [];
+      for (const attr of attributes) {
+        if (!attr) continue;
+        if (!attributeMap.has(attr._id.toString())) {
+          attributeMap.set(attr._id.toString(), attr);
+        }
+      }
+    }
+    const uniqueAttributes = Array.from(attributeMap.values());
+    const result = await Promise.all(
+      uniqueAttributes.map(async (attr) => {
+        const values = await AttributeValue.find({
+          attributeId: attr._id,
+          status: "active",
+        });
+        return {
+          _id: attr._id,
+          name: attr.name,
+          code: attr.code,
           values: values.map((v) => ({ _id: v._id, value: v.value, colorHex: v.colorHex })),
         };
       })

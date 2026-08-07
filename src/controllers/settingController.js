@@ -5,12 +5,13 @@ const getUserSettings = async (req, res) => {
   try {
     const userId = req.user._id;
     const storeId = req.user.storeId || null;
-
-    const query = storeId ? { storeId } : { user: userId };
-    const setting = await Setting.findOne(query);
-
+    let query = storeId ? { storeId } : { storeId: null };
+    let setting = await Setting.findOne(query);
+    if (!setting && !storeId) {
+      setting = await Setting.findOne({});
+    }
     if (!setting) {
-      return sendResponse(res, true, null, "No settings found for this user");
+      return sendResponse(res, true, null, "No settings found");
     }
     sendResponse(res, true, setting, "User settings fetched successfully");
   } catch (err) {
@@ -23,26 +24,30 @@ const updateUserSettings = async (req, res) => {
     const userId = req.user._id;
     const storeId = req.user.storeId || null;
     const data = req.body;
-
-    const query = storeId ? { storeId } : { user: userId };
-
-    let setting = await Setting.findOne(query);
+    let setting = null;
+    if (storeId) {
+      setting = await Setting.findOne({ storeId });
+    } else {
+      setting = (await Setting.findOne({ storeId: null })) || (await Setting.findOne({}));
+    }
 
     if (setting) {
-      setting = await Setting.findOneAndUpdate(query, data, {
-        returnDocument: "after",
-      });
-      sendResponse(res, true, setting, "Settings updated successfully");
+      setting = await Setting.findByIdAndUpdate(
+        setting._id,
+        { ...data, user: userId, storeId: storeId },
+        { returnDocument: "after", runValidators: true }
+      );
     } else {
-      setting = new Setting({
+      setting = await Setting.create({
         ...data,
         user: userId,
         storeId: storeId,
       });
-      await setting.save();
-      sendResponse(res, true, setting, "Settings created successfully");
     }
+
+    sendResponse(res, true, setting, "Settings saved successfully");
   } catch (err) {
+    console.error("Update Settings Error:", err);
     sendResponse(res, false, null, err.message);
   }
 };
@@ -55,6 +60,10 @@ const getPublicSettings = async (req, res) => {
 
     if (storeId) {
       setting = await Setting.findOne({ storeId });
+    }
+
+    if (!setting) {
+      setting = await Setting.findOne({ storeId: null });
     }
 
     if (!setting) {

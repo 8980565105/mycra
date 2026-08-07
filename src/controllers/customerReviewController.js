@@ -132,10 +132,20 @@ const getReviewById = async (req, res) => {
 
 const createReview = async (req, res) => {
   try {
-    const { product_id, rating, title, comment, is_approved } = req.body;
+    const { rating, title, comment, is_approved } = req.body;
+    let product_id = req.body.product_id || req.body.productId || req.body.product;
+
+    if (product_id && typeof product_id === "object") {
+      product_id = product_id._id || product_id.id;
+    }
 
     if (!product_id) {
       return sendResponse(res, false, null, "product_id is required");
+    }
+
+    let user_id = req.body.user_id || req.body.userId || req.user?._id;
+    if (user_id && typeof user_id === "object") {
+      user_id = user_id._id || user_id.id;
     }
 
     let storeId = null;
@@ -155,18 +165,28 @@ const createReview = async (req, res) => {
       console.error("storeId resolve failed:", e.message);
     }
 
-    const review = new CustomerReview({
-      user_id: req.user?._id,
+    const reviewData = {
+      user_id,
       product_id,
       storeId,
       rating,
       title,
       comment,
       is_approved: is_approved !== undefined ? is_approved : false,
-    });
+    };
+
+    if (req.body.createdAt) {
+      reviewData.createdAt = new Date(req.body.createdAt);
+    }
+
+    const review = new CustomerReview(reviewData);
 
     const savedReview = await review.save();
-    sendResponse(res, true, savedReview, "Review submitted successfully.");
+    const populatedReview = await CustomerReview.findById(savedReview._id)
+      .populate("user_id", "name email")
+      .populate("product_id", "name images");
+
+    sendResponse(res, true, populatedReview || savedReview, "Review submitted successfully.");
   } catch (err) {
     sendResponse(res, false, null, err.message);
   }
@@ -174,11 +194,24 @@ const createReview = async (req, res) => {
 
 const updateReview = async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    if (req.body.productId && !req.body.product_id) {
+      updateData.product_id = req.body.productId;
+    }
+    if (req.body.userId && !req.body.user_id) {
+      updateData.user_id = req.body.userId;
+    }
+    if (req.body.createdAt) {
+      updateData.createdAt = new Date(req.body.createdAt);
+    }
     const updatedReview = await CustomerReview.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { returnDocument: "after" },
-    );
+    )
+      .populate("user_id", "name email")
+      .populate("product_id", "name images");
+
     if (!updatedReview)
       return sendResponse(res, false, null, "Review not found");
     sendResponse(res, true, updatedReview, "Review updated successfully");

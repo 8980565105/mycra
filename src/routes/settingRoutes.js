@@ -17,6 +17,6 @@ router.get("/public", injectPublicStoreFilter, getPublicSettings);
 
 router.use(authMiddleware);
 router.get("/", getUserSettings);
-router.put("/", authorizeMinRole("store_owner"), updateUserSettings);
+router.put("/", authorizeMinRole("admin"), updateUserSettings);
 
 module.exports = router;

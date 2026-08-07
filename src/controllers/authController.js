@@ -22,7 +22,7 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: port,
-    secure: isSecure, // true for 465, false for other ports
+    secure: isSecure, 
     auth: { user, pass },
     tls: { rejectUnauthorized: false },
   });
@@ -465,7 +465,6 @@ const googleLogin = async (req, res) => {
     if (!credential)
       return sendResponse(res, false, null, "Google credential is required");
 
-    // Verify token with Google
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -484,13 +483,12 @@ const googleLogin = async (req, res) => {
 
     let user;
     if (store) {
-      // Store-user flow: find or create user under this store
       user = await User.findOne({ email, storeId: store._id });
       if (!user) {
         user = await User.create({
           name,
           email,
-          password: googleId + process.env.JWT_SECRET, // random unusable password
+          password: googleId + process.env.JWT_SECRET, 
           role: "store_user",
           domain: store.domain,
           storeId: store._id,
@@ -498,7 +496,6 @@ const googleLogin = async (req, res) => {
         });
       }
     } else {
-      // Fallback: admin/store_owner login
       user = await User.findOne({
         email,
         role: { $in: ["admin", "store_owner"] },
@@ -532,71 +529,6 @@ const googleLogin = async (req, res) => {
     return sendResponse(res, false, null, err.message || "Google login failed");
   }
 };
-
-// const changePassword = async (req, res) => {
-//   try {
-//     const { currentPassword, newPassword, confirmNewPassword } = req.body;
-
-//     if (!currentPassword || !newPassword || !confirmNewPassword) {
-//       return sendResponse(
-//         res,
-//         false,
-//         null,
-//         "Current password, new password and confirm password are required",
-//       );
-//     }
-
-//     if (newPassword !== confirmNewPassword) {
-//       return sendResponse(
-//         res,
-//         false,
-//         null,
-//         "New password and confirm password do not match",
-//       );
-//     }
-
-//     if (newPassword.length < 6) {
-//       return sendResponse(
-//         res,
-//         false,
-//         null,
-//         "New password must be at least 6 characters long",
-//       );
-//     }
-
-//     const user = await User.findById(req.user._id);
-//     if (!user) return sendResponse(res, false, null, "User not found");
-
-//     // Google-only accounts have a random unusable password set at signup.
-//     // If you want to block password-change entirely for such accounts,
-//     // check a flag like user.googleId here instead of comparing.
-//     const isMatch = await bcrypt.compare(currentPassword, user.password);
-//     if (!isMatch)
-//       return sendResponse(res, false, null, "Current password is incorrect");
-
-//     const isSamePassword = await bcrypt.compare(newPassword, user.password);
-//     if (isSamePassword)
-//       return sendResponse(
-//         res,
-//         false,
-//         null,
-//         "New password must be different from current password",
-//       );
-
-//     // Let the pre('save') hook hash it — do NOT hash it here again.
-//     user.password = newPassword;
-//     await user.save();
-
-//     return sendResponse(res, true, null, "Password changed successfully");
-//   } catch (err) {
-//     return sendResponse(
-//       res,
-//       false,
-//       null,
-//       "Failed to change password: " + err.message,
-//     );
-//   }
-// };
 
 const changePassword = async (req, res) => {
   try {
@@ -692,7 +624,6 @@ const sendRegistrationOtp = async (req, res) => {
     console.log(`🔑 [REGISTRATION EMAIL OTP] For ${email}: ${otp}`);
     console.log(`-----------------------------------------`);
 
-    // Try sending email, but catch error so API returns success & OTP box opens
     try {
       await sendOtpEmail(email, otp, "Seller Registration", "Seller Registration Verification OTP");
     } catch (mailErr) {
