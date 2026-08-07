@@ -59,18 +59,32 @@ export default function Orders() {
       });
       return;
     }
+    const rawProd =
+      order.products?.[0]?.product_id ||
+      order.products?.[0]?.product ||
+      order.items?.[0]?.product_id ||
+      order.items?.[0]?.product;
     const productId =
-      order.products?.[0]?.product_id || order.items?.[0]?.product_id;
+      typeof rawProd === "object" ? rawProd?._id || rawProd?.id : rawProd;
+
     setSelectedOrder(order);
     setReviewData({ ...reviewData, product_id: productId });
     setIsReviewOpen(true);
   };
   const handleReviewSubmit = (e) => {
     e.preventDefault();
-    const userId = JSON.parse(localStorage.getItem("user"))._id;
+    const userStr = localStorage.getItem("user");
+    const userObj = userStr ? JSON.parse(userStr) : null;
+    const userId = userObj?._id || userObj?.id;
+
+    const targetProductId =
+      typeof reviewData.product_id === "object"
+        ? reviewData.product_id?._id || reviewData.product_id?.id
+        : reviewData.product_id;
 
     const finalData = {
       ...reviewData,
+      product_id: targetProductId,
       user_id: userId,
       is_approved: true,
     };

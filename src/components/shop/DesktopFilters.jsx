@@ -5,29 +5,18 @@ import {
   PriceRangeFilter,
 } from "./WomenCollections";
 import { useSelector } from "react-redux";
+import { getGroupedTypes, getEnrichedAttributes } from "../utils/attribut";
 
 const DesktopFilters = ({
   selectedCategories = [],
   handleCategoryChange,
   handleResetCategories,
-  selectedSizes = [],
-  handleSizeChange,
-  handleResetSizes,
-  selectedColors = [],
-  handleColorChange,
-  handleResetColors,
-  selectedBrands = [],
-  handleBrandChange,
-  handleResetBrands,
   selectedTypes = [],
   handleTypeChange,
   handleResetTypes,
-  selectedFabrics = [],
-  handleFabricChange,
-  handleResetFabrics,
-  selectedDiscounts = [],
-  handleDiscountChange,
-  handleResetDiscounts,
+  selectedAttributes = {},
+  handleAttributeChange,
+  handleResetAttributes,
   selectedLabels = [],
   handleLabelChange,
   handleResetLabels,
@@ -37,83 +26,52 @@ const DesktopFilters = ({
   setMaxPrice,
   isCategorySelected,
 }) => {
-  // const dispatch = useDispatch();
   const [openFilter, setOpenFilter] = useState("Category");
 
   const toggleFilter = (filterId) => {
     setOpenFilter((prev) => (prev === filterId ? null : filterId));
   };
+
   const { items: subcategories = [], loading: subcatLoading } = useSelector(
-    (state) => state.subcategories,
+    (state) => state.subcategories
   );
-  const {
-    products = [],
-    // loading,
-    // error,
-  } = useSelector((state) => state.products);
-  const { sizes = [], loading: sizeLoading } = useSelector(
-    (state) => state.sizes,
-  );
-  const { colors = [], loading: colorLoading } = useSelector(
-    (state) => state.colors,
-  );
-  const { brands = [], loading: brandLoading } = useSelector(
-    (state) => state.brands,
-  );
+  const { products = [], priceMetadata = {} } = useSelector((state) => state.products);
+  const { displayMin, displayMax } = priceMetadata;
   const { types = [], loading: typesLoading } = useSelector(
-    (state) => state.types,
+    (state) => state.types
   );
-  const { fabrics = [], loading: fabricsLoading } = useSelector(
-    (state) => state.fabrics,
+  const { attributes = [], typeAttributes = [], loading: attrLoading } = useSelector(
+    (state) => state.attributes
   );
-  // const { discounts = [], loading: discountsLoading } = useSelector(
-  //   (state) => state.discounts,
-  // );
+  const displayAttributes =
+    selectedTypes.length > 0 && typeAttributes.length > 0
+      ? typeAttributes
+      : attributes;
+  const enrichedAttributes = getEnrichedAttributes(displayAttributes, products);
   const { productLabels = [], loading: labelsLoading } = useSelector(
-    (state) => state.productLabels,
+    (state) => state.productLabels
   );
+
+  const groupedTypes = getGroupedTypes(types);
 
   const subCategoryCountsById = Array.isArray(products)
     ? products.reduce((acc, product) => {
         const catId = product.category_id;
-        if (catId) {
-          acc[catId] = (acc[catId] || 0) + 1;
+        if (catId) acc[catId] = (acc[catId] || 0) + 1;
+        return acc;
+      }, {})
+    : {};
+
+  const typeCountsByName = Array.isArray(products)
+    ? products.reduce((acc, product) => {
+        const tName = product.variants?.[0]?.type?.[0]?.name?.trim();
+        if (tName) {
+          const lower = tName.toLowerCase();
+          acc[lower] = (acc[lower] || 0) + 1;
         }
         return acc;
       }, {})
     : {};
-
-  const brandCounts = Array.isArray(products)
-    ? products.reduce((acc, product) => {
-        const brandId = product.variants?.[0]?.brand?.[0]?._id;
-        if (brandId) acc[brandId] = (acc[brandId] || 0) + 1;
-        return acc;
-      }, {})
-    : {};
-
-  const typeCounts = Array.isArray(products)
-    ? products.reduce((acc, product) => {
-        const typeId = product.variants?.[0]?.type?.[0]?._id;
-        if (typeId) acc[typeId] = (acc[typeId] || 0) + 1;
-        return acc;
-      }, {})
-    : {};
-
-  const fabricCounts = Array.isArray(products)
-    ? products.reduce((acc, product) => {
-        const fabricId = product.variants?.[0]?.fabric?.[0]?._id;
-        if (fabricId) acc[fabricId] = (acc[fabricId] || 0) + 1;
-        return acc;
-      }, {})
-    : {};
-
-  // const discountCounts = Array.isArray(products)
-  //   ? products.reduce((acc, product) => {
-  //       const discountId = product.discount_id;
-  //       if (discountId) acc[discountId] = (acc[discountId] || 0) + 1;
-  //       return acc;
-  //     }, {})
-  //   : {};
 
   const labelCounts = Array.isArray(products)
     ? products.reduce((acc, product) => {
@@ -167,104 +125,12 @@ const DesktopFilters = ({
         maxPrice={maxPrice}
         setMinPrice={setMinPrice}
         setMaxPrice={setMaxPrice}
+        displayMin={displayMin}
+        displayMax={displayMax}
         isMobile={false}
         isOpen={openFilter === "Price"}
         onToggle={() => toggleFilter("Price")}
       />
-
-      <CollapsibleFilter
-        title="Size"
-        isOpen={openFilter === "Size"}
-        onToggle={() => toggleFilter("Size")}
-        isSelected={selectedSizes.length > 0}
-        onReset={handleResetSizes}
-        showButtons={true}
-      >
-        <div className="grid grid-cols-2 gap-2 px-3 py-3">
-          {sizeLoading ? (
-            <p className="text-sm text-gray-500">Loading sizes...</p>
-          ) : sizes.length > 0 ? (
-            sizes.map((size) => (
-              <FilterItemCheckbox
-                key={size._id}
-                name={size.name}
-                isChecked={selectedSizes.includes(size.name)}
-                onChange={handleSizeChange}
-              />
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No sizes found.</p>
-          )}
-        </div>
-      </CollapsibleFilter>
-
-      <CollapsibleFilter
-        title="Color"
-        isOpen={openFilter === "Color"}
-        onToggle={() => toggleFilter("Color")}
-        isSelected={selectedColors.length > 0}
-        onReset={handleResetColors}
-        showButtons={true}
-      >
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-y-[15px] gap-x-[10px] px-3 py-3">
-          {colorLoading ? (
-            <p className="text-sm text-gray-500 col-span-full">
-              Loading colors...
-            </p>
-          ) : Array.isArray(colors) && colors.length > 0 ? (
-            colors.map((clr) => (
-              <div
-                key={clr._id || clr.name}
-                className="flex flex-col items-center cursor-pointer"
-                onClick={() => handleColorChange(clr.name)}
-              >
-                <div
-                  className={`w-[22px] h-[22px] rounded-full box-shadow ${
-                    selectedColors.includes(clr.name)
-                      ? "ring-2 ring-offset-1 ring-black"
-                      : ""
-                  } transition-transform duration-200`}
-                  style={{ backgroundColor: clr.code }}
-                ></div>
-                <p className="text-[10px] sec-text-color mt-1 text-center">
-                  {clr.name}
-                </p>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500 col-span-full">
-              No colors found.
-            </p>
-          )}
-        </div>
-      </CollapsibleFilter>
-
-      <CollapsibleFilter
-        title="Brands"
-        isOpen={openFilter === "Brands"}
-        onToggle={() => toggleFilter("Brands")}
-        isSelected={selectedBrands.length > 0}
-        onReset={handleResetBrands}
-        showButtons={true}
-      >
-        <div className="space-y-1 overflow-y-auto px-3 py-3">
-          {brandLoading ? (
-            <p className="text-sm text-gray-500">Loading brands...</p>
-          ) : brands.length > 0 ? (
-            brands.map((brand) => (
-              <FilterItemCheckbox
-                key={brand._id}
-                name={brand.name}
-                count={brandCounts[brand._id] || 0}
-                isChecked={selectedBrands.includes(brand.name)}
-                onChange={handleBrandChange}
-              />
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No brands found.</p>
-          )}
-        </div>
-      </CollapsibleFilter>
 
       <CollapsibleFilter
         title="Type"
@@ -274,82 +140,130 @@ const DesktopFilters = ({
         onReset={handleResetTypes}
         showButtons={true}
       >
-        <div className="space-y-1 overflow-y-auto px-3 py-3">
+        <div className="space-y-1 overflow-y-auto px-3 py-3 max-h-[180px]">
           {typesLoading ? (
             <p className="text-sm text-gray-500">Loading types...</p>
-          ) : types.length > 0 ? (
-            types.map((type) => (
-              <FilterItemCheckbox
-                key={type._id}
-                name={type.name}
-                count={typeCounts[type._id] || 0}
-                isChecked={selectedTypes.includes(type.name)}
-                onChange={handleTypeChange}
-              />
-            ))
+          ) : groupedTypes.length > 0 ? (
+            groupedTypes.map((gt) => {
+              const name = gt.displayName;
+              const count = typeCountsByName[name.toLowerCase()] || 0;
+              return (
+                <FilterItemCheckbox
+                  key={name}
+                  name={name}
+                  count={count}
+                  isChecked={selectedTypes.includes(name)}
+                  onChange={() => handleTypeChange(name, gt.typeIds)}
+                />
+              );
+            })
           ) : (
             <p className="text-sm text-gray-500">No types found.</p>
           )}
         </div>
       </CollapsibleFilter>
 
-      <CollapsibleFilter
-        title="Fabric"
-        isOpen={openFilter === "Fabric"}
-        onToggle={() => toggleFilter("Fabric")}
-        isSelected={selectedFabrics.length > 0}
-        onReset={handleResetFabrics}
-        showButtons={true}
-      >
-        <div className="space-y-1 overflow-y-auto px-3 py-3">
-          {fabricsLoading ? (
-            <p className="text-sm text-gray-500">Loading fabrics...</p>
-          ) : fabrics.length > 0 ? (
-            fabrics.map((fabric) => (
-              <FilterItemCheckbox
-                key={fabric._id}
-                name={fabric.name}
-                count={fabricCounts[fabric._id] || 0}
-                isChecked={selectedFabrics.includes(fabric.name)}
-                onChange={handleFabricChange}
-              />
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No fabrics found.</p>
-          )}
+      {attrLoading ? (
+        <div className="p-4">
+          <p className="text-sm text-gray-500">Loading attributes...</p>
         </div>
-      </CollapsibleFilter>
+      ) : (
+        enrichedAttributes.map((attr) => {
+          const code = attr.code || attr.name.toLowerCase();
+          const selectedVals = selectedAttributes[code] || [];
+          const isColorAttr = code === "color" || attr.name.toLowerCase() === "color";
+          const valuesArray = Array.isArray(attr.values) ? attr.values : [];
+
+          return (
+            <CollapsibleFilter
+              key={attr._id || attr.name}
+              title={attr.name}
+              isOpen={openFilter === attr.name}
+              onToggle={() => toggleFilter(attr.name)}
+              isSelected={selectedVals.length > 0}
+              onReset={() => handleResetAttributes(code)}
+              showButtons={true}
+            >
+              {isColorAttr ? (
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-y-[15px] gap-x-[10px] px-3 py-3">
+                  {valuesArray.length > 0 ? (
+                    valuesArray.map((valObj, idx) => {
+                      const valName =
+                        typeof valObj === "object" && valObj !== null
+                          ? valObj.value || valObj.name || valObj.val || ""
+                          : String(valObj || "");
+                      const valId =
+                        typeof valObj === "object" && valObj !== null
+                          ? valObj._id || valObj.id || valName
+                          : valName;
+                      const hex =
+                        typeof valObj === "object" && valObj !== null
+                          ? valObj.colorHex || valObj.hex || "#000000"
+                          : "#000000";
+                      const isChecked =
+                        selectedVals.includes(valName) ||
+                        selectedVals.includes(valId);
+
+                      return (
+                        <div
+                          key={valId || idx}
+                          className="flex flex-col items-center cursor-pointer"
+                          onClick={() => handleAttributeChange(code, valName)}
+                        >
+                          <div
+                            className={`w-[22px] h-[22px] rounded-full box-shadow ${
+                              isChecked ? "ring-2 ring-offset-1 ring-black" : ""
+                            } transition-transform duration-200`}
+                            style={{ backgroundColor: hex }}
+                          />
+                          <p className="text-[10px] sec-text-color mt-1 text-center truncate max-w-[45px]">
+                            {valName}
+                          </p>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-sm text-gray-500 col-span-full">
+                      No colors found.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1 overflow-y-auto px-3 py-3 max-h-[160px]">
+                  {valuesArray.length > 0 ? (
+                    valuesArray.map((valObj, idx) => {
+                      const valName =
+                        typeof valObj === "object" && valObj !== null
+                          ? valObj.value || valObj.name || valObj.val || ""
+                          : String(valObj || "");
+                      const valId =
+                        typeof valObj === "object" && valObj !== null
+                          ? valObj._id || valObj.id || valName
+                          : valName;
+                      const isChecked =
+                        selectedVals.includes(valName) ||
+                        selectedVals.includes(valId);
+
+                      return (
+                        <FilterItemCheckbox
+                          key={valId || idx}
+                          name={valName}
+                          isChecked={isChecked}
+                          onChange={() => handleAttributeChange(code, valName)}
+                        />
+                      );
+                    })
+                  ) : (
+                    <p className="text-sm text-gray-500">No options found.</p>
+                  )}
+                </div>
+              )}
+            </CollapsibleFilter>
+          );
+        })
+      )}
 
       {/* <CollapsibleFilter
-        title="Discounts"
-        isOpen={openFilter === "Discounts"}
-        onToggle={() => toggleFilter("Discounts")}
-        isSelected={selectedDiscounts.length > 0}
-        onReset={handleResetDiscounts}
-        showButtons={true}
-      >
-        <div className="space-y-1 overflow-y-auto px-3 py-3">
-          {discountsLoading ? (
-            <p className="text-sm text-gray-500">Loading discounts...</p>
-          ) : discounts.length > 0 ? (
-            discounts.map((discount) => (
-              <FilterItemCheckbox
-                key={discount._id}
-                name={discount.name}
-                count={discountCounts[discount._id] || 0}
-                isChecked={selectedDiscounts.some((d) => d.id === discount._id)}
-                onChange={() =>
-                  handleDiscountChange(discount._id, discount.name)
-                }
-              />
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No discounts found.</p>
-          )}
-        </div>
-      </CollapsibleFilter> */}
-
-      <CollapsibleFilter
         title="Product Label"
         isOpen={openFilter === "Product Label"}
         onToggle={() => toggleFilter("Product Label")}
@@ -374,7 +288,7 @@ const DesktopFilters = ({
             <p className="text-sm text-gray-500">No product labels found.</p>
           )}
         </div>
-      </CollapsibleFilter>
+      </CollapsibleFilter> */}
     </aside>
   );
 };

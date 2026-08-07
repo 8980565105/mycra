@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import ProductCard from "../productcard/ProductCard";
 
 const ProductGrid = ({ products = [], loading, setShowLoginPopup }) => {
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const handleLoadMore = () => {
     setVisibleCount((v) => v + 3);

@@ -9,5 +9,9 @@
 }
 
 * {
-  font-family: var(--font-family-main), 'Roboto', sans-serif !important;
+  font-family: inherit;
+}
+
+body {
+  font-family: var(--font-family-main), sans-serif;
 }

@@ -27,7 +27,6 @@ import AccountDetails from "./components/AccountDetails/AccountDetails";
 import Faqs from "./pages/Faqs";
 import AboutPage from "./pages/About";
 import ScrollToTop from "./components/ScrollToTop";
-// import { fetchStoreInfo } from "./features/store/storeThunk";
 import { useDispatch, useSelector } from "react-redux";
 import { trackPageVisit } from "./utils/trackPageVisit";
 import Wallets from "./pages/Wallets";
@@ -37,6 +36,7 @@ import ContinueWithKyc from "./components/wallets/continuewithkyc";
 import KycForm from "./components/wallets/kycform";
 import GiftCardToBalance from "./components/wallets/giftcardtobalance";
 import { fetchPublicSettings } from "./features/setting/settingThunk";
+import { fetchCart } from "./features/cart/cartThunk";
 
 const hexToRgba = (hex, opacity) => {
   if (!hex) return null;
@@ -53,8 +53,7 @@ const injectThemeColors = (theme) => {
 
   const primary = theme.primary_color;
   const secondary = theme.secondary_color;
-  // const button = theme.buttonColor;
-  const font = theme.fontFamily;
+  const font = theme.font_family || theme.fontFamily || theme?.theme?.fontFamily;
 
   if (primary) {
     root.style.setProperty("--primary-color", primary);
@@ -71,14 +70,10 @@ const injectThemeColors = (theme) => {
     root.style.setProperty("--sec-theme-color-30", hexToRgba(secondary, 0.5));
   }
 
-  // if (button) {
-  //   root.style.setProperty("--button-color", button);
-  // }
-
   if (font) {
-    root.style.setProperty("--font-family-main", font);
-    root.style.setProperty("--font-inter", font);
-    root.style.fontFamily = font;
+    const fontBaseName = font.split(",")[0].replace(/['"]/g, "").trim();
+    root.style.setProperty("--font-family-main", `'${fontBaseName}', sans-serif`);
+    root.style.setProperty("--font-inter", `'${fontBaseName}', sans-serif`);
   }
 };
 
@@ -117,7 +112,6 @@ function App() {
     const location = useLocation();
     const isShopPage = location.pathname === "/shop";
     const dispatch = useDispatch();
-    // const storeData = useSelector((state) => state.store.info);WomenCollections
     const settings = useSelector((state) => state.settings.data);
 
     useEffect(() => {
@@ -129,7 +123,7 @@ function App() {
         return;
       }
 
-      const font = settings?.theme?.fontFamily;
+      const font = settings?.font_family || settings?.fontFamily || settings?.theme?.fontFamily;
       if (!font) {
         document.documentElement.style.setProperty(
           "--font-family-main",
@@ -159,11 +153,11 @@ function App() {
       link.onload = () => {
         document.documentElement.style.setProperty(
           "--font-family-main",
-          `'${fontBaseName}', 'Roboto', sans-serif`,
+          `'${fontBaseName}', sans-serif`,
         );
       };
       link.onerror = () => {
-        console.warn(`Font load failed: ${fontBaseName}, using Roboto`);
+        console.warn(`Font load failed: ${fontBaseName}, using Roboto fallback`);
         document.documentElement.style.setProperty(
           "--font-family-main",
           DEFAULT_FONT,
@@ -175,6 +169,10 @@ function App() {
 
     useEffect(() => {
       dispatch(fetchPublicSettings());
+      const cartId = localStorage.getItem("cart_id");
+      if (cartId) {
+        dispatch(fetchCart(cartId));
+      }
     }, [dispatch]);
 
     useEffect(() => {

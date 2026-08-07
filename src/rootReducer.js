@@ -3,16 +3,11 @@ import userReducer from "./features/user/userSlice";
 import navbarReducer from "./features/navbar/navbarSlice";
 import footerReducer from "./features/footer/footerSlice";
 import productsReducer from "./features/products/productsSlice";
-// import discountsReducer from "./features/discounts/discountsSlice";
 import couponsReducer from "./features/coupons/couponsSlice";
 import categoriesReducer from "./features/categories/categoriesSlice";
 import subcategoriesReducer from "./features/subcategories/subcategoriesSlice";
 import pagesReducer from "./features/pages/pagesSlice";
-import sizesReducer from "./features/sizes/sizesSlice";
-import colorsReducer from "./features/colors/colorsSlice";
-import brandsReducer from "./features/brands/brandsSlice";
 import typesReducer from "./features/types/typesSlice";
-import fabricsReducer from "./features/fabrics/fabricsSlice";
 import productLabelsReducer from "./features/productLabels/productLabelsSlice";
 import wishlistReducer from "./features/wishlist/wishlistSlice";
 import cartReducer from "./features/cart/cartSlice";
@@ -23,11 +18,10 @@ import reviewsReducer from "./features/reivews/reviewsSlice";
 import addressReducer from "./features/address/addressSlice";
 import offersReducer from "./features/offers/offersSlice";
 import faqsReducer from "./features/faqs/faqsSlice";
-// import storeReducer from "./features/store/storeSlice";
 import settingReducer from "./features/setting/settingSlice";
 import walletReducer from "./features/wallet/walletSlice";
 import transectionReducer from "./features/transection/transectionSlice";
-
+import attributeReducer from "./features/attribut/attributSlice";
 export const rootReducer = {
   auth: authReducer,
   user: userReducer,
@@ -35,16 +29,11 @@ export const rootReducer = {
   footer: footerReducer,
   contact: contactReducer,
   products: productsReducer,
-  // discounts: discountsReducer,
   categories: categoriesReducer,
   subcategories: subcategoriesReducer,
   coupons: couponsReducer,
   pages: pagesReducer,
-  sizes: sizesReducer,
-  colors: colorsReducer,
-  brands: brandsReducer,
   types: typesReducer,
-  fabrics: fabricsReducer,
   productLabels: productLabelsReducer,
   wishlist: wishlistReducer,
   cart: cartReducer,
@@ -54,8 +43,8 @@ export const rootReducer = {
   address: addressReducer,
   offers: offersReducer,
   faqs: faqsReducer,
-  // store: storeReducer,
   settings: settingReducer,
   wallet: walletReducer,
   transection: transectionReducer,
+  attributes: attributeReducer,
 };

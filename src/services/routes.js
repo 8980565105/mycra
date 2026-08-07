@@ -38,31 +38,9 @@ export const ROUTES = {
     delete: (id) => `/pages/${id}`,
     bulkDelete: "/pages/bulk-delete",
   },
-  sizes: {
-    getPublic: "/sizes/public",
-    getAll: "/sizes",
-    getById: (id) => `/sizes/${id}`,
-  },
-  colors: {
-    getPublic: "/colors/public",
-    getAll: "/colors",
-    getById: (id) => `/colors/${id}`,
-  },
-  brands: {
-    getPublic: "/brands/public",
-    getAll: "/brands",
-  },
   types: {
     getAll: "/types",
     getPublic: "/types/public",
-  },
-  fabrics: {
-    getAll: "/fabrics",
-    getPublic: "/fabrics/public",
-  },
-  discounts: {
-    getAll: "/discounts",
-    getPublic: "/discounts/Public",
   },
   productLabels: {
     getPublic: "/product-labels/Public",
@@ -156,5 +134,10 @@ export const ROUTES = {
     getById: (id) => `/transactions/${id}`,
     adminAll: "/transactions/admin/all",
     adminUpdateStatus: (id) => `/transactions/admin/status/${id}`,
+  },
+  attribute: {
+    getAll: "/attributes",
+    getByType: "/attributes/type",
+    getBySubCategory: "/attributes/subcategory",
   },
 };

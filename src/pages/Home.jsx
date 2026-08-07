@@ -12,9 +12,7 @@ import BannerClothes from "../components/home/bannerclothes.jsx";
 import FeatureSection from "../components/home/FeatureSection.jsx";
 import Row from "../components/ui/Row.jsx";
 import Section from "../components/ui/Section.jsx";
-import { fetchPages } from "../features/pages/pagesThunk";
 import { fetchProducts } from "../features/products/productsThunk";
-import { fetchCategories } from "../features/categories/categoriesThunk";
 import LoginForm from "./Login.jsx";
 import { Toaster } from "react-hot-toast";
 import FlowerIcon from "../components/icons/FlowerIcon.jsx";
@@ -23,9 +21,7 @@ const Home = () => {
   const dispatch = useDispatch();
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   useEffect(() => {
-    dispatch(fetchPages());
     dispatch(fetchProducts());
-    dispatch(fetchCategories());
   }, [dispatch]);
 
   return (

@@ -63,25 +63,101 @@ export default function ProductCard({ product, setShowLoginPopup }) {
         (ci.variant_id?._id || ci.variant_id) === variantId,
     );
   };
-  useEffect(() => {
-    const cartId = localStorage.getItem("cart_id");
-    if (cartId) {
-      dispatch(fetchCart(cartId));
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const getColorFromVariant = (variant) => {
+    if (!variant) return null;
+    if (Array.isArray(variant.attributes) && variant.attributes.length > 0) {
+      const colorAttr = variant.attributes.find((a) => {
+        const attrObj = a.attributeId || a.attribute || {};
+        const code = (attrObj.code || a.attributeCode || a.code || "")
+          .toString()
+          .toLowerCase();
+        const name = (attrObj.name || a.attributeName || a.name || "")
+          .toString()
+          .toLowerCase();
+        return (
+          code.includes("color") ||
+          name.includes("color") ||
+          code.includes("colour") ||
+          name.includes("colour")
+        );
+      });
+
+      if (colorAttr) {
+        const valObj =
+          colorAttr.valueId || colorAttr.valueObj || colorAttr.val || {};
+        const code =
+          valObj.colorHex ||
+          valObj.hex ||
+          valObj.code ||
+          valObj.value ||
+          valObj.name ||
+          (typeof colorAttr.value === "string" ? colorAttr.value : null) ||
+          colorAttr.customValue;
+        const name =
+          valObj.name ||
+          valObj.value ||
+          valObj.colorName ||
+          valObj.val ||
+          code ||
+          "";
+        if (code) return { code, name };
+      }
     }
-  }, [dispatch]);
-  useEffect(() => {
-    if (product?._id && !productReviewData) {
-      dispatch(
-        fetchProductReviews({ productId: product._id, page: 1, limit: 50 }),
-      );
+
+    const oldColor = Array.isArray(variant?.color)
+      ? variant.color[0]
+      : variant?.color || variant?.colors;
+    if (oldColor) {
+      if (typeof oldColor === "object") {
+        const code =
+          oldColor.code ||
+          oldColor.colorHex ||
+          oldColor.hex ||
+          oldColor.value ||
+          oldColor.name;
+        const name =
+          oldColor.name || oldColor.value || oldColor.colorName || code || "";
+        if (code) return { code, name };
+      } else if (typeof oldColor === "string") {
+        return { code: oldColor, name: oldColor };
+      }
     }
-  }, [product?._id, productReviewData, dispatch]);
-  const getDiscountedPrice = (product) => {
-    const variant = product?.variants?.[0] || {};
-    const originalPrice = Number(variant?.price) || 0;
+
+    return null;
+  };
+
+  const uniqueColors = (() => {
+    const seen = new Set();
+    const result = [];
+    (product?.variants || []).forEach((variant) => {
+      const clr = getColorFromVariant(variant);
+      if (!clr || !clr.code) return;
+      if (seen.has(clr.code)) return;
+      seen.add(clr.code);
+      result.push(clr);
+    });
+    return result;
+  })();
+
+  const getVariantForColor = (prod, colorCode) => {
+    if (!colorCode) return prod?.variants?.[0];
+    return (
+      prod?.variants?.find((v) => {
+        const clr = getColorFromVariant(v);
+        return clr?.code === colorCode;
+      }) || prod?.variants?.[0]
+    );
+  };
+
+  const getDiscountedPrice = (variant) => {
+    const targetVariant = variant || {};
+    const originalPrice = Number(targetVariant?.price) || 0;
     const offerPrice =
-      variant?.offerprice !== undefined && variant?.offerprice !== null
-        ? Number(variant.offerprice)
+      targetVariant?.offerprice !== undefined &&
+      targetVariant?.offerprice !== null
+        ? Number(targetVariant.offerprice)
         : originalPrice;
     const hasOffer = offerPrice > 0 && offerPrice < originalPrice;
     const discountPercent = hasOffer
@@ -94,9 +170,20 @@ export default function ProductCard({ product, setShowLoginPopup }) {
       discountPercent,
     };
   };
-  const price = getDiscountedPrice(product);
+
+  const currentSelectedColor = selectedColor || uniqueColors[0]?.code;
+  const currentVariant = getVariantForColor(product, currentSelectedColor);
+  const isOutOfStock = currentVariant?.stock_quantity === 0;
+  const price = getDiscountedPrice(currentVariant);
+
   const { productReviews } = useSelector((state) => state.reviews);
   const reviewData = useMemo(() => {
+    if (product?.averageRating !== undefined && product?.totalReviews !== undefined) {
+      return {
+        average: product.averageRating,
+        total: product.totalReviews,
+      };
+    }
     const reviews = productReviews?.[product?._id]?.reviews || [];
     if (reviews.length === 0) return { average: 0, total: 0 };
     const total = reviews.length;
@@ -108,42 +195,19 @@ export default function ProductCard({ product, setShowLoginPopup }) {
       average: (sum / total).toFixed(1),
       total,
     };
-  }, [productReviews, product?._id]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const firstVariantImages = Array.isArray(product?.variants?.[0]?.images)
-    ? product.variants[0].images
+  }, [productReviews, product?._id, product?.averageRating, product?.totalReviews]);
+
+  const variantImages = Array.isArray(currentVariant?.images)
+    ? currentVariant.images
     : [];
   const mainImages = Array.isArray(product?.images) ? product.images : [];
-  const allImages =
-    firstVariantImages.length > 0 ? firstVariantImages : mainImages;
+  const allImages = variantImages.length > 0 ? variantImages : mainImages;
   const displayedImage = getImageUrl(allImages[currentIndex]);
   const hasMultipleImages = allImages.length > 1;
+
   const { handleAddToWishlist } = useAddToWishlist(setShowLoginPopup);
   const wishlistProductIds = useSelector((state) => state.wishlist.productIds);
   const isWishlisted = wishlistProductIds.includes(product._id);
-  const uniqueColors = (() => {
-    const seen = new Set();
-    const result = [];
-    (product?.variants || []).forEach((variant) => {
-      const firstColor = Array.isArray(variant?.color)
-        ? variant.color[0]
-        : variant?.color;
-      if (!firstColor) return;
-      const colorCode = firstColor?.code || firstColor;
-      const colorName = firstColor?.name || "";
-      if (seen.has(colorCode)) return;
-      seen.add(colorCode);
-      result.push({ code: colorCode, name: colorName });
-    });
-    return result;
-  })();
-  const getVariantForColor = (product, colorCode) => {
-    return (
-      product?.variants?.find((v) =>
-        v.color?.some((c) => c.code === colorCode),
-      ) || product?.variants?.[0]
-    );
-  };
   const handleAddToCart = async (product) => {
     if (!token) {
       setShowLoginPopup(true);
@@ -205,9 +269,6 @@ export default function ProductCard({ product, setShowLoginPopup }) {
   const endsWithin24h =
     discount?.end_date &&
     new Date(discount.end_date).getTime() - Date.now() <= 24 * 60 * 60 * 1000;
-  const currentSelectedColor = selectedColor || uniqueColors[0]?.code;
-  const currentVariant = getVariantForColor(product, currentSelectedColor);
-  const isOutOfStock = currentVariant?.stock_quantity === 0;
   return (
     <>
       <Link to={`/products/${product._id}`}>
@@ -223,7 +284,6 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                 alt={product.subtitle || product.name}
                 className="w-full h-full transition duration-300 object-cover"
               />
-             
             </div>
             <div className="absolute top-3 right-3 flex flex-col space-y-2">
               <button
@@ -239,7 +299,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                   ${isWishlisted ? "invert brightness-0 contrast-200" : ""}`}
                 />
               </button>
-              
+
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -302,6 +362,9 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                 </div>
               )}
             </div>
+
+            {/* <p>{product|| "store name"}</p> */}
+
             <p className="sec-text-color text-14 mb-2 lowercase capitalize line-clamp-1">
               {product.name}
             </p>

@@ -110,12 +110,6 @@ export default function ProductTabs({ product, selectedVariant }) {
             ))}
           </div>
         </div>
-
-        {filteredReviews.length > VISIBLE_COUNT && (
-          <p className="text-xs text-gray-400 mt-3 text-center">
-            ↑ Scroll to see all reviews
-          </p>
-        )}
       </div>
     );
   };

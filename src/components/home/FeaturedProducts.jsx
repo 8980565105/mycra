@@ -15,11 +15,9 @@ import { Star } from "lucide-react";
 import {
   addToCart,
   createCart,
-  fetchCart,
 } from "../../features/cart/cartThunk";
 import toast from "react-hot-toast";
 import FlowerIcon from "../icons/FlowerIcon";
-import { fetchWishlistByUser } from "../../features/wishlist/wishlistThunk";
 
 function CountdownTimer({ endDate }) {
   const calcTimeLeft = useCallback(() => {
@@ -96,17 +94,6 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
   const [mounted, setMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
   const tabItems = subcategories.length > 0 ? subcategories : categories;
-  useEffect(() => {
-    if (userId) {
-      dispatch(fetchWishlistByUser(userId));
-    }
-  }, [dispatch, userId]);
-  useEffect(() => {
-    const cartId = localStorage.getItem("cart_id");
-    if (cartId) {
-      dispatch(fetchCart(cartId));
-    }
-  }, [dispatch]);
   const getDiscountedPrice = (product) => {
     const variant = product?.variants?.[0] || {};
     const originalPrice = Number(variant?.price) || 0;
@@ -185,33 +172,6 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
     infinite: true,
     arrows: false,
   };
-
-  // const filteredProducts =
-  //   activeCategory && products.length > 0
-  //     ? products.filter((p) => {
-  //         const hasFeaturedVariant = p?.variants?.some(
-  //           (v) => v?.is_featured === true,
-  //         );
-
-  //         if (!hasFeaturedVariant) return false;
-
-  //         const productCatId = p.category_id || "";
-
-  //         if (productCatId === activeCategory) return true;
-
-  //         const selectedTab = tabItems.find((t) => t._id === activeCategory);
-
-  //         if (
-  //           selectedTab &&
-  //           selectedTab.parent_id &&
-  //           productCatId === selectedTab.parent_id
-  //         ) {
-  //           return true;
-  //         }
-
-  //         return false;
-  //       })
-  //     : [];
   const filteredProducts =
     activeCategory && products.length > 0
       ? products.filter((p) => {
@@ -286,8 +246,6 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
           quantity: 1,
         }),
       ).unwrap();
-
-      await dispatch(fetchCart(cartId));
       navigate("/cart");
 
       toast.success("Added to cart successfully!");
@@ -391,7 +349,8 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                     <div className="relative group">
                       <img
                         src={getImageUrl(
-                          p.variants?.[0]?.images?.[0] ||
+                          currentVariant?.images?.[0] ||
+                            p.variants?.[0]?.images?.[0] ||
                             p.images?.[0] ||
                             "/uploads/placeholder.png",
                         )}

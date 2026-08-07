@@ -13,7 +13,6 @@ import ProductInfo from "../components/productcard/ProductInfo";
 import ProductTabs from "../components/productcard/ProductTabs";
 import SimilarProducts from "../components/productcard/SimilarProducts";
 import CustomerAlsoViewed from "../components/productcard/CustomerAlsoViewed";
-import { fetchPages } from "../features/pages/pagesThunk";
 import { addRecentlyViewed } from "../components/utils/recentlyViewed";
 import LoginForm from "./Login";
 import FlowerIcon from "../components/icons/FlowerIcon";
@@ -34,7 +33,6 @@ export default function Product() {
   }, [id, dispatch]);
   useEffect(() => {
     dispatch(fetchProducts());
-    dispatch(fetchPages());
   }, [dispatch]);
   useEffect(() => {
     if (product && product._id) {
@@ -96,9 +94,6 @@ export default function Product() {
       </Section>
 
       <Section>
-        {/* <Row>
-          <SectionHeading page="products" order="2" index="1" />
-        </Row> */}
         <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
           <div className="w-[18px] md:w-[50px] border-t border-black"></div>
 

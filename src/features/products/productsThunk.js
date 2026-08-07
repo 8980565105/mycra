@@ -39,6 +39,7 @@ export const fetchProducts = createAsyncThunk(
           total: data.total || 0,
           page: data.page || 1,
           pages: data.pages || 1,
+          price: data.price || null,
         };
       }
 

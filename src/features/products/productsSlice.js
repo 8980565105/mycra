@@ -8,6 +8,14 @@ const initialState = {
   total: 0,
   page: 1,
   pages: 1,
+  priceMetadata: {
+    actualMin: 0,
+    actualMax: 5000,
+    displayMin: 0,
+    displayMax: 5000,
+    filteredMin: 0,
+    filteredMax: 5000,
+  },
   loading: false,
   error: null,
 };
@@ -36,6 +44,9 @@ const productsSlice = createSlice({
         state.total = action.payload?.total || 0;
         state.page = action.payload?.page || 1;
         state.pages = action.payload?.pages || 1;
+        if (action.payload?.price) {
+          state.priceMetadata = action.payload.price;
+        }
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;

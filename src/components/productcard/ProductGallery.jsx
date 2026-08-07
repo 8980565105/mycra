@@ -14,9 +14,45 @@ export default function ProductGallery({
   const colorOptions = useMemo(() => {
     const seen = new Map();
     variants.forEach((v) => {
+      if (Array.isArray(v.attributes) && v.attributes.length > 0) {
+        const colorAttr = v.attributes.find((a) => {
+          const code =
+            a.attributeId?.code ||
+            a.attributeCode ||
+            a.code ||
+            a.name ||
+            a.attributeId?.name;
+          return code && code.toString().toLowerCase() === "color";
+        });
+        if (colorAttr) {
+          const valObj = colorAttr.valueId || colorAttr.valueObj || {};
+          const id = valObj._id || colorAttr.valueId || colorAttr._id;
+          const name =
+            valObj.value ||
+            valObj.name ||
+            colorAttr.value ||
+            (typeof colorAttr.valueId === "string" ? colorAttr.valueId : null);
+          const hex =
+            valObj.colorHex ||
+            valObj.code ||
+            colorAttr.colorHex ||
+            colorAttr.code ||
+            name ||
+            "#000000";
+          if (id && name) {
+            seen.set(String(id), {
+              id: String(id),
+              name: String(name),
+              code: hex,
+            });
+            return;
+          }
+        }
+      }
+
       if (v.color_id?._id) {
-        seen.set(v.color_id._id, {
-          id: v.color_id._id,
+        seen.set(String(v.color_id._id), {
+          id: String(v.color_id._id),
           name: v.color_id.name,
           code: v.color_id.code,
         });
@@ -80,7 +116,7 @@ export default function ProductGallery({
             onClick={() => setCurrentImage(img)}
             className={`w-[160px] h-[208px] object-cover rounded-[3px] cursor-pointer transition-all duration-200 ${
               currentImage === img
-                ? "ring-1 ring-theme scale-[1.02]"
+                ? "ring-1 ring-[var(--primary-color)] scale-[1.02]"
                 : "opacity-50 hover:opacity-100"
             }`}
           />

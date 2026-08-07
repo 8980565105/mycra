@@ -11,7 +11,6 @@ import { getImageUrl } from "../utils/helper";
 import { useNavigate } from "react-router-dom";
 import FlowerIcon from "../icons/FlowerIcon";
 
-// ---------------- IMAGE CARD ----------------
 const ImageCard = ({
   name,
   img,
@@ -52,7 +51,6 @@ const ImageCard = ({
   );
 };
 
-// ---------------- STATIC DATA ----------------
 const staticNewArrivals = [
   {
     name: "Earings",
@@ -80,7 +78,6 @@ const staticNewArrivals = [
   },
 ];
 
-// ---------------- NEW ARRIVALS SECTION ----------------
 export default function NewArrivals() {
   const { products, loading } = useSelector((state) => state.products);
 
@@ -123,7 +120,6 @@ export default function NewArrivals() {
 
         <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
           <h2 className="font-h2 text-black whitespace-nowrap relative z-10">
-            {/* {currentSection.title} */}
             New Arrivals
           </h2>
           <FlowerIcon className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[40px] h-[25px] md:w-[110px] md:h-[80px] pointer-events-none z-0" />
@@ -132,9 +128,7 @@ export default function NewArrivals() {
         <div className="w-[18px] md:w-[50px] border-t border-black"></div>
       </div>
 
-      {/* <Row className="flex flex-col items-center">
-        <SectionHeading page="Home" order={3} />
-      </Row> */}
+      
 
       <Row className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {Object.entries(groupedItems).map(([col, items]) => (

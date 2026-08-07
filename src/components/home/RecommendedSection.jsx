@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Slider from "react-slick";
-// import SectionHeading from "../ui/SectionHeading";
 import Row from "../ui/Row.jsx";
 import Section from "../ui/Section.jsx";
 import "slick-carousel/slick/slick.css";
@@ -55,10 +55,6 @@ const RecommendedSection = () => {
 
   return (
     <Section className="w-full ">
-      {/* <Row>
-        <SectionHeading page="Home" order={8} />
-      </Row> */}
-
       <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
         <div className="w-[18px] md:w-[50px] border-t border-black"></div>
 
@@ -92,7 +88,10 @@ const ProductCard = ({ item }) => {
   const description = item?.name || "No description available";
 
   return (
-    <div className="relative shadow-lg overflow-hidden transition-transform duration-300">
+    <Link
+      to={`/products/${item._id}`}
+      className="block relative shadow-lg overflow-hidden transition-transform duration-300 cursor-pointer"
+    >
       <div className="relative w-full min-h-[300px]  lg:w-[342px] h-[315px] sm:h-[398px]">
         <img
           src={imageUrl}
@@ -117,7 +116,7 @@ const ProductCard = ({ item }) => {
           {description}
         </p>
       </div>
-    </div>
+    </Link>
   );
 };
 

@@ -4,7 +4,6 @@ import Button from "../ui/Button";
 import { useNavigate } from "react-router-dom";
 import HeartIcon from "../icons/HeartIcon";
 import { useDispatch, useSelector } from "react-redux";
-
 import {
   addToCart,
   createCart,
@@ -92,18 +91,142 @@ export default function ProductInfo({
   const [selectedSize, setSelectedSize] = useState(null);
   const [activeVariant, setActiveVariant] = useState(null);
 
+  const getSizeFromVariant = (variant) => {
+    if (!variant) return null;
+
+    if (Array.isArray(variant.attributes) && variant.attributes.length > 0) {
+      const sizeAttr = variant.attributes.find((a) => {
+        const attrObj = a.attributeId || a.attribute || {};
+        const code = (attrObj.code || a.attributeCode || a.code || "").toString().toLowerCase();
+        const name = (attrObj.name || a.attributeName || a.name || "").toString().toLowerCase();
+
+        return (
+          code.includes("size") ||
+          name.includes("size") ||
+          code.includes("waist") ||
+          name.includes("waist") ||
+          code.includes("alpha") ||
+          name.includes("alpha") ||
+          code.includes("numeric") ||
+          name.includes("numeric") ||
+          code === "size" ||
+          name === "size"
+        );
+      });
+
+      if (sizeAttr) {
+        const valObj = sizeAttr.valueId || sizeAttr.valueObj || sizeAttr.val || {};
+        const id = valObj._id || sizeAttr.valueId || sizeAttr._id;
+        const val =
+          typeof valObj === "object"
+            ? valObj.value || valObj.name || valObj.val
+            : typeof sizeAttr.value === "string"
+            ? sizeAttr.value
+            : typeof sizeAttr.valueId === "string"
+            ? sizeAttr.valueId
+            : sizeAttr.customValue;
+
+        if (val) return { _id: id || val, name: String(val) };
+      }
+
+      const nonColorAttr = variant.attributes.find((a) => {
+        const attrObj = a.attributeId || a.attribute || {};
+        const code = (attrObj.code || a.attributeCode || a.code || "").toString().toLowerCase();
+        const name = (attrObj.name || a.attributeName || a.name || "").toString().toLowerCase();
+        return (
+          !code.includes("color") &&
+          !name.includes("color") &&
+          !code.includes("colour") &&
+          !name.includes("colour")
+        );
+      });
+
+      if (nonColorAttr) {
+        const valObj = nonColorAttr.valueId || nonColorAttr.valueObj || nonColorAttr.val || {};
+        const id = valObj._id || nonColorAttr.valueId || nonColorAttr._id;
+        const val =
+          typeof valObj === "object"
+            ? valObj.value || valObj.name || valObj.val
+            : typeof nonColorAttr.value === "string"
+            ? nonColorAttr.value
+            : typeof nonColorAttr.valueId === "string"
+            ? nonColorAttr.valueId
+            : nonColorAttr.customValue;
+
+        if (val) return { _id: id || val, name: String(val) };
+      }
+    }
+
+    const oldSize = variant.size_id || variant.size || variant.sizes || variant.available_sizes;
+    if (oldSize) {
+      if (typeof oldSize === "object") {
+        const val = oldSize.name || oldSize.value || oldSize.size;
+        if (val) return { _id: oldSize._id || val, name: String(val) };
+      } else if (typeof oldSize === "string") {
+        return { _id: oldSize, name: oldSize };
+      }
+    }
+
+    return null;
+  };
+
+  const getColorFromVariant = (variant) => {
+    if (!variant) return null;
+
+    if (Array.isArray(variant.attributes) && variant.attributes.length > 0) {
+      const colorAttr = variant.attributes.find((a) => {
+        const attrObj = a.attributeId || a.attribute || {};
+        const code = (attrObj.code || a.attributeCode || a.code || "").toString().toLowerCase();
+        const name = (attrObj.name || a.attributeName || a.name || "").toString().toLowerCase();
+        return code.includes("color") || name.includes("color") || code.includes("colour") || name.includes("colour");
+      });
+
+      if (colorAttr) {
+        const valObj = colorAttr.valueId || colorAttr.valueObj || colorAttr.val || {};
+        const id = valObj._id || colorAttr.valueId || colorAttr._id;
+        const val =
+          typeof valObj === "object"
+            ? valObj.value || valObj.name || valObj.val
+            : typeof colorAttr.value === "string"
+            ? colorAttr.value
+            : typeof colorAttr.valueId === "string"
+            ? colorAttr.valueId
+            : colorAttr.customValue;
+
+        if (val) return { _id: id || val, name: String(val) };
+      }
+    }
+
+    const oldColor = variant.color_id || variant.color || variant.colors;
+    if (oldColor) {
+      if (typeof oldColor === "object") {
+        const val = oldColor.name || oldColor.value || oldColor.color;
+        return { _id: oldColor._id || val, name: String(val || "N/A") };
+      }
+      return { _id: String(oldColor), name: String(oldColor) };
+    }
+    return null;
+  };
+
   const sizesForSelectedColor = useMemo(() => {
-    if (!selectedColor) return [];
-    return (product?.variants || []).filter(
-      (v) => v.color_id?._id === selectedColor,
-    );
+    const variants = product?.variants || [];
+    if (!variants.length) return [];
+
+    if (!selectedColor) return variants;
+
+    return variants.filter((v) => {
+      const colorObj = getColorFromVariant(v);
+      return colorObj?._id === selectedColor || colorObj?.name === selectedColor;
+    });
   }, [product, selectedColor]);
 
   useEffect(() => {
     if (product?.variants?.length > 0) {
       const first = product.variants[0];
-      setSelectedColor(first.color_id?._id || null);
-      setSelectedSize(first.size_id?._id || null);
+      const colorObj = getColorFromVariant(first);
+      const sizeObj = getSizeFromVariant(first);
+      setSelectedColor(colorObj?._id || colorObj?.name || null);
+      setSelectedSize(sizeObj?._id || sizeObj?.name || null);
       setActiveVariant(first);
       setSelectedVariant(first);
     }
@@ -111,14 +234,18 @@ export default function ProductInfo({
 
   useEffect(() => {
     if (!selectedColor) return;
-    const variantsForColor = (product?.variants || []).filter(
-      (v) => v.color_id?._id === selectedColor,
-    );
+    const variantsForColor = (product?.variants || []).filter((v) => {
+      const colorObj = getColorFromVariant(v);
+      return colorObj?._id === selectedColor || colorObj?.name === selectedColor;
+    });
+
     if (variantsForColor.length > 0) {
       const firstAvailable =
         variantsForColor.find((v) => v.stock_quantity > 0) ||
         variantsForColor[0];
-      setSelectedSize(firstAvailable.size_id?._id || null);
+      const sizeObj = getSizeFromVariant(firstAvailable);
+
+      setSelectedSize(sizeObj?._id || sizeObj?.name || null);
       setActiveVariant(firstAvailable);
       setSelectedVariant(firstAvailable);
     }
@@ -126,27 +253,22 @@ export default function ProductInfo({
 
   useEffect(() => {
     if (!selectedSize || !selectedColor) return;
-    const match = (product?.variants || []).find(
-      (v) =>
-        v.color_id?._id === selectedColor && v.size_id?._id === selectedSize,
-    );
+    const match = (product?.variants || []).find((v) => {
+      const colorObj = getColorFromVariant(v);
+      const sizeObj = getSizeFromVariant(v);
+
+      const matchColor = colorObj?._id === selectedColor || colorObj?.name === selectedColor;
+      const matchSize = sizeObj?._id === selectedSize || sizeObj?.name === selectedSize;
+
+      return matchColor && matchSize;
+    });
+
     if (match) {
       setActiveVariant(match);
       setSelectedVariant(match);
     }
   }, [selectedSize, selectedColor, product?.variants, setSelectedVariant]);
 
-  // const originalPrice = activeVariant?.price || 0;
-  // const discountType = product?.discount_id?.type;
-  // const discountValue = product?.discount_id?.value || 0;
-  // let discountedPrice = originalPrice;
-  // if (discountType === "percentage") {
-  //   discountedPrice = Math.round(
-  //     originalPrice - (originalPrice * discountValue) / 100,
-  //   );
-  // } else if (discountType === "flat") {
-  //   discountedPrice = Math.max(0, originalPrice - discountValue);
-  // }
   const originalPrice = Number(activeVariant?.price) || 0;
 
   const offerPrice =
@@ -156,9 +278,7 @@ export default function ProductInfo({
       : originalPrice;
 
   const hasOffer = offerPrice > 0 && offerPrice < originalPrice;
-
   const discountedPrice = hasOffer ? offerPrice : originalPrice;
-
   const discountPercent = hasOffer
     ? Math.round(((originalPrice - offerPrice) / originalPrice) * 100)
     : 0;
@@ -214,12 +334,6 @@ export default function ProductInfo({
 
   const { handleAddToWishlist } = useAddToWishlist(setShowLoginPopup);
 
-  // const discount = product?.discount || product?.discount_id || {};
-  // const hasDiscount = discount?.value > 0;
-  // const endsWithin24h =
-  //   discount?.end_date &&
-  //   new Date(discount.end_date).getTime() - Date.now() <= 24 * 60 * 60 * 1000;
-
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
@@ -243,22 +357,6 @@ export default function ProductInfo({
 
       <div className="pb-[33px] border-dashed border-b light-border">
         <div className="flex items-center gap-2 justify-left mb-1">
-          {/* {hasDiscount && (
-            <>
-              <span className="bg-theme text-theme text-[12px] md:text-[15px] px-2 py-1 rounded font-bold">
-                {discount?.type === "percentage"
-                  ? `${discount?.value || 0}% OFF`
-                  : `₹${discount?.value || 0} OFF`}
-              </span>
-              {endsWithin24h ? (
-                <CountdownTimer endDate={discount.end_date} />
-              ) : (
-                <span className="text-theme text-[12px] md:text-[15px] font-bold">
-                  Limited time deal
-                </span>
-              )}
-            </>
-          )} */}
         </div>
 
         <div className="flex gap-2 items-center">
@@ -287,22 +385,26 @@ export default function ProductInfo({
 
         <div className="flex flex-wrap gap-[13px]">
           {sizesForSelectedColor.map((v) => {
+            const sizeObj = getSizeFromVariant(v);
+            const sizeId = sizeObj?._id || v._id;
+            const sizeName = sizeObj?.name || "N/A";
             const outOfStock = v.stock_quantity === 0;
+
             return (
-              <div key={v._id} className="flex flex-col items-center">
+              <div key={v._id || sizeId} className="flex flex-col items-center">
                 <button
                   disabled={outOfStock}
-                  onClick={() => !outOfStock && setSelectedSize(v.size_id._id)}
+                  onClick={() => !outOfStock && setSelectedSize(sizeId)}
                   className={`text-black w-[65px] py-[6px] rounded-[20px] text-[16px] transition-all
                     ${
-                      selectedSize === v.size_id._id
+                      selectedSize === sizeId
                         ? "border border-black bg-black text-white"
                         : "border light-border"
                     }
                     ${outOfStock ? "cursor-not-allowed opacity-50" : ""}
                   `}
                 >
-                  {v.size_id.name}
+                  {sizeName}
                 </button>
                 {outOfStock && (
                   <span className="text-[12px] sec-text-color mt-[3px]">

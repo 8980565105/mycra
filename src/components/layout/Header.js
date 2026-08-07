@@ -126,7 +126,6 @@ const Header = () => {
 
   const cart = useSelector((state) => state.cart.cart);
   const wishlist = useSelector((state) => state.wishlist.items);
-  // const { info: storeInfo } = useSelector((state) => state.store);
   const settings = useSelector((state) => state.settings.data);
   const userId = useSelector((state) => state.auth.user?._id);
 
@@ -284,9 +283,13 @@ const Header = () => {
             <img
               src={dynamicLogoUrl || HeaderLogo}
               alt="Logo"
-              className="hidden lg:block"
+              className="hidden lg:block w-[230px] h-[56px] object-fit"
             />
-            <img src={dynamicMobileLogoUrl} alt="Logo" className="lg:hidden" />
+            <img
+              src={dynamicMobileLogoUrl}
+              alt="Logo"
+              className="lg:hidden w-[100px] h-[30px] object-fit"
+            />
           </Link>
         </div>
 
