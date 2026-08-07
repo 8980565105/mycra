@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
 
-// Fetch products with pagination/search
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
   async (
@@ -30,7 +29,6 @@ export const fetchProducts = createAsyncThunk(
   },
 );
 
-// Get product by ID
 export const getProductById = createAsyncThunk(
   "products/getProductById",
   async (id: string, { rejectWithValue }) => {
@@ -44,7 +42,6 @@ export const getProductById = createAsyncThunk(
   },
 );
 
-// Create product
 export const createProduct = createAsyncThunk(
   "products/createProduct",
   async (data: any, { rejectWithValue }) => {
@@ -58,7 +55,6 @@ export const createProduct = createAsyncThunk(
   },
 );
 
-// Update product
 export const updateProduct = createAsyncThunk(
   "products/updateProduct",
   async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
@@ -72,7 +68,6 @@ export const updateProduct = createAsyncThunk(
   },
 );
 
-// ✅ Update product status
 export const updateProductStatus = createAsyncThunk(
   "products/updateProductStatus",
   async (
@@ -89,7 +84,6 @@ export const updateProductStatus = createAsyncThunk(
   },
 );
 
-// Delete product
 export const deleteProduct = createAsyncThunk(
   "products/deleteProduct",
   async (id: string, { rejectWithValue }) => {
@@ -103,7 +97,6 @@ export const deleteProduct = createAsyncThunk(
   },
 );
 
-// Bulk delete products
 export const bulkDeleteProducts = createAsyncThunk(
   "products/bulkDeleteProducts",
   async (ids: string[], { rejectWithValue }) => {

@@ -2,13 +2,7 @@ import {
   LayoutDashboard,
   Package,
   FolderTree,
-  Tag,
   Shirt,
-  Palette,
-  Tags,
-  Droplet,
-  Ruler,
-  Percent,
   Ticket,
   ShoppingCart,
   CreditCard,
@@ -51,7 +45,6 @@ import {
 } from "@/components/ui/collapsible";
 import { RootState } from "@/store";
 
-
 const adminSections = [
   {
     label: "Main",
@@ -69,22 +62,14 @@ const adminSections = [
       { title: "SubCategories", url: "/admin/subcategories", icon: Folders },
       { title: "Attributes", url: "/admin/attributes", icon: Shapes },
       { title: "Product Categories", url: "/admin/types", icon: Shirt },
-
-      // { title: "Brands", url: "/admin/brands", icon: BadgeCheck },
-      // { title: "Fabrics", url: "/admin/fabrics", icon: Shirt },
-      // { title: "Colors", url: "/admin/colors", icon: Palette },
-      // { title: "Sizes", url: "/admin/sizes", icon: Ruler },
       { title: "Products", url: "/admin/products", icon: Package },
-      { title: "Product Labels", url: "/admin/product-labels", icon: Tag },
-
+      // { title: "Product Labels", url: "/admin/product-labels", icon: Tag },
     ],
   },
   {
     label: "Promotions",
     items: [
-      // { title: "Discounts", url: "/admin/discounts", icon: Percent },
       { title: "Coupons", url: "/admin/coupons", icon: TicketPercent },
-
     ],
   },
   {
@@ -110,7 +95,6 @@ const adminSections = [
     label: "Wallets",
     items: [
       { title: "User Wallets", url: "/admin/wallets/users", icon: Wallet },
-      // { title: "Store Wallets", url: "/admin/wallets/stores", icon: Wallet },
     ],
   },
   {
@@ -135,14 +119,6 @@ const storeOwnerSections = [
   {
     label: "Catalog",
     items: [
-      // { title: "Categories", url: "/store_owner/categories", icon: FolderTree },
-      // { title: "SubCategories", url: "/store_owner/subcategories", icon: FolderTree },
-      // { title: "Brands", url: "/store_owner/brands", icon: Tag },
-      // { title: "Types", url: "/store_owner/types", icon: Shirt },
-      // { title: "Fabrics", url: "/store_owner/fabrics", icon: Palette },
-      // { title: "Product Labels", url: "/store_owner/product-labels", icon: Tags },
-      // { title: "Colors", url: "/store_owner/colors", icon: Droplet },
-      // { title: "Sizes", url: "/store_owner/sizes", icon: Ruler },
       { title: "Products", url: "/store_owner/products", icon: Package },
 
     ],

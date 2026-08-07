@@ -6,9 +6,6 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Edit2, Trash2, Download } from "lucide-react";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
-
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirmDialog";
 import { toast } from "sonner";
@@ -20,11 +17,7 @@ import {
 } from "@/features/products/productsThunk";
 import { Switch } from "@/components/ui/switch";
 import { fetchCategories } from "@/features/categories/categoriesThunk";
-import { fetchBrands } from "@/features/brands/brandsThunk";
 import { fetchTypes } from "@/features/types/typesThunk";
-import { fetchFabrics } from "@/features/fabrics/fabricsThunk";
-import { fetchColors } from "@/features/colors/colorsThunk";
-import { fetchSizes } from "@/features/sizes/sizesThunk";
 import { fetchProductLabels } from "@/features/productLabels/productLabelsThunk";
 import {
   Select,
@@ -47,7 +40,6 @@ export default function Products() {
   const { products, total, loading } = useSelector(
     (state: RootState) => state.products
   );
-
   const { categories: subCategories } = useSelector((state: RootState) => state.subcategori);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -78,15 +70,10 @@ export default function Products() {
   }>({});
   const [productLabelsFilter, setProductLabelsFilter] = useState<string[]>([]);
   const { categories } = useSelector((state: RootState) => state.categories);
-  const { brands } = useSelector((state: RootState) => state.brands);
   const { types } = useSelector((state: RootState) => state.types);
-  const { fabrics } = useSelector((state: RootState) => state.fabrics);
-  const { colors } = useSelector((state: RootState) => state.colors);
-  const { sizes } = useSelector((state: RootState) => state.sizes);
   const { labels: productLabels } = useSelector(
     (state: RootState) => state.productLabels
   );
-
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedQuery(searchQuery), 500);
     return () => clearTimeout(handler);
@@ -154,7 +141,6 @@ export default function Products() {
     productLabelsFilter,
     dispatch,
   ]);
-
   const handleDelete = async (id: string) => {
     try {
       await dispatch(deleteProduct(id)).unwrap();
@@ -198,11 +184,7 @@ export default function Products() {
 
   useEffect(() => {
     dispatch(fetchCategories({ page: 1, limit: 100 }));
-    dispatch(fetchBrands({ page: 1, limit: 100 }));
     dispatch(fetchTypes({ page: 1, limit: 100 }));
-    dispatch(fetchFabrics({ page: 1, limit: 100 }));
-    dispatch(fetchColors({ page: 1, limit: 100 }));
-    dispatch(fetchSizes({ page: 1, limit: 100 }));
     dispatch(fetchProductLabels({ page: 1, limit: 100 }));
     dispatch(fetchsubCategories({ page: 1, limit: 100, status: "active" }));
   }, [dispatch]);
@@ -294,21 +276,7 @@ export default function Products() {
         />
 
         <h4 className="font-semibold text-gray-700">Filter by Brand</h4>
-        <MultiSelectPopover
-          label="Select Brands"
-          options={brands.map((b) => ({ value: b._id, label: b.name }))}
-          selected={localBrand}
-          setSelected={setLocalBrand}
-        />
-
         <h4 className="font-semibold text-gray-700">Filter by Size</h4>
-        <MultiSelectPopover
-          label="Select Sizes"
-          options={sizes.map((s) => ({ value: s._id, label: s.name }))}
-          selected={localSize}
-          setSelected={setLocalSize}
-        />
-
         <h4 className="font-semibold text-gray-700">Other Filters</h4>
         <div className="grid grid-cols-2 gap-2">
           <MultiSelectPopover
@@ -316,18 +284,6 @@ export default function Products() {
             options={types.map((t) => ({ value: t._id, label: t.name }))}
             selected={localType}
             setSelected={setLocalType}
-          />
-          <MultiSelectPopover
-            label="Fabrics"
-            options={fabrics.map((f) => ({ value: f._id, label: f.name }))}
-            selected={localFabric}
-            setSelected={setLocalFabric}
-          />
-          <MultiSelectPopover
-            label="Colors"
-            options={colors.map((c) => ({ value: c._id, label: c.name }))}
-            selected={localColor}
-            setSelected={setLocalColor}
           />
           <MultiSelectPopover
             label="Product Labels"
@@ -684,9 +640,7 @@ export default function Products() {
                                           <th className="p-2 text-left">
                                             Price / Stock
                                           </th>
-                                          <th className="p-2 text-left">
-                                            Labels
-                                          </th>
+
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -711,23 +665,6 @@ export default function Products() {
                                             </td>
                                             <td className="p-2">
                                               ${v?.price} / {v?.stock_quantity}
-                                            </td>
-                                            <td className="p-2 flex gap-1 flex-wrap">
-                                              {v?.is_featured && (
-                                                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">
-                                                  Featured
-                                                </span>
-                                              )}
-                                              {v?.is_best_seller && (
-                                                <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs">
-                                                  Best Seller
-                                                </span>
-                                              )}
-                                              {v?.is_trending && (
-                                                <span className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded text-xs">
-                                                  Trending
-                                                </span>
-                                              )}
                                             </td>
                                           </tr>
                                         ))}

@@ -12,13 +12,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Plus, Trash2, Edit, List } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -42,7 +35,6 @@ export default function AttributesPage() {
   const [editingAttr, setEditingAttr] = useState<Attribute | null>(null);
   const [attrName, setAttrName] = useState("");
   const [attrCode, setAttrCode] = useState("");
-  const [inputType, setInputType] = useState<"select" | "multi-select" | "text" | "number">("select");
 
   const [selectedValueAttr, setSelectedValueAttr] = useState<Attribute | null>(null);
   const [isValueModalOpen, setIsValueModalOpen] = useState(false);
@@ -58,12 +50,10 @@ export default function AttributesPage() {
       setEditingAttr(attr);
       setAttrName(attr.name);
       setAttrCode(attr.code);
-      setInputType(attr.inputType);
     } else {
       setEditingAttr(null);
       setAttrName("");
       setAttrCode("");
-      setInputType("select");
     }
     setIsAttrModalOpen(true);
   };
@@ -78,13 +68,13 @@ export default function AttributesPage() {
         await dispatch(
           updateAttribute({
             id: editingAttr._id,
-            data: { name: attrName, code: attrCode, inputType },
+            data: { name: attrName, code: attrCode },
           })
         ).unwrap();
         toast.success("Attribute updated successfully");
       } else {
         await dispatch(
-          createAttribute({ name: attrName, code: attrCode, inputType })
+          createAttribute({ name: attrName, code: attrCode })
         ).unwrap();
         toast.success("Attribute created successfully");
       }
@@ -101,7 +91,6 @@ export default function AttributesPage() {
     }
   };
 
-  // Value Management
   const handleOpenValues = (attr: Attribute) => {
     setSelectedValueAttr(attr);
     dispatch(fetchAttributeValues({ attributeId: attr._id }));
@@ -184,14 +173,12 @@ export default function AttributesPage() {
             <CardContent>
               <div className="text-xs text-muted-foreground space-y-1">
                 <p><span className="font-medium text-foreground">Code:</span> {attr.code}</p>
-                <p><span className="font-medium text-foreground">Input Type:</span> {attr.inputType}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Attribute Create/Edit Dialog */}
       <Dialog open={isAttrModalOpen} onOpenChange={setIsAttrModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -216,23 +203,7 @@ export default function AttributesPage() {
                 onChange={(e) => setAttrCode(e.target.value)}
               />
             </div>
-            <div>
-              <Label>Input Type</Label>
-              <Select
-                value={inputType}
-                onValueChange={(val: any) => setInputType(val)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="select">Single Select (Dropdown)</SelectItem>
-                  <SelectItem value="multi-select">Multi-Select</SelectItem>
-                  <SelectItem value="text">Text Input</SelectItem>
-                  <SelectItem value="number">Number Input</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAttrModalOpen(false)}>
@@ -243,7 +214,6 @@ export default function AttributesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Attribute Values Dialog */}
       <Dialog open={isValueModalOpen} onOpenChange={setIsValueModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

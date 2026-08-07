@@ -19,9 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetchsubCategories } from "@/features/subcategories/subcategoriesThunk";
-import { fetchBrands } from "@/features/brands/brandsThunk";
 import { fetchTypes } from "@/features/types/typesThunk";
-import { fetchFabrics } from "@/features/fabrics/fabricsThunk";
 import { useBasePath } from "@/hooks/useBasePath";
 import { fetchProductLabels } from "@/features/productLabels/productLabelsThunk";
 import {
@@ -29,8 +27,6 @@ import {
   getProductById,
   updateProduct,
 } from "@/features/products/productsThunk";
-import { fetchColors } from "@/features/colors/colorsThunk";
-import { fetchSizes } from "@/features/sizes/sizesThunk";
 import { fetchCategories } from "@/features/categories/categoriesThunk";
 import { fetchCategoryAttributes, fetchTypeAttributes } from "@/features/attributes/attributesThunk";
 export default function ProductFormPage() {
@@ -41,11 +37,7 @@ export default function ProductFormPage() {
   const basePath = useBasePath();
   const { categories: mainCategories } = useSelector((state: RootState) => state.categories);
   const { categories: subCategories } = useSelector((state: RootState) => state.subcategori);
-  const { brands } = useSelector((state: RootState) => state.brands);
   const { types } = useSelector((state: RootState) => state.types);
-  const { fabrics } = useSelector((state: RootState) => state.fabrics);
-  const { colors } = useSelector((state: RootState) => state.colors);
-  const { sizes } = useSelector((state: RootState) => state.sizes);
   const { categoryAttributes } = useSelector((state: RootState) => state.attributes);
   const { labels: productLabels } = useSelector((state: RootState) => state.productLabels);
   const [name, setName] = useState("");
@@ -73,11 +65,7 @@ export default function ProductFormPage() {
   useEffect(() => {
     dispatch(fetchCategories({ page: 1, limit: 100, status: "active" }));
     dispatch(fetchsubCategories({ page: 1, limit: 1000, status: "active", role: "admin" }));
-    dispatch(fetchBrands({ page: 1, limit: 100, status: "active" }));
     dispatch(fetchTypes({ page: 1, limit: 1000, status: "active" }));
-    dispatch(fetchFabrics({ page: 1, limit: 100, status: "active" }));
-    dispatch(fetchColors({ page: 1, limit: 100, status: "active" }));
-    dispatch(fetchSizes({ page: 1, limit: 100, status: "active" }));
     dispatch(fetchProductLabels({ page: 1, limit: 100, status: "active" }));
   }, [dispatch]);
 
@@ -133,9 +121,7 @@ export default function ProductFormPage() {
                 fabric_id: v.fabric_id?._id || v.fabric_id || "",
                 type_id: v.type_id?._id || v.type_id || "",
                 color_id: v.color_id?._id || v.color_id || "",
-                color_name: v.color_id?.name || colors.find((c) => c._id === v.color_id)?.name || "",
                 size_id: v.size_id?._id || v.size_id || "",
-                size_name: v.size_id?.name || sizes.find((s) => s._id === v.size_id)?.name || "",
                 dynamicAttributes: dynAttrsObj,
                 price: v.price || "",
                 offerprice: v.offerprice || "",
@@ -193,24 +179,6 @@ export default function ProductFormPage() {
 
   const handleGenerateVariants = () => {
     const attributeSets: { key: string; items: { id: string; name: string; attrId?: string }[] }[] = [];
-    if (selectedColors.length > 0) {
-      attributeSets.push({
-        key: "color",
-        items: selectedColors.map((id) => ({
-          id,
-          name: colors.find((c) => c._id === id)?.name || "Color",
-        })),
-      });
-    }
-    if (selectedSizes.length > 0) {
-      attributeSets.push({
-        key: "size",
-        items: selectedSizes.map((id) => ({
-          id,
-          name: sizes.find((s) => s._id === id)?.name || "Size",
-        })),
-      });
-    }
     if (categoryAttributes && categoryAttributes.length > 0) {
       categoryAttributes.forEach((attr: any) => {
         const selectedForAttr = selectedDynAttrs[attr._id] || [];
@@ -231,7 +199,7 @@ export default function ProductFormPage() {
     }
     if (attributeSets.length === 0) {
       return toast.error("Please select at least one variant attribute option!");
-    }
+  }
 
     const arraysToCombine = attributeSets.map((s) => s.items);
     const combinations = cartesianProduct(arraysToCombine);
@@ -442,7 +410,7 @@ export default function ProductFormPage() {
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select SubCategory (e.g. Men's Wear)" />
+                      <SelectValue placeholder="Select SubCategory" />
                     </SelectTrigger>
                     <SelectContent>
                       {subCategories
@@ -466,7 +434,7 @@ export default function ProductFormPage() {
                     onValueChange={(val) => setTypeId(val)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Product Category (e.g. T-Shirt, Jeans)" />
+                      <SelectValue placeholder="Select Product Category" />
                     </SelectTrigger>
                     <SelectContent>
                       {types

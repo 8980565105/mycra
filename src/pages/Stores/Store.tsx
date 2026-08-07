@@ -26,11 +26,7 @@ export default function Stores() {
       label: "Phone",
       render: (item: any) => item.phone || "-",
     },
-    {
-      key: "website",
-      label: "Website",
-      render: (item: any) => item.website || "-",
-    },
+   
     {
       key: "createdAt",
       label: "Created At",

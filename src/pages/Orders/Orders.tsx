@@ -42,8 +42,6 @@ import {
 } from "@/components/ui/popover";
 import { fetchProducts } from "@/features/products/productsThunk";
 import { fetchUsers } from "@/features/users/usersThunk";
-import { fetchColors } from "@/features/colors/colorsThunk";
-import { fetchSizes } from "@/features/sizes/sizesThunk";
 import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
 import { Order, OrderStatus } from "@/features/orders/ordersSlice";
@@ -156,8 +154,6 @@ export default function Orders() {
   const { orders, total, loading, actionLoading, selectedOrder } = useSelector((state: RootState) => state.orders);
   const { products } = useSelector((state: RootState) => state.products);
   const { users } = useSelector((state: RootState) => state.users);
-  const { colors } = useSelector((state: RootState) => state.colors);
-  const { sizes } = useSelector((state: RootState) => state.sizes);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -193,8 +189,6 @@ export default function Orders() {
   useEffect(() => {
     dispatch(fetchProducts({ page: 1, limit: 1000 }));
     dispatch(fetchUsers({ page: 1, limit: 1000 }));
-    dispatch(fetchColors({ page: 1, limit: 100 }));
-    dispatch(fetchSizes({ page: 1, limit: 100 }));
   }, [dispatch]);
 
   useEffect(() => {

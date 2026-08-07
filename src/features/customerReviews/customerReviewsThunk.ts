@@ -86,9 +86,7 @@ export const bulkDeleteCustomerReviews = createAsyncThunk(
   },
 );
 
-// ─── Create review (Frontend user submits review on product page) ─────────────
-// store_owner_id is auto-resolved on backend from product_id.createdBy
-// Frontend just sends: product_id, rating, title, comment
+// ─── Create review ────────────────────────────────────────────────────────────
 export const createCustomerReview = createAsyncThunk(
   "customerReviews/create",
   async (
@@ -97,6 +95,8 @@ export const createCustomerReview = createAsyncThunk(
       rating: number;
       title: string;
       comment?: string;
+      is_approved?: boolean;
+      createdAt?: string;
     },
     { rejectWithValue },
   ) => {
@@ -104,6 +104,36 @@ export const createCustomerReview = createAsyncThunk(
       const res = await api.post(ROUTES.customerReviews.getAll, reviewData);
       if (res.data.success) return res.data.data;
       return rejectWithValue(res.data.message || "Failed to submit review");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server error");
+    }
+  },
+);
+
+// ─── Update review ────────────────────────────────────────────────────────────
+export const updateCustomerReview = createAsyncThunk(
+  "customerReviews/update",
+  async (
+    {
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        product_id?: string;
+        rating?: number;
+        title?: string;
+        comment?: string;
+        is_approved?: boolean;
+        createdAt?: string;
+      };
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const res = await api.put(ROUTES.customerReviews.update(id), data);
+      if (res.data.success) return res.data.data;
+      return rejectWithValue(res.data.message || "Failed to update review");
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server error");
     }

@@ -912,14 +912,14 @@ export default function VelzonDashboard() {
       ...productChange,
       link: "/subcategories"
     },
-    {
-      title: "Total Brands",
-      value: totalBrands,
-      icon: BadgeCheck,
-      bgClass: "stat-card-primary",
-      ...productChange,
-      link: "/brands"
-    },
+    // {
+    //   title: "Total Brands",
+    //   value: totalBrands,
+    //   icon: BadgeCheck,
+    //   bgClass: "stat-card-primary",
+    //   ...productChange,
+    //   link: "/brands"
+    // },
     {
       title: "Total Types",
       value: totalTypes,
@@ -928,38 +928,38 @@ export default function VelzonDashboard() {
       ...productChange,
       link: "/types"
     },
-    {
-      title: "Total Fabrics",
-      value: totalFabrics,
-      icon: Shirt,
-      bgClass: "stat-card-primary",
-      ...productChange,
-      link: "/fabrics"
-    },
-    {
-      title: "Total Product Labels",
-      value: totalProductLabels,
-      icon: Tag,
-      bgClass: "stat-card-primary",
-      ...productChange,
-      link: "/product-labels"
-    },
-    {
-      title: "Total colors",
-      value: totalColors,
-      icon: Palette,
-      bgClass: "stat-card-primary",
-      ...productChange,
-      link: "/colors"
-    },
-    {
-      title: "Total Sizes",
-      value: totalSizes,
-      icon: Ruler,
-      bgClass: "stat-card-primary",
-      ...productChange,
-      link: "/sizes"
-    },
+    // {
+    //   title: "Total Fabrics",
+    //   value: totalFabrics,
+    //   icon: Shirt,
+    //   bgClass: "stat-card-primary",
+    //   ...productChange,
+    //   link: "/fabrics"
+    // },
+    // {
+    //   title: "Total Product Labels",
+    //   value: totalProductLabels,
+    //   icon: Tag,
+    //   bgClass: "stat-card-primary",
+    //   ...productChange,
+    //   link: "/product-labels"
+    // },
+    // {
+    //   title: "Total colors",
+    //   value: totalColors,
+    //   icon: Palette,
+    //   bgClass: "stat-card-primary",
+    //   ...productChange,
+    //   link: "/colors"
+    // },
+    // {
+    //   title: "Total Sizes",
+    //   value: totalSizes,
+    //   icon: Ruler,
+    //   bgClass: "stat-card-primary",
+    //   ...productChange,
+    //   link: "/sizes"
+    // },
     {
       title: "Total Orders",
       value: totalOrders,

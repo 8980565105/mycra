@@ -7,6 +7,7 @@ import {
   getCustomerReviewById,
   updateReviewsStatus,
   createCustomerReview,
+  updateCustomerReview,
   fetchPublicProductReviews,
 } from "./customerReviewsThunk";
 
@@ -61,6 +62,17 @@ const customerReviewsSlice = createSlice({
       // ─── Get by ID ──────────────────────────────────────────────────────────
       .addCase(getCustomerReviewById.fulfilled, (state, action) => {
         state.selectedReview = action.payload;
+      })
+
+      // ─── Update review ──────────────────────────────────────────────────────
+      .addCase(updateCustomerReview.fulfilled, (state, action) => {
+        const updated = action.payload;
+        const index = state.customerReviews.findIndex(
+          (r) => r._id === updated._id,
+        );
+        if (index !== -1) {
+          state.customerReviews[index] = updated;
+        }
       })
 
       // ─── Update status (approve/reject toggle) ──────────────────────────────

@@ -22,6 +22,13 @@ export default function TypesPage() {
   const columns = [
     { key: "name", label: "Name", width: "w-48" },
     {
+      key: "subCategoryId",
+      label: "Subcategory",
+      width: "w-48",
+      render: (item: any) => item.subCategoryId?.name || "-",
+      exportValue: (item: any) => item.subCategoryId?.name || "-",
+    },
+    {
       key: "description",
       label: "Description",
       width: "w-64",

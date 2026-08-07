@@ -121,7 +121,7 @@ export default function StoreFormPage() {
 
       if (createStore.fulfilled.match(result) || updateStore.fulfilled.match(result)) {
         toast.success(isEditMode ? "Store updated successfully!" : "Store created successfully!");
-        navigate("/stores");
+        navigate(`${basePath}/stores`);
       } else {
         toast.error((result.payload as string) || "Something went wrong");
       }
@@ -173,7 +173,7 @@ export default function StoreFormPage() {
                   <Label htmlFor="phone">Store Phone</Label>
                   <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Store Phone" />
                 </div>
-                <div>
+                {/* <div>
                   <Label htmlFor="website">Store Website</Label>
                   <Input id="website" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://store.com" />
                   {website && (
@@ -186,7 +186,7 @@ export default function StoreFormPage() {
                       })()}
                     </p>
                   )}
-                </div>
+                </div> */}
               </div>
 
               <div>
@@ -208,7 +208,7 @@ export default function StoreFormPage() {
           </Card>
 
           {/* Store Theme */}
-          <Card className="shadow-md border border-gray-200">
+          {/* <Card className="shadow-md border border-gray-200">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">Store Theme</CardTitle>
             </CardHeader>
@@ -222,10 +222,7 @@ export default function StoreFormPage() {
                   <Label>Secondary Color</Label>
                   <Input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-full h-10 cursor-pointer rounded border" />
                 </div>
-                {/* <div>
-                  <Label>Button Color</Label>
-                  <Input type="color" value={buttonColor} onChange={(e) => setButtonColor(e.target.value)} className="w-full h-10 cursor-pointer rounded border" />
-                </div> */}
+               
               </div>
 
               <div>
@@ -244,7 +241,7 @@ export default function StoreFormPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Store Address */}
           <Card className="shadow-md border border-gray-200">
@@ -297,7 +294,7 @@ export default function StoreFormPage() {
               <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
                 {isEditMode ? "Update Store" : "Create Store"}
               </Button>
-              <Link to="/stores" className="flex-1">
+              <Link to={`${basePath}/stores`} className="flex-1">
                 <Button type="button" variant="outline" className="w-full">
                   Cancel
                 </Button>
