@@ -211,8 +211,8 @@ const DesktopFilters = ({
                           onClick={() => handleAttributeChange(code, valName)}
                         >
                           <div
-                            className={`w-[22px] h-[22px] rounded-full box-shadow ${
-                              isChecked ? "ring-2 ring-offset-1 ring-black" : ""
+                            className={`w-[22px] h-[22px] rounded-full box-shadow  ${
+                              isChecked ? "border-2 border-black scale-110" : ""
                             } transition-transform duration-200`}
                             style={{ backgroundColor: hex }}
                           />

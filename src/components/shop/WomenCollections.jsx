@@ -456,9 +456,8 @@ export default function WomenCollections() {
   const [isSortByOpen, setIsSortByOpen] = useState(false);
 
   const [page] = useState(1);
-  const limit = 100;
+  const limit = 30;
 
-  // Debounced price values sent to API & URL to eliminate UI flickering and drag jerks
   const [debouncedMinPrice, setDebouncedMinPrice] = useState(minPrice);
   const [debouncedMaxPrice, setDebouncedMaxPrice] = useState(maxPrice);
 

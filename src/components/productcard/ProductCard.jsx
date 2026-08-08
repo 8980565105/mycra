@@ -178,7 +178,10 @@ export default function ProductCard({ product, setShowLoginPopup }) {
 
   const { productReviews } = useSelector((state) => state.reviews);
   const reviewData = useMemo(() => {
-    if (product?.averageRating !== undefined && product?.totalReviews !== undefined) {
+    if (
+      product?.averageRating !== undefined &&
+      product?.totalReviews !== undefined
+    ) {
       return {
         average: product.averageRating,
         total: product.totalReviews,
@@ -195,7 +198,12 @@ export default function ProductCard({ product, setShowLoginPopup }) {
       average: (sum / total).toFixed(1),
       total,
     };
-  }, [productReviews, product?._id, product?.averageRating, product?.totalReviews]);
+  }, [
+    productReviews,
+    product?._id,
+    product?.averageRating,
+    product?.totalReviews,
+  ]);
 
   const variantImages = Array.isArray(currentVariant?.images)
     ? currentVariant.images
@@ -282,7 +290,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
               <img
                 src={displayedImage}
                 alt={product.subtitle || product.name}
-                className="w-full h-full transition duration-300 object-cover"
+                className="w-full h-full transition duration-300 object-fill"
               />
             </div>
             <div className="absolute top-3 right-3 flex flex-col space-y-2">
@@ -364,12 +372,17 @@ export default function ProductCard({ product, setShowLoginPopup }) {
             </div>
 
             {/* <p>{product|| "store name"}</p> */}
+            {/* {product.store &&( */}
+            <p className="sec-text-color text-14 mb-2 lowercase capitalize line-clamp-1">
+              {product.store} store
+            </p>
+            {/* )} */}
 
             <p className="sec-text-color text-14 mb-2 lowercase capitalize line-clamp-1">
               {product.name}
             </p>
             <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className="text-[20px] font-semibold text-black">
+              <span className="text-[20px] font-regular text-black">
                 ₹{price.discountedPrice.toLocaleString("en-IN")}
               </span>
               {price.hasOffer && (
@@ -399,7 +412,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                       e.stopPropagation();
                       setSelectedColor(clr.code);
                     }}
-                    className={`w-[10px] h-[10px] sm:w-[16px] sm:h-[16px] rounded-full border-2 transition-transform hover:scale-110
+                    className={`w-[10px] h-[10px] sm:w-[16px] sm:h-[16px] rounded-full border transition-transform hover:scale-110
           ${isSelected ? "border-black scale-110" : ""}
         `}
                     style={{ backgroundColor: clr.code }}

@@ -44,9 +44,9 @@ import cropImg from "../../assets/Crop Tops.png";
 import ForgetForm from "../../pages/ForgetForm";
 import toast from "react-hot-toast";
 import SearchBar from "../search/searchbar";
-import { fetchProducts } from "../../features/products/productsThunk";
+// import { fetchProducts } from "../../features/products/productsThunk";
 import { fetchWishlistByUser } from "../../features/wishlist/wishlistThunk";
-import { fetchCart } from "../../features/cart/cartThunk";
+// import { fetchCart } from "../../features/cart/cartThunk";
 
 const STATIC_CATEGORIES = [
   { _id: "static-1", name: "Saree", image_url: shoppingImg, isStatic: true },
@@ -159,7 +159,7 @@ const Header = () => {
 
   useEffect(() => {
     dispatch(fetchNavbar({ status: "active" }));
-    dispatch(fetchProducts());
+    // dispatch(fetchProducts());
     dispatch(fetchCategories());
     dispatch(fetchsubCategories());
   }, [dispatch]);
@@ -170,12 +170,12 @@ const Header = () => {
     }
   }, [dispatch, userId]);
 
-  useEffect(() => {
-    const cart_id = localStorage.getItem("cart_id");
-    if (cart_id) {
-      dispatch(fetchCart(cart_id));
-    }
-  }, [dispatch, user]);
+  // useEffect(() => {
+  //   const cart_id = localStorage.getItem("cart_id");
+  //   if (cart_id) {
+  //     dispatch(fetchCart(cart_id));
+  //   }
+  // }, [dispatch, user]);
 
   const handleShopMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);

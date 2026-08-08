@@ -115,7 +115,7 @@ export default function ProductTabs({ product, selectedVariant }) {
   };
 
   return (
-    <div className="mt-[30px] md:mt-[65px]">
+    <div className="mt-[15px] md:mt-[65px]">
       <div className="hidden md:flex w-full">
         {tabs.map((tab) => (
           <button

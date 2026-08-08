@@ -129,7 +129,7 @@ export default function ProductGallery({
             key={currentImage}
             src={currentImage}
             alt="Main product"
-            className="w-full h-[727px] rounded-[10px] object-cover transition-all duration-300 ease-in-out"
+            className="w-full h-[727px] rounded-[10px] object-fill transition-all duration-300 ease-in-out"
           />
         ) : (
           <div className="w-full h-[727px] rounded-[10px] bg-gray-100 flex items-center justify-center text-gray-400">

@@ -20,7 +20,7 @@ export const fetchProducts = createAsyncThunk(
     try {
       const queryParams = {
         page: 1,
-        limit: 50,
+        limit: 30,
         status: "active",
         ...params,
       };
