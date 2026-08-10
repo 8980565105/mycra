@@ -50,6 +50,15 @@ export const ROUTES = {
     delete: (id: string) => `/subcategories/${id}`,
     bulkDelete: "/subcategories/bulk-delete",
   },
+  brands: {
+    getAll: "/brands",
+    getById: (id: string) => `/brands/${id}`,
+    create: "/brands",
+    update: (id: string) => `/brands/${id}`,
+    updateStatus: (id: string) => `/brands/${id}/status`,
+    delete: (id: string) => `/brands/${id}`,
+    bulkDelete: "/brands/bulk-delete",
+  },
   types: {
     getAll: "/types",
     getById: (id: string) => `/types/${id}`,

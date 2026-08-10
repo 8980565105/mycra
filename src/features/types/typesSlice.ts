@@ -14,6 +14,12 @@ interface Type {
   slug: string;
   description?: string;
   status: string;
+  subCategoryId?: any;
+  allowedAttributes?: any[];
+  variantAttributes?: any[];
+  brandIds?: any[];
+  brands?: any[];
+  brandId?: any;
   createdAt: string;
   updatedAt: string;
 }

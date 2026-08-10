@@ -24,12 +24,18 @@ import faqsReducer from "./features/faqs/faqsSlice";
 import walletReducer from "./features/wallets/walletsSlice";
 import businessReducer from "./features/Business/businessSlice";
 import attributesReducer from "./features/attributes/attributesSlice";
+import brandsReducer from "./features/brands/brandsSlice";
+
+import childCategoriesReducer from "./features/childCategories/childCategoriesSlice";
 
 export const rootReducer = {
   auth: authReducer,
   products: productsReducer,
   warehouse: warehouseReducer,
+  brands: brandsReducer,
   categories: categoriesReducer,
+  subcategori: subcategoriReducer,
+  childCategories: childCategoriesReducer,
   types: typesReducer,
   productLabels: productLabelsReducer,
   attributes: attributesReducer,
@@ -48,7 +54,6 @@ export const rootReducer = {
   setting: settingReducer,
   stores: storesReducer,
   dashboard: dashboardReducer,
-  subcategori: subcategoriReducer,
   faqs: faqsReducer,
   wallet: walletReducer,
   business: businessReducer,

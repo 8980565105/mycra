@@ -73,7 +73,7 @@ export default function CategoriesPage() {
           fetchUsers({
             role: "store_owner",
             page: 1,
-            limit: 1000,
+            limit: 10,
           })
         ).unwrap();
         return res.users.map((u: any) => ({

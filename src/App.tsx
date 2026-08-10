@@ -16,8 +16,8 @@ import Login from "./pages/Login";
 import Categories from "./pages/Categories/Categories";
 import Attributes from "./pages/Attributes/Attributes";
 import CategoryFormPage from "./pages/Categories/CategoryForm";
-// import BrandFormPage from "./pages/Brands/BrandFormPage";
-// import Brands from "./pages/Brands/Brands";
+import BrandFormPage from "./pages/Brands/BrandFormPage";
+import Brands from "./pages/Brands/Brands";
 import TypeFormPage from "./pages/Types/TypeForm";
 import Types from "./pages/Types/Types";
 // import FabricFormPage from "./pages/Fabrics/FabricForm";
@@ -54,6 +54,8 @@ import WarehouseFormPage from "./pages/Warehouse/WarehouseForm";
 import Forgatepassword from "./pages/Forgatepassword";
 import Subcategories from "./pages/Subcategories/Subcategories"
 import SubCategoryFormPage from "./pages/Subcategories/SubcategoryForm";
+import ChildCategories from "./pages/ChildCategories/ChildCategories";
+import ChildCategoryFormPage from "./pages/ChildCategories/ChildCategoryForm";
 import FaqsFrom from "./pages/Faqs/FaqsFrom";
 import Faqspage from "./pages/Faqs/Faqs";
 import StoreView from "./pages/Stores/StoreView";
@@ -110,10 +112,13 @@ const App = () => (
               <Route path="subcategories" element={<Subcategories />} />
               <Route path="subcategories/add" element={<SubCategoryFormPage />} />
               <Route path="subcategories/:id/edit" element={<SubCategoryFormPage />} />
+              <Route path="child-categories" element={<ChildCategories />} />
+              <Route path="child-categories/add" element={<ChildCategoryFormPage />} />
+              <Route path="child-categories/:id/edit" element={<ChildCategoryFormPage />} />
               <Route path="attributes" element={<Attributes />} />
-              {/* <Route path="brands" element={<Brands />} />
+              <Route path="brands" element={<Brands />} />
               <Route path="brands/add" element={<BrandFormPage />} />
-              <Route path="brands/:id/edit" element={<BrandFormPage />} /> */}
+              <Route path="brands/:id/edit" element={<BrandFormPage />} />
               <Route path="types" element={<Types />} />
               <Route path="types/add" element={<TypeFormPage />} />
               <Route path="types/:id/edit" element={<TypeFormPage />} />

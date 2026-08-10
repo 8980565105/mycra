@@ -23,6 +23,7 @@ import {
   Shapes,
   TicketPercent,
   Wallet,
+  Tag,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -58,10 +59,12 @@ const adminSections = [
   {
     label: "Catalog",
     items: [
-      { title: "Categories", url: "/admin/categories", icon: FolderTree },
-      { title: "SubCategories", url: "/admin/subcategories", icon: Folders },
+      { title: "Categories (L1)", url: "/admin/categories", icon: FolderTree },
+      { title: "SubCategories (L2)", url: "/admin/subcategories", icon: Folders },
+      { title: "Child Categories (L3)", url: "/admin/child-categories", icon: Layers },
+      { title: "Product Types (L4)", url: "/admin/types", icon: Shirt },
       { title: "Attributes", url: "/admin/attributes", icon: Shapes },
-      { title: "Product Categories", url: "/admin/types", icon: Shirt },
+      { title: "Brands", url: "/admin/brands", icon: Tag },
       { title: "Products", url: "/admin/products", icon: Package },
       // { title: "Product Labels", url: "/admin/product-labels", icon: Tag },
     ],

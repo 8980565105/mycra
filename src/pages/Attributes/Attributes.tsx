@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirmDialog";
 import { Plus, Trash2, Edit, List } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -85,10 +86,8 @@ export default function AttributesPage() {
   };
 
   const handleDeleteAttr = async (id: string) => {
-    if (confirm("Are you sure you want to delete this attribute and its values?")) {
-      await dispatch(deleteAttribute(id));
-      toast.success("Attribute deleted");
-    }
+    await dispatch(deleteAttribute(id));
+    toast.success("Attribute deleted");
   };
 
   const handleOpenValues = (attr: Attribute) => {
@@ -160,14 +159,21 @@ export default function AttributesPage() {
                 >
                   <Edit className="w-4 h-4 text-gray-600" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteAttr(attr._id)}
+                <ConfirmDialog
                   title="Delete Attribute"
+                  description={`Are you sure you want to delete "${attr.name}" and its values?`}
+                  confirmText="Delete"
+                  danger
+                  onConfirm={() => handleDeleteAttr(attr._id)}
                 >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Delete Attribute"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </Button>
+                </ConfirmDialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -260,13 +266,17 @@ export default function AttributesPage() {
                       )}
                       <span>{val.value}</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteValue(val._id)}
+                    <ConfirmDialog
+                      title="Delete Value"
+                      description={`Are you sure you want to delete "${val.value}"?`}
+                      confirmText="Delete"
+                      danger
+                      onConfirm={() => handleDeleteValue(val._id)}
                     >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </ConfirmDialog>
                   </div>
                 ))
               )}

@@ -28,7 +28,7 @@ export default function BrandsPage() {
           <img
             src={`${import.meta.env.VITE_API_URL_IMAGE}${item.image_url}`}
             alt={item.name}
-            className="h-10 w-10 rounded-md object-cover border"
+            className="h-10 w-10 rounded-md object-contain border"
           />
         ) : (
           <div className="h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 text-xs border border-dashed">
@@ -73,7 +73,7 @@ export default function BrandsPage() {
           fetchUsers({
             role: "store_owner",
             page: 1,
-            limit: 1000,
+            limit: 10,
           })
         ).unwrap();
         return res.users.map((u: any) => ({

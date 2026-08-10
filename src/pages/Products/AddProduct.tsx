@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Sparkles, Trash2, Layers, Tag } from "lucide-react";
+import { ArrowLeft, Sparkles, Trash2, Layers, Tag, Info } from "lucide-react";
 import { toast } from "sonner";
 import { TiptapEditor } from "@/components/ui/TiptapEditor";
 import { ImageUpload } from "@/components/ui/ImageUpload";
@@ -28,7 +28,14 @@ import {
   updateProduct,
 } from "@/features/products/productsThunk";
 import { fetchCategories } from "@/features/categories/categoriesThunk";
-import { fetchCategoryAttributes, fetchTypeAttributes } from "@/features/attributes/attributesThunk";
+import {
+  fetchAttributes,
+  fetchCategoryAttributes,
+  fetchTypeAttributes,
+} from "@/features/attributes/attributesThunk";
+import { getTypeById } from "@/features/types/typesThunk";
+import { fetchBrands } from "@/features/brands/brandsThunk";
+
 export default function ProductFormPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -38,8 +45,10 @@ export default function ProductFormPage() {
   const { categories: mainCategories } = useSelector((state: RootState) => state.categories);
   const { categories: subCategories } = useSelector((state: RootState) => state.subcategori);
   const { types } = useSelector((state: RootState) => state.types);
-  const { categoryAttributes } = useSelector((state: RootState) => state.attributes);
+  const { brands } = useSelector((state: RootState) => state.brands);
+  const { attributes, categoryAttributes } = useSelector((state: RootState) => state.attributes);
   const { labels: productLabels } = useSelector((state: RootState) => state.productLabels);
+
   const [name, setName] = useState("");
   const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
@@ -55,27 +64,113 @@ export default function ProductFormPage() {
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
 
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedTypeDetails, setSelectedTypeDetails] = useState<any>(null);
+  const [selectedSpecAttrs, setSelectedSpecAttrs] = useState<{ [attrId: string]: string }>({});
   const [selectedDynAttrs, setSelectedDynAttrs] = useState<{ [attrId: string]: string[] }>({});
   const [variants, setVariants] = useState<any[]>([]);
   const [bulkPrice, setBulkPrice] = useState("");
   const [bulkOfferPrice, setBulkOfferPrice] = useState("");
   const [bulkStock, setBulkStock] = useState("");
+
   useEffect(() => {
     dispatch(fetchCategories({ page: 1, limit: 100, status: "active" }));
     dispatch(fetchsubCategories({ page: 1, limit: 1000, status: "active", role: "admin" }));
     dispatch(fetchTypes({ page: 1, limit: 1000, status: "active" }));
+    dispatch(fetchBrands({ page: 1, limit: 1000, status: "active" }));
+    dispatch(fetchAttributes({ page: 1, limit: 1000, status: "active" }));
     dispatch(fetchProductLabels({ page: 1, limit: 100, status: "active" }));
   }, [dispatch]);
 
   useEffect(() => {
     if (typeId) {
+      dispatch(getTypeById(typeId)).then((res: any) => {
+        if (res.payload) {
+          setSelectedTypeDetails(res.payload.data || res.payload);
+        }
+      });
       dispatch(fetchTypeAttributes(typeId));
     } else if (categoryId) {
       dispatch(fetchCategoryAttributes(categoryId));
+      setSelectedTypeDetails(null);
+    } else {
+      setSelectedTypeDetails(null);
     }
   }, [dispatch, typeId, categoryId]);
+
+  // Selected Product Category / Type object details
+  const activeTypeObject = useMemo(() => {
+    if (selectedTypeDetails) return selectedTypeDetails;
+    if (!typeId) return null;
+    return types.find((t: any) => (t._id || t) === typeId) || null;
+  }, [selectedTypeDetails, types, typeId]);
+
+  // Brands filtered strictly by selected Type (only linked brands appear)
+  const availableBrands = useMemo(() => {
+    if (!activeTypeObject) return [];
+    const rawTypeBrands = Array.isArray(activeTypeObject.brandIds)
+      ? activeTypeObject.brandIds
+      : Array.isArray(activeTypeObject.brands)
+        ? activeTypeObject.brands
+        : Array.isArray(activeTypeObject.brandId)
+          ? activeTypeObject.brandId
+          : activeTypeObject.brandId
+            ? [activeTypeObject.brandId]
+            : [];
+    if (rawTypeBrands.length === 0) return [];
+    const typeBrandIds = rawTypeBrands.map((b: any) => (typeof b === "object" ? b._id : b));
+    return brands.filter((brand: any) => typeBrandIds.includes(brand._id));
+  }, [activeTypeObject, brands]);
+
+  const allAttributePool = useMemo(() => {
+    const map = new Map<string, any>();
+    (attributes || []).forEach((a: any) => map.set(a._id, a));
+    (categoryAttributes || []).forEach((a: any) => map.set(a._id, a));
+    return Array.from(map.values());
+  }, [attributes, categoryAttributes]);
+
+  const typeVariantAttrIds = useMemo(() => {
+    if (!activeTypeObject || !Array.isArray(activeTypeObject.variantAttributes)) return [];
+    return activeTypeObject.variantAttributes.map((a: any) => (typeof a === "object" ? a._id : a));
+  }, [activeTypeObject]);
+
+  const typeSpecAttrIds = useMemo(() => {
+    if (!activeTypeObject) return [];
+    const allowed = Array.isArray(activeTypeObject.allowedAttributes)
+      ? activeTypeObject.allowedAttributes
+      : Array.isArray(activeTypeObject.specificAttributes)
+        ? activeTypeObject.specificAttributes
+        : [];
+    return allowed.map((a: any) => (typeof a === "object" ? a._id : a));
+  }, [activeTypeObject]);
+
+  const variantAttributesList = useMemo(() => {
+    if (!typeId) return [];
+    if (typeVariantAttrIds.length > 0) {
+      return allAttributePool.filter((attr: any) => typeVariantAttrIds.includes(attr._id));
+    }
+    if (activeTypeObject && Array.isArray(activeTypeObject.variantAttributes)) {
+      const popObjs = activeTypeObject.variantAttributes.filter((a: any) => typeof a === "object" && a._id);
+      if (popObjs.length > 0) return popObjs;
+    }
+    return [];
+  }, [typeId, typeVariantAttrIds, allAttributePool, activeTypeObject]);
+
+  const specAttributesList = useMemo(() => {
+    if (!typeId) return [];
+    if (typeSpecAttrIds.length > 0) {
+      return allAttributePool.filter((attr: any) => typeSpecAttrIds.includes(attr._id));
+    }
+    if (activeTypeObject) {
+      const allowed = Array.isArray(activeTypeObject.allowedAttributes)
+        ? activeTypeObject.allowedAttributes
+        : Array.isArray(activeTypeObject.specificAttributes)
+          ? activeTypeObject.specificAttributes
+          : [];
+      const popObjs = allowed.filter((a: any) => typeof a === "object" && a._id);
+      if (popObjs.length > 0) return popObjs;
+    }
+    return [];
+  }, [typeId, typeSpecAttrIds, allAttributePool, activeTypeObject]);
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -100,6 +195,7 @@ export default function ProductFormPage() {
             if (firstV.fabric_id) setFabricId(firstV.fabric_id._id || firstV.fabric_id);
 
             const dynAttrsUnion: { [attrId: string]: Set<string> } = {};
+            const loadedSpecAttrs: { [attrId: string]: string } = {};
 
             const mappedVariants = p.variants.map((v: any, idx: number) => {
               let dynAttrsObj: { [attrId: string]: string } = {};
@@ -111,6 +207,7 @@ export default function ProductFormPage() {
                     dynAttrsObj[attrId] = valId;
                     if (!dynAttrsUnion[attrId]) dynAttrsUnion[attrId] = new Set();
                     dynAttrsUnion[attrId].add(valId);
+                    loadedSpecAttrs[attrId] = valId;
                   }
                 });
               }
@@ -139,6 +236,7 @@ export default function ProductFormPage() {
             });
 
             setVariants(mappedVariants);
+            setSelectedSpecAttrs(loadedSpecAttrs);
 
             const dynAttrsForState: { [attrId: string]: string[] } = {};
             Object.entries(dynAttrsUnion).forEach(([attrId, valSet]) => {
@@ -151,15 +249,13 @@ export default function ProductFormPage() {
     }
   }, [dispatch, id, isEditMode]);
 
-
-
-  const toggleSelection = (list: string[], setList: (val: string[]) => void, id: string) => {
-    if (list.includes(id)) {
-      setList(list.filter((item) => item !== id));
-    } else {
-      setList([...list, id]);
-    }
+  const handleSingleSpecAttrChange = (attrId: string, valId: string) => {
+    setSelectedSpecAttrs((prev) => ({
+      ...prev,
+      [attrId]: valId,
+    }));
   };
+
   const toggleDynAttrSelection = (attrId: string, valId: string) => {
     setSelectedDynAttrs((prev) => {
       const current = prev[attrId] || [];
@@ -170,6 +266,7 @@ export default function ProductFormPage() {
       }
     });
   };
+
   const cartesianProduct = (arrays: any[][]): any[][] => {
     return arrays.reduce<any[][]>(
       (acc, curr) => acc.flatMap((d) => curr.map((e) => [...d, e])),
@@ -179,8 +276,8 @@ export default function ProductFormPage() {
 
   const handleGenerateVariants = () => {
     const attributeSets: { key: string; items: { id: string; name: string; attrId?: string }[] }[] = [];
-    if (categoryAttributes && categoryAttributes.length > 0) {
-      categoryAttributes.forEach((attr: any) => {
+    if (variantAttributesList && variantAttributesList.length > 0) {
+      variantAttributesList.forEach((attr: any) => {
         const selectedForAttr = selectedDynAttrs[attr._id] || [];
         if (selectedForAttr.length > 0) {
           attributeSets.push({
@@ -197,9 +294,10 @@ export default function ProductFormPage() {
         }
       });
     }
+
     if (attributeSets.length === 0) {
-      return toast.error("Please select at least one variant attribute option!");
-  }
+      return toast.error("Please select at least one Variant Attribute option to generate variants!");
+    }
 
     const arraysToCombine = attributeSets.map((s) => s.items);
     const combinations = cartesianProduct(arraysToCombine);
@@ -219,8 +317,9 @@ export default function ProductFormPage() {
     const generated = combinations.map((combo, idx) => {
       let colorItem: any = null;
       let sizeItem: any = null;
-      const dynAttrs: { [attrId: string]: string } = {};
+      const dynAttrs: { [attrId: string]: string } = { ...selectedSpecAttrs };
       const variantNameParts: string[] = [];
+
       combo.forEach((item, index) => {
         const setKey = attributeSets[index].key;
         if (setKey === "color") {
@@ -243,13 +342,14 @@ export default function ProductFormPage() {
           ...existing,
           color_name: colorItem ? colorItem.name : existing.color_name,
           size_name: sizeItem ? sizeItem.name : existing.size_name,
+          dynamicAttributes: dynAttrs,
           variantLabel: variantNameParts.join(" / "),
         };
       }
 
       const cleanProdName = name.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5) || "PROD";
       const cleanVariantTag = variantNameParts.join("-").toUpperCase().replace(/[^A-Z0-9-]/g, "");
-      const uniqueSuffix = Date.now().toString(36).slice(-5).toUpperCase(); // collision-safe
+      const uniqueSuffix = Date.now().toString(36).slice(-5).toUpperCase();
       const generatedSku = `${cleanProdName}-${cleanVariantTag}-${uniqueSuffix}`;
 
       return {
@@ -280,7 +380,6 @@ export default function ProductFormPage() {
     toast.success(`Successfully generated ${generated.length} variant(s)!`);
   };
 
-
   const handleApplyBulk = () => {
     if (variants.length === 0) return toast.error("No variants generated yet!");
     const updated = variants.map((v) => ({
@@ -292,16 +391,19 @@ export default function ProductFormPage() {
     setVariants(updated);
     toast.success("Bulk settings applied to all variants!");
   };
+
   const handleVariantChange = (index: number, field: string, value: any) => {
     const updated = [...variants];
     updated[index][field] = value;
     setVariants(updated);
   };
+
   const removeVariant = (index: number) => {
     const updated = [...variants];
     updated.splice(index, 1);
     setVariants(updated);
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return toast.error("Product Name is required");
@@ -314,12 +416,22 @@ export default function ProductFormPage() {
         return toast.error(`Price, Offer Price, Stock, and SKU are required for variant ${i + 1}`);
       }
     }
-    const processedVariants = variants.map((v) => ({
-      ...v,
-      brand_id: v.brand_id || brandId || undefined,
-      fabric_id: v.fabric_id || fabricId || undefined,
-      type_id: v.type_id || typeId || undefined,
-    }));
+
+    const processedVariants = variants.map((v) => {
+      const dynAttrsObj = { ...selectedSpecAttrs, ...(v.dynamicAttributes || {}) };
+      const formattedAttributes = Object.entries(dynAttrsObj).map(([attributeId, valueId]) => ({
+        attributeId,
+        valueId,
+      }));
+
+      return {
+        ...v,
+        brand_id: v.brand_id || brandId || undefined,
+        fabric_id: v.fabric_id || fabricId || undefined,
+        type_id: v.type_id || typeId || undefined,
+        attributes: formattedAttributes,
+      };
+    });
 
     const payload = {
       name,
@@ -354,6 +466,7 @@ export default function ProductFormPage() {
       toast.error("Server Error");
     }
   };
+
   return (
     <div className="p-6 mx-auto space-y-6">
       <div className="flex items-center gap-4">
@@ -371,8 +484,10 @@ export default function ProductFormPage() {
           </p>
         </div>
       </div>
-      <form onSubmit={handleSubmit} className=" flex gap-4">
+
+      <form onSubmit={handleSubmit} className="flex gap-4">
         <div className="w-[75%] space-y-6">
+          {/* Step 1: Common Details */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader className="bg-slate-50/50 border-b border-gray-100">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -399,6 +514,7 @@ export default function ProductFormPage() {
                   />
                 </div>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>2. SubCategory *</Label>
@@ -407,6 +523,8 @@ export default function ProductFormPage() {
                     onValueChange={(val) => {
                       setCategoryId(val);
                       setTypeId("");
+                      setSelectedSpecAttrs({});
+                      setSelectedDynAttrs({});
                     }}
                   >
                     <SelectTrigger>
@@ -431,7 +549,12 @@ export default function ProductFormPage() {
                   <Label>3. Product Category (Product Type) *</Label>
                   <Select
                     value={typeId}
-                    onValueChange={(val) => setTypeId(val)}
+                    onValueChange={(val) => {
+                      setTypeId(val);
+                      setBrandId("");
+                      setSelectedSpecAttrs({});
+                      setSelectedDynAttrs({});
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Product Category" />
@@ -451,6 +574,41 @@ export default function ProductFormPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div>
+                  <Label>Brand *</Label>
+                  <Select
+                    value={brandId}
+                    onValueChange={(val) => setBrandId(val)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={typeId ? "Select Brand" : "Please select Product Category first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableBrands.length === 0 ? (
+                        <SelectItem value="__none" disabled>
+                          {typeId
+                            ? "No brands linked to this Product Category"
+                            : "Please select Product Category first"}
+                        </SelectItem>
+                      ) : (
+                        availableBrands.map((brand: any) => (
+                          <SelectItem key={brand._id} value={brand._id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+
+
+
+
+
+
+
               </div>
 
               <div>
@@ -470,7 +628,7 @@ export default function ProductFormPage() {
                 />
               </div>
 
-              <div className="flex  gap-1 text-xs">
+              <div className="flex gap-4 text-xs">
                 <label className="flex items-center gap-2">
                   <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
                   Featured
@@ -484,15 +642,70 @@ export default function ProductFormPage() {
                   Trending
                 </label>
               </div>
-
             </CardContent>
           </Card>
+
+          {/* Step 2: Specification Attributes (Single Select) */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader className="bg-slate-50/50 border-b border-gray-100">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-600" />
+                Step 2: Specification Attributes (Single-Select)
+              </CardTitle>
+              <p className="text-xs text-gray-500 mt-1">
+                Specific attributes defined in Product Category (e.g. Gender, Fabric, Warranty). Pick one option per attribute.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-5">
+              {!typeId ? (
+                <div className="p-4 bg-slate-50 text-slate-600 rounded-md border border-slate-200 flex items-center gap-2 text-sm">
+                  <Info className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span>Please select a SubCategory & Product Category in Step 1 to view specification attributes.</span>
+                </div>
+              ) : specAttributesList.length === 0 ? (
+                <div className="p-4 bg-slate-50 text-slate-600 rounded-md border border-slate-200 flex items-center gap-2 text-sm">
+                  <Info className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span>No specification attributes mapped for this Product Category.</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {specAttributesList.map((attr: any) => (
+                    <div key={attr._id}>
+                      <Label className="text-xs font-semibold text-gray-700">{attr.name}</Label>
+                      <Select
+                        value={selectedSpecAttrs[attr._id] || ""}
+                        onValueChange={(val) => handleSingleSpecAttrChange(attr._id, val)}
+                      >
+                        <SelectTrigger className="mt-1 h-9">
+                          <SelectValue placeholder={`Select ${attr.name}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {attr.values?.map((valObj: any) => (
+                            <SelectItem key={valObj._id} value={valObj._id}>
+                              {valObj.value}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Step 3: Variant Builder (Multi-Select Attributes) */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader className="bg-slate-50/50 border-b border-gray-100 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Layers className="w-5 h-5 text-indigo-600" />
-                Step 2: Variant Builder (Multi-Select Attributes)
-              </CardTitle>
+              <div>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-indigo-600" />
+                  Step 3: Variant Builder (Multi-Select Attributes)
+                </CardTitle>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select multi-options for variant attributes (e.g. Color, Size) mapped in Product Category to generate product variants.
+                </p>
+              </div>
               <Button
                 type="button"
                 onClick={handleGenerateVariants}
@@ -503,11 +716,21 @@ export default function ProductFormPage() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-6 pt-5">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-                {categoryAttributes &&
-                  categoryAttributes.length > 0 &&
-                  categoryAttributes.map((attr: any) => {
+              {!typeId ? (
+                <div className="p-4 bg-slate-50 text-slate-600 rounded-md border border-slate-200 flex items-center gap-2 text-sm">
+                  <Info className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span>Please select a SubCategory & Product Category in Step 1 to view variant attributes.</span>
+                </div>
+              ) : variantAttributesList.length === 0 ? (
+                <div className="p-4 bg-amber-50 text-amber-800 rounded-md border border-amber-200 flex items-center gap-2 text-sm">
+                  <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    No variant attributes found for the selected Product Category. Please assign Variant Attributes in the Product Category form.
+                  </span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {variantAttributesList.map((attr: any) => {
                     const selectedForAttr = selectedDynAttrs[attr._id] || [];
                     return (
                       <div key={attr._id}>
@@ -565,12 +788,15 @@ export default function ProductFormPage() {
                       </div>
                     );
                   })}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {/* Step 4: Variant Pricing & Table */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader className="bg-slate-50/50 border-b border-gray-100">
-              <CardTitle className="text-lg font-semibold">Step 3: Variant Pricing & Table</CardTitle>
+              <CardTitle className="text-lg font-semibold">Step 4: Variant Pricing & Table</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-5">
               <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
