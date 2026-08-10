@@ -11,6 +11,7 @@ import { fetchsubCategories } from "../features/subcategories/subcategoriesThunk
 import { fetchCategories } from "../features/categories/categoriesThunk";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Row from "../components/ui/Row";
+import CategoryNavigation from "../components/category/CategoryNavigation";
 
 const STATIC_CATEGORIES = [
   {
@@ -157,67 +158,12 @@ function Collections({ products = [] }) {
 
       {!loading && (
         <>
-          {/* ── Category filter bar ── */}
-          <Row className="relative">
-            <button
-              onClick={() => scroll("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow p-2 py-3 rounded-[5px]"
-            >
-              <ChevronLeft size={20} />
-            </button>
-
-            <div
-              ref={scrollRef}
-              className="flex gap-3 overflow-x-auto scroll-smooth px-10 py-3 no-scrollbar"
-            >
-              {/* All button */}
-              <button
-                onClick={handleAllClick}
-                className={`whitespace-nowrap px-4 py-2 rounded-[5px] border text-sm transition
-                  ${
-                    activecategory === "all"
-                      ? "bg-[#f32f94] text-white"
-                      : "bg-white text-black"
-                  }`}
-              >
-                All
-              </button>
-
-              {/* Dynamic category buttons */}
-              {categories
-                .filter((cat) => cat.status === "active")
-                .map((cat) => (
-                  <button
-                    key={cat._id}
-                    onClick={() => handleCategoryClick(cat)}
-                    className={`whitespace-nowrap px-4 py-2 rounded-[5px] border text-sm transition
-                      ${
-                        activecategory === cat._id
-                          ? "bg-[#f32f94] text-white"
-                          : "bg-white text-black"
-                      }`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-            </div>
-
-            <button
-              onClick={() => scroll("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow p-2 py-3 rounded-[5px]"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </Row>
-
-          {/* ── Dynamic heading ── */}
+          <CategoryNavigation />
           <div className="px-4 mb-6 mt-4">
             <h2 className="text-dark text-[22px] font-semibold">
               {headingText}
             </h2>
           </div>
-
-          {/* ── Subcategory grid ── */}
           {displaySubcategories.length === 0 ? (
             <p className="text-center text-gray-400 py-8">
               {selectedCategoryName
@@ -269,7 +215,6 @@ function Collections({ products = [] }) {
         </>
       )}
 
-      {/* ── Products section ── */}
       {visibleProducts.length > 0 && (
         <div className="mt-10">
           {visibleCount < products.length && (

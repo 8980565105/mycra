@@ -181,6 +181,42 @@ const CollapsibleFilter = ({
   );
 };
 
+export const getProductEffectivePrice = (p) => {
+  if (!p) return 0;
+  
+  if (Array.isArray(p.variants) && p.variants.length > 0) {
+    const variantPrices = p.variants
+      .map((v) => {
+        const originalPrice = Number(v?.price) || 0;
+        const offerPrice =
+          v?.offerprice !== undefined && v?.offerprice !== null
+            ? Number(v.offerprice)
+            : 0;
+        const sellingPrice = Number(v?.selling_price) || 0;
+
+        if (offerPrice > 0 && (originalPrice === 0 || offerPrice < originalPrice)) return offerPrice;
+        if (sellingPrice > 0) return sellingPrice;
+        if (originalPrice > 0) return originalPrice;
+        return 0;
+      })
+      .filter((pr) => pr > 0);
+
+    if (variantPrices.length > 0) {
+      return Math.min(...variantPrices);
+    }
+  }
+
+  const pOffer = Number(p.offerprice) || 0;
+  const pSelling = Number(p.selling_price) || 0;
+  const pPrice = Number(p.price) || 0;
+
+  if (pOffer > 0 && (pPrice === 0 || pOffer < pPrice)) return pOffer;
+  if (pSelling > 0) return pSelling;
+  if (pPrice > 0) return pPrice;
+
+  return 0;
+};
+
 const PriceRangeFilter = ({
   minPrice,
   maxPrice,
@@ -191,216 +227,151 @@ const PriceRangeFilter = ({
   isMobile = false,
   isOpen,
   onToggle,
+  onReset,
 }) => {
-  const MAX_PRICE = Math.max(displayMax || 5000, maxPrice || 5000, 5000);
-  const MIN_PRICE = displayMin || 0;
-  const DEFAULT_MIN = MIN_PRICE;
-  const DEFAULT_MAX = MAX_PRICE;
+  const MIN_BOUND = displayMin !== undefined ? displayMin : 0;
+  const MAX_BOUND = Math.max(displayMax || 5000, maxPrice || 5000, 1000);
 
-  const [localMin, setLocalMin] = useState(minPrice);
-  const [localMax, setLocalMax] = useState(maxPrice);
+  const currentMin = minPrice !== undefined && minPrice !== null ? minPrice : MIN_BOUND;
+  const currentMax = maxPrice !== undefined && maxPrice !== null ? maxPrice : MAX_BOUND;
 
-  useEffect(() => {
-    setLocalMin(minPrice);
-  }, [minPrice]);
+  const [localMin, setLocalMin] = useState(currentMin);
+  const [localMax, setLocalMax] = useState(currentMax);
 
   useEffect(() => {
-    setLocalMax(maxPrice);
-  }, [maxPrice]);
+    setLocalMin(currentMin);
+  }, [currentMin]);
 
-  const handleMinChange = (e) => {
-    const val = Number(e.target.value);
+  useEffect(() => {
+    setLocalMax(currentMax);
+  }, [currentMax]);
+
+  const handleMinSliderChange = (e) => {
+    const val = Math.min(Number(e.target.value), localMax);
     setLocalMin(val);
     setMinPrice(val);
-    if (val >= localMax - 100) {
-      const newMax = val + 5000;
-      setLocalMax(newMax);
-      setMaxPrice(newMax);
-    }
   };
 
-  const handleMaxChange = (e) => {
-    const val = Math.max(Number(e.target.value), localMin + 10);
+  const handleMaxSliderChange = (e) => {
+    const val = Math.max(Number(e.target.value), localMin);
     setLocalMax(val);
     setMaxPrice(val);
   };
 
-  const handleReset = () => {
-    setLocalMin(DEFAULT_MIN);
-    setLocalMax(DEFAULT_MAX);
-    setMinPrice(DEFAULT_MIN);
-    setMaxPrice(DEFAULT_MAX);
+  const handleMinInputChange = (e) => {
+    const val = e.target.value === "" ? "" : Number(e.target.value);
+    setLocalMin(val);
+    if (val !== "" && !isNaN(val)) {
+      const clamped = Math.max(MIN_BOUND, Math.min(val, localMax));
+      setMinPrice(clamped);
+    }
   };
 
-  const range = Math.max(1, MAX_PRICE - MIN_PRICE);
-  const minPercent = Math.max(0, Math.min(100, ((localMin - MIN_PRICE) / range) * 100));
-  const maxPercent = Math.max(0, Math.min(100, ((localMax - MIN_PRICE) / range) * 100));
-  const midPercent = (minPercent + maxPercent) / 2;
-
-  const commonInputStyle = {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    top: 0,
-    left: 0,
-    margin: 0,
-    padding: 0,
-    opacity: 0,
-    cursor: "pointer",
-    WebkitAppearance: "none",
-    appearance: "none",
-    zIndex: 10,
+  const handleMaxInputChange = (e) => {
+    const val = e.target.value === "" ? "" : Number(e.target.value);
+    setLocalMax(val);
+    if (val !== "" && !isNaN(val)) {
+      const clamped = Math.max(localMin, val);
+      setMaxPrice(clamped);
+    }
   };
+
+  const handleResetClick = () => {
+    if (onReset) {
+      onReset();
+    } else {
+      setLocalMin(MIN_BOUND);
+      setLocalMax(MAX_BOUND);
+      setMinPrice(MIN_BOUND);
+      setMaxPrice(MAX_BOUND);
+    }
+  };
+
+  const range = Math.max(1, MAX_BOUND - MIN_BOUND);
+  const minPercent = Math.max(0, Math.min(100, ((localMin - MIN_BOUND) / range) * 100));
+  const maxPercent = Math.max(0, Math.min(100, ((localMax - MIN_BOUND) / range) * 100));
 
   return (
     <CollapsibleFilter
       title="Price"
       isOpen={isOpen}
       onToggle={onToggle}
-      isSelected={minPrice !== DEFAULT_MIN || maxPrice !== DEFAULT_MAX}
-      onReset={handleReset}
-      showButtons={false}
+      isSelected={localMin > MIN_BOUND || localMax < MAX_BOUND}
+      onReset={handleResetClick}
+      showButtons={true}
     >
-      <div className="space-y-6 px-3 py-6">
-        <div className="relative select-none" style={{ height: "30px" }}>
+      <div className="space-y-5 px-3 py-4">
+        {/* Dual Range Slider Track */}
+        <div className="relative select-none my-4 h-[30px]">
+          <div className="absolute top-1/2 left-0 right-0 h-1.5 -translate-y-1/2 bg-gray-200 rounded-full" />
           <div
+            className="absolute top-1/2 h-1.5 -translate-y-1/2 bg-color rounded-full"
             style={{
-              position: "absolute",
-              height: "4px",
-              top: "50%",
-              left: 0,
-              right: 0,
-              transform: "translateY(-50%)",
-              backgroundColor: "rgba(210, 175, 159, 0.4)",
-              borderRadius: "9999px",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              height: "4px",
-              top: "50%",
-              transform: "translateY(-50%)",
               left: `${minPercent}%`,
-              right: `${100 - maxPercent}%`,
-              pointerEvents: "none",
-              borderRadius: "9999px",
+              width: `${Math.max(0, maxPercent - minPercent)}%`,
             }}
-            className="bg-color"
           />
           <div
-            style={{
-              position: "absolute",
-              width: "18px",
-              height: "18px",
-              top: "50%",
-              left: `calc(${minPercent}% - 9px)`,
-              transform: "translateY(-50%)",
-              pointerEvents: "none",
-              zIndex: 8,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-            }}
-            className="bg-color"
+            className="absolute top-1/2 w-5 h-5 -translate-y-1/2 bg-color rounded-full flex items-center justify-center shadow-md pointer-events-none z-10"
+            style={{ left: `calc(${minPercent}% - 10px)` }}
           >
-            <div
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                backgroundColor: "white",
-              }}
-            />
+            <div className="w-2 h-2 rounded-full bg-white" />
           </div>
           <div
-            style={{
-              position: "absolute",
-              width: "18px",
-              height: "18px",
-              top: "50%",
-              left: `calc(${maxPercent}% - 9px)`,
-              transform: "translateY(-50%)",
-              pointerEvents: "none",
-              zIndex: 8,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-            }}
-            className="bg-color"
+            className="absolute top-1/2 w-5 h-5 -translate-y-1/2 bg-color rounded-full flex items-center justify-center shadow-md pointer-events-none z-10"
+            style={{ left: `calc(${maxPercent}% - 10px)` }}
           >
-            <div
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                backgroundColor: "white",
-              }}
-            />
+            <div className="w-2 h-2 rounded-full bg-white" />
           </div>
           <input
             type="range"
-            min={MIN_PRICE}
-            max={MAX_PRICE}
+            min={MIN_BOUND}
+            max={MAX_BOUND}
             step={10}
-            value={Math.max(MIN_PRICE, Math.min(localMin, MAX_PRICE))}
-            onChange={handleMinChange}
+            value={localMin}
+            onChange={handleMinSliderChange}
+            className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-20 pointer-events-auto"
             style={{
-              ...commonInputStyle,
-              width: `${midPercent + 5}%`,
-              left: 0,
-              zIndex: 11,
+              zIndex: localMin > MAX_BOUND - 100 ? 25 : 20,
             }}
           />
           <input
             type="range"
-            min={MIN_PRICE}
-            max={MAX_PRICE}
+            min={MIN_BOUND}
+            max={MAX_BOUND}
             step={10}
-            value={Math.max(MIN_PRICE, Math.min(localMax, MAX_PRICE))}
-            onChange={handleMaxChange}
-            style={{
-              ...commonInputStyle,
-              width: `${100 - midPercent + 5}%`,
-              left: `${midPercent - 5}%`,
-              zIndex: 11,
-            }}
+            value={localMax}
+            onChange={handleMaxSliderChange}
+            className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-20 pointer-events-auto"
           />
         </div>
-        <div className="flex gap-[15px]">
+
+        {/* Inputs Min & Max */}
+        <div className="flex items-center gap-3">
           <div className="flex flex-col flex-1">
-            <span className="sec-text-color text-14">Min</span>
-            <div className="mt-2 h-[40px] flex items-center justify-center border border-gray-300 rounded-full text-[14px]">
-              Rs {localMin}
-            </div>
+            <span className="text-xs sec-text-color font-medium mb-1">Min (Rs)</span>
+            <input
+              type="number"
+              min={MIN_BOUND}
+              max={localMax}
+              value={localMin}
+              onChange={handleMinInputChange}
+              className="w-full h-[38px] px-3 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:border-[var(--primary-color)]"
+            />
           </div>
+          <span className="text-gray-400 font-semibold mt-4">-</span>
           <div className="flex flex-col flex-1">
-            <span className="sec-text-color text-14">Max</span>
-            <div className="mt-2 h-[40px] flex items-center justify-center border border-gray-300 rounded-full text-[14px]">
-              Rs {localMax}
-            </div>
+            <span className="text-xs sec-text-color font-medium mb-1">Max (Rs)</span>
+            <input
+              type="number"
+              min={localMin}
+              max={MAX_BOUND}
+              value={localMax}
+              onChange={handleMaxInputChange}
+              className="w-full h-[38px] px-3 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:border-[var(--primary-color)]"
+            />
           </div>
         </div>
-        {isMobile && (
-          <div className="flex gap-4 mt-4 pt-4 border-t border-gray-200">
-            <button
-              onClick={handleReset}
-              className="w-[100px] h-[40px] text-[18px] font-regular text-black/70 border border-[#989696] rounded-[3px] transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => { }}
-              className="w-[100px] h-[40px] text-[18px] font-regular text-white bg-color rounded-[3px] transition shadow-md"
-            >
-              Filter
-            </button>
-          </div>
-        )}
       </div>
     </CollapsibleFilter>
   );
@@ -434,10 +405,33 @@ export default function WomenCollections() {
       categories: params.get("category") ? params.get("category").split(",") : [],
       types: params.get("type") ? params.get("type").split(",") : [],
       labels: params.get("label") ? params.get("label").split(",") : [],
-      min: params.get("min") ? Number(params.get("min")) : 0,
-      max: params.get("max") ? Number(params.get("max")) : 5000,
+      min: params.get("min") !== null ? Number(params.get("min")) : null,
+      max: params.get("max") !== null ? Number(params.get("max")) : null,
     };
   };
+
+  const catalogPrices = useMemo(() => {
+    if (!Array.isArray(products) || products.length === 0) {
+      return { min: 0, max: priceMetadata?.displayMax || priceMetadata?.actualMax || 5000 };
+    }
+    const prices = products.map(getProductEffectivePrice).filter((pr) => pr > 0);
+    if (prices.length === 0) {
+      return { min: 0, max: priceMetadata?.displayMax || priceMetadata?.actualMax || 5000 };
+    }
+    const realMin = Math.min(...prices);
+    const realMax = Math.max(...prices);
+
+    const metaMax = priceMetadata?.displayMax || priceMetadata?.actualMax || 0;
+    const metaMin = priceMetadata?.displayMin !== undefined ? priceMetadata?.displayMin : 0;
+
+    return {
+      min: Math.min(realMin, metaMin),
+      max: Math.max(realMax, metaMax, 1000),
+    };
+  }, [products, priceMetadata]);
+
+  const minCatalogPrice = catalogPrices.min;
+  const maxCatalogPrice = catalogPrices.max;
 
   const [selectedCategories, setSelectedCategories] = useState(() => getInitialParams().categories);
   const [selectedTypes, setSelectedTypes] = useState(() => getInitialParams().types);
@@ -448,8 +442,8 @@ export default function WomenCollections() {
     return labelNames.map((name) => ({ id: name, name }));
   });
   const [isBestSeller, setIsBestSeller] = useState(false);
-  const [minPrice, setMinPrice] = useState(() => getInitialParams().min);
-  const [maxPrice, setMaxPrice] = useState(() => getInitialParams().max);
+  const [minPrice, setMinPrice] = useState(() => getInitialParams().min ?? minCatalogPrice);
+  const [maxPrice, setMaxPrice] = useState(() => getInitialParams().max ?? maxCatalogPrice);
   const [currentSortValue, setCurrentSortValue] = useState("popularity");
   const [currentSortLabel, setCurrentSortLabel] = useState("popularity");
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -460,6 +454,12 @@ export default function WomenCollections() {
 
   const [debouncedMinPrice, setDebouncedMinPrice] = useState(minPrice);
   const [debouncedMaxPrice, setDebouncedMaxPrice] = useState(maxPrice);
+
+  useEffect(() => {
+    if (getInitialParams().max === null && maxCatalogPrice > 0 && (maxPrice < maxCatalogPrice || maxPrice === 5000)) {
+      setMaxPrice(maxCatalogPrice);
+    }
+  }, [maxCatalogPrice]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -562,14 +562,6 @@ export default function WomenCollections() {
     );
   };
 
-  const maxCatalogPrice = useMemo(() => {
-    return priceMetadata?.displayMax || priceMetadata?.actualMax || 20000;
-  }, [priceMetadata?.displayMax, priceMetadata?.actualMax]);
-
-  const minCatalogPrice = useMemo(() => {
-    return priceMetadata?.displayMin !== undefined ? priceMetadata?.displayMin : 0;
-  }, [priceMetadata?.displayMin]);
-
   const handleClearAllFilters = () => {
     setSelectedCategories([]);
     setSelectedTypes([]);
@@ -591,7 +583,7 @@ export default function WomenCollections() {
     const urlTypes = params.get("type") ? params.get("type").split(",") : [];
     const urlLabels = params.get("label") ? params.get("label").split(",") : [];
     const urlMin = params.get("min") !== null ? Number(params.get("min")) : minCatalogPrice;
-    const urlMax = params.get("max") !== null ? Number(params.get("max")) : (urlMin + 5000);
+    const urlMax = params.get("max") !== null ? Number(params.get("max")) : maxCatalogPrice;
 
     if (JSON.stringify(selectedCategories) !== JSON.stringify(urlCats)) {
       setSelectedCategories(urlCats);
@@ -603,7 +595,7 @@ export default function WomenCollections() {
     if (JSON.stringify(currentLabelNames) !== JSON.stringify(urlLabels)) {
       setSelectedLabels(urlLabels.map((name) => ({ id: name, name })));
     }
-    if (minPrice !== urlMin) {
+    if (minPrice !== urlMin && params.get("min") !== null) {
       setMinPrice(urlMin);
       setDebouncedMinPrice(urlMin);
     }
@@ -611,7 +603,7 @@ export default function WomenCollections() {
       setMaxPrice(urlMax);
       setDebouncedMaxPrice(urlMax);
     }
-  }, [location.search, minCatalogPrice]);
+  }, [location.search, minCatalogPrice, maxCatalogPrice]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -621,7 +613,7 @@ export default function WomenCollections() {
     if (selectedLabels.length)
       params.set("label", selectedLabels.map((l) => l.name).join(","));
     if (debouncedMinPrice > minCatalogPrice) params.set("min", debouncedMinPrice);
-    if (debouncedMaxPrice < maxCatalogPrice) params.set("max", debouncedMaxPrice);
+    if (debouncedMaxPrice < maxCatalogPrice && debouncedMaxPrice > 0) params.set("max", debouncedMaxPrice);
 
     const queryString = params.toString();
     const newUrl = `/shop${queryString ? `?${queryString}` : ""}`;
@@ -636,6 +628,8 @@ export default function WomenCollections() {
     selectedLabels,
     debouncedMinPrice,
     debouncedMaxPrice,
+    minCatalogPrice,
+    maxCatalogPrice,
     navigate,
     location.pathname,
     location.search,
@@ -667,7 +661,7 @@ export default function WomenCollections() {
       });
     });
 
-    if (minPrice > 0 || (maxPrice && maxPrice < maxCatalogPrice)) {
+    if (minPrice > minCatalogPrice || (maxPrice && maxPrice < maxCatalogPrice)) {
       arr.push({
         type: "price",
         value: "price",
@@ -682,6 +676,8 @@ export default function WomenCollections() {
     selectedLabels,
     minPrice,
     maxPrice,
+    minCatalogPrice,
+    maxCatalogPrice,
   ]);
 
   const productTypeNames = (p) =>
@@ -721,15 +717,11 @@ export default function WomenCollections() {
         return false;
     }
 
-    const priceCandidates = [
-      p?.price,
-      p?.selling_price,
-      p?.variants?.[0]?.price,
-      p?.variants?.[0]?.selling_price,
-      p?.variants?.[0]?.mrp,
-    ].filter(Boolean);
-    const price = priceCandidates.length ? Number(priceCandidates[0]) : null;
-    if (price != null && (price < minPrice || price > maxPrice)) return false;
+    const price = getProductEffectivePrice(p);
+    if (price > 0) {
+      if (minPrice !== undefined && minPrice !== null && price < minPrice) return false;
+      if (maxPrice !== undefined && maxPrice !== null && price > maxPrice) return false;
+    }
     return true;
   };
 
@@ -774,32 +766,8 @@ export default function WomenCollections() {
       const tb = new Date(b?.createdAt || b?.updatedAt || 0).getTime() || 0;
       return tb - ta;
     },
-    price_asc: (a, b) => {
-      const getPrice = (p) => {
-        const c = [
-          p?.selling_price,
-          p?.price,
-          p?.variants?.[0]?.selling_price,
-          p?.variants?.[0]?.price,
-          p?.variants?.[0]?.mrp,
-        ].filter(Boolean);
-        return c.length ? Number(c[0]) : Infinity;
-      };
-      return getPrice(a) - getPrice(b);
-    },
-    price_desc: (a, b) => {
-      const getPrice = (p) => {
-        const c = [
-          p?.selling_price,
-          p?.price,
-          p?.variants?.[0]?.selling_price,
-          p?.variants?.[0]?.price,
-          p?.variants?.[0]?.mrp,
-        ].filter(Boolean);
-        return c.length ? Number(c[0]) : -Infinity;
-      };
-      return getPrice(b) - getPrice(a);
-    },
+    price_asc: (a, b) => getProductEffectivePrice(a) - getProductEffectivePrice(b),
+    price_desc: (a, b) => getProductEffectivePrice(b) - getProductEffectivePrice(a),
     rating: (a, b) =>
       Number(b?.rating || b?.average_rating || 0) -
       Number(a?.rating || a?.average_rating || 0),
@@ -850,6 +818,8 @@ export default function WomenCollections() {
             setMinPrice={setMinPrice}
             maxPrice={maxPrice}
             setMaxPrice={setMaxPrice}
+            displayMin={minCatalogPrice}
+            displayMax={maxCatalogPrice}
             applyAllFilters={() => setIsMobileFilterOpen(false)}
             onClearAll={handleClearAllFilters}
           />
@@ -913,6 +883,8 @@ export default function WomenCollections() {
               setMinPrice={setMinPrice}
               maxPrice={maxPrice}
               setMaxPrice={setMaxPrice}
+              displayMin={minCatalogPrice}
+              displayMax={maxCatalogPrice}
               isCategorySelected={selectedCategories.length > 0}
             />
             <main className="w-full lg:w-3/4">

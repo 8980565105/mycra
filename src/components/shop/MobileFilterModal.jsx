@@ -27,6 +27,8 @@ const MobileFilterModal = ({
   setMinPrice,
   maxPrice,
   setMaxPrice,
+  displayMin: propDisplayMin,
+  displayMax: propDisplayMax,
 }) => {
   const [openFilter, setOpenFilter] = useState("Category");
   const toggleFilter = (filterId) => {
@@ -37,7 +39,8 @@ const MobileFilterModal = ({
     (state) => state.subcategories
   );
   const { products = [], priceMetadata = {} } = useSelector((state) => state.products);
-  const { displayMin, displayMax } = priceMetadata;
+  const displayMin = propDisplayMin !== undefined ? propDisplayMin : (priceMetadata.displayMin ?? 0);
+  const displayMax = propDisplayMax !== undefined ? propDisplayMax : (priceMetadata.displayMax ?? 5000);
   const { types = [], loading: typesLoading } = useSelector(
     (state) => state.types
   );
@@ -153,7 +156,11 @@ const MobileFilterModal = ({
               setMaxPrice={setMaxPrice}
               displayMin={displayMin}
               displayMax={displayMax}
-              isMobile={false}
+              isMobile={true}
+              onReset={() => {
+                setMinPrice(displayMin);
+                setMaxPrice(displayMax);
+              }}
             />
 
             <CollapsibleFilter

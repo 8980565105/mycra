@@ -16,6 +16,7 @@ import { fetchProducts } from "../features/products/productsThunk";
 import LoginForm from "./Login.jsx";
 import { Toaster } from "react-hot-toast";
 import FlowerIcon from "../components/icons/FlowerIcon.jsx";
+import CategoryNavigation from "../components/category/CategoryNavigation.jsx";
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -28,6 +29,7 @@ const Home = () => {
     <>
       <div className="text-center">
         <Toaster position="top center" />
+        {/* <CategoryNavigation /> */}
         <Hero />
         <Section>
           <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
