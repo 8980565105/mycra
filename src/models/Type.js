@@ -14,10 +14,35 @@ const typeSchema = new mongoose.Schema(
         index: true,
       },
     ],
+    childCategoryId: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ChildCategory",
+        index: true,
+      },
+    ],
     allowedAttributes: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Attribute",
+      },
+    ],
+    variantAttributes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Attribute",
+      },
+    ],
+    brandIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Brand",
+      },
+    ],
+    brands: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Brand",
       },
     ],
     storeId: {

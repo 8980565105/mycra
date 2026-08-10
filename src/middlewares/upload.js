@@ -8,11 +8,11 @@ if (!fs.existsSync(uploadPath)) {
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  const allowed = ["image/jpeg", "image/png", "image/webp", "image/svg"];
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only JPEG, PNG and WEBP files are allowed"));
+    cb(new Error("Only JPEG, PNG ,svg and WEBP files are allowed"));
   }
 };
 

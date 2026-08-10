@@ -175,7 +175,9 @@ exports.getTypeAttributesWithValues = async (req, res) => {
     
     const typeIds = typeId.includes(",") ? typeId.split(",") : [typeId];
     
-    const types = await Type.find({ _id: { $in: typeIds } }).populate("allowedAttributes");
+    const types = await Type.find({ _id: { $in: typeIds } })
+      .populate("allowedAttributes")
+      .populate("variantAttributes");
 
     if (!types || types.length === 0) {
       return res.status(404).json({ success: false, message: "Product Type(s) not found" });
@@ -184,7 +186,10 @@ exports.getTypeAttributesWithValues = async (req, res) => {
     const attributeMap = new Map();
 
     for (const typeObj of types) {
-      const attributes = typeObj.allowedAttributes || [];
+      const attributes = [
+        ...(typeObj.allowedAttributes || []),
+        ...(typeObj.variantAttributes || []),
+      ];
       for (const attr of attributes) {
         if (!attr) continue;
         if (!attributeMap.has(attr._id.toString())) {
@@ -224,12 +229,17 @@ exports.getMultipleTypeAttributesWithValues = async (req, res) => {
     }
 
     const Type = require("../models/Type");
-    const types = await Type.find({ _id: { $in: typeIds } }).populate("allowedAttributes");
+    const types = await Type.find({ _id: { $in: typeIds } })
+      .populate("allowedAttributes")
+      .populate("variantAttributes");
 
     const attributeMap = new Map();
 
     for (const typeObj of types) {
-      const attributes = typeObj.allowedAttributes || [];
+      const attributes = [
+        ...(typeObj.allowedAttributes || []),
+        ...(typeObj.variantAttributes || []),
+      ];
       for (const attr of attributes) {
         if (!attr) continue;
         if (!attributeMap.has(attr._id.toString())) {

@@ -81,6 +81,30 @@ const getTypes = async (req, res) => {
           as: "allowedAttributes",
         },
       },
+      {
+        $lookup: {
+          from: "attributes",
+          localField: "variantAttributes",
+          foreignField: "_id",
+          as: "variantAttributes",
+        },
+      },
+      {
+        $lookup: {
+          from: "brands",
+          localField: "brandIds",
+          foreignField: "_id",
+          as: "brandIds",
+        },
+      },
+      {
+        $lookup: {
+          from: "brands",
+          localField: "brands",
+          foreignField: "_id",
+          as: "brands",
+        },
+      },
     ];
 
     if (role && ["admin", "store_owner"].includes(role)) {
@@ -151,7 +175,10 @@ const getTypeById = async (req, res) => {
   try {
     const type = await Type.findById(req.params.id)
       .populate("subCategoryId")
-      .populate("allowedAttributes");
+      .populate("allowedAttributes")
+      .populate("variantAttributes")
+      .populate("brandIds")
+      .populate("brands");
     if (!type) return sendResponse(res, false, null, "Type not found");
     sendResponse(res, true, type, "Type retrieved successfully");
   } catch (err) {
@@ -161,7 +188,7 @@ const getTypeById = async (req, res) => {
 
 const createType = async (req, res) => {
   try {
-    const { name, description, status, subCategoryId, allowedAttributes } =
+    const { name, description, status, subCategoryId, allowedAttributes, variantAttributes, brandIds, brands } =
       req.body;
     if (!name) return sendResponse(res, false, null, "Name is required");
 
@@ -191,12 +218,18 @@ const createType = async (req, res) => {
       }
     }
 
+    const rawBrandList = brandIds || brands || [];
+    const brandArray = Array.isArray(rawBrandList) ? rawBrandList : [rawBrandList];
+
     const type = new Type({
       name,
       description: description || "",
       status: status || "active",
       subCategoryId: subCategoryIds,
       allowedAttributes: allowedAttributes || [],
+      variantAttributes: variantAttributes || [],
+      brandIds: brandArray,
+      brands: brandArray,
       createdBy: req.user._id,
       storeId,
     });
@@ -213,6 +246,13 @@ const updateType = async (req, res) => {
     const updateData = { ...req.body };
     if (updateData.subCategoryId && !Array.isArray(updateData.subCategoryId)) {
       updateData.subCategoryId = [updateData.subCategoryId];
+    }
+
+    if (updateData.brandIds || updateData.brands) {
+      const rawBrandList = updateData.brandIds || updateData.brands;
+      const brandArray = Array.isArray(rawBrandList) ? rawBrandList : [rawBrandList];
+      updateData.brandIds = brandArray;
+      updateData.brands = brandArray;
     }
 
     if (updateData.name && updateData.subCategoryId?.length > 0) {
@@ -241,7 +281,10 @@ const updateType = async (req, res) => {
       },
     )
       .populate("subCategoryId")
-      .populate("allowedAttributes");
+      .populate("allowedAttributes")
+      .populate("variantAttributes")
+      .populate("brandIds")
+      .populate("brands");
     if (!updatedType) return sendResponse(res, false, null, "Type not found");
     sendResponse(res, true, updatedType, "Type updated successfully");
   } catch (err) {

@@ -610,14 +610,22 @@ const createProduct = async (req, res) => {
     let savedVariants = [];
     if (Array.isArray(variants) && variants.length > 0) {
       const variantDocs = variants.map((v, idx) => {
-        let formattedAttributes = [];
+        let formattedAttributes = Array.isArray(v.attributes) ? [...v.attributes] : [];
         if (v.dynamicAttributes && typeof v.dynamicAttributes === "object") {
-          formattedAttributes = Object.entries(v.dynamicAttributes)
+          const dynFormatted = Object.entries(v.dynamicAttributes)
             .filter(([_, valId]) => valId)
             .map(([attrId, valId]) => ({
               attributeId: attrId,
               valueId: valId,
             }));
+          const existingAttrIds = new Set(
+            formattedAttributes.map((a) => (a.attributeId?._id || a.attributeId)?.toString())
+          );
+          dynFormatted.forEach((item) => {
+            if (!existingAttrIds.has(item.attributeId?.toString())) {
+              formattedAttributes.push(item);
+            }
+          });
         }
         return {
           ...v,
@@ -684,16 +692,22 @@ const updateProduct = async (req, res) => {
       });
 
       for (const v of variants) {
-        let formattedAttributes = [];
+        let formattedAttributes = Array.isArray(v.attributes) ? [...v.attributes] : [];
         if (v.dynamicAttributes && typeof v.dynamicAttributes === "object") {
-          formattedAttributes = Object.entries(v.dynamicAttributes)
+          const dynFormatted = Object.entries(v.dynamicAttributes)
             .filter(([_, valId]) => valId)
             .map(([attrId, valId]) => ({
               attributeId: attrId,
               valueId: valId,
             }));
-        } else if (Array.isArray(v.attributes)) {
-          formattedAttributes = v.attributes;
+          const existingAttrIds = new Set(
+            formattedAttributes.map((a) => (a.attributeId?._id || a.attributeId)?.toString())
+          );
+          dynFormatted.forEach((item) => {
+            if (!existingAttrIds.has(item.attributeId?.toString())) {
+              formattedAttributes.push(item);
+            }
+          });
         }
         const variantPayload = {
           brand_id: v.brand_id || null,
