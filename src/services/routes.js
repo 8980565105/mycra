@@ -140,4 +140,7 @@ export const ROUTES = {
     getByType: "/attributes/type",
     getBySubCategory: "/attributes/subcategory",
   },
+  childcategory: {
+    getAll: "child-categories/public"
+  }
 };

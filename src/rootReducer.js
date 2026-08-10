@@ -22,6 +22,8 @@ import settingReducer from "./features/setting/settingSlice";
 import walletReducer from "./features/wallet/walletSlice";
 import transectionReducer from "./features/transection/transectionSlice";
 import attributeReducer from "./features/attribut/attributSlice";
+import childcategoryReducer from "./features/childcategory/childcategorySlice";
+
 export const rootReducer = {
   auth: authReducer,
   user: userReducer,
@@ -46,5 +48,6 @@ export const rootReducer = {
   settings: settingReducer,
   wallet: walletReducer,
   transection: transectionReducer,
+  childcategory: childcategoryReducer,
   attributes: attributeReducer,
 };

@@ -44,9 +44,8 @@ import cropImg from "../../assets/Crop Tops.png";
 import ForgetForm from "../../pages/ForgetForm";
 import toast from "react-hot-toast";
 import SearchBar from "../search/searchbar";
-// import { fetchProducts } from "../../features/products/productsThunk";
 import { fetchWishlistByUser } from "../../features/wishlist/wishlistThunk";
-// import { fetchCart } from "../../features/cart/cartThunk";
+import { fetchChildCategory } from "../../features/childcategory/childcategoryThunk";
 
 const STATIC_CATEGORIES = [
   { _id: "static-1", name: "Saree", image_url: shoppingImg, isStatic: true },
@@ -97,6 +96,9 @@ const Header = () => {
   );
   const { items: subCategoriesItems } = useSelector(
     (state) => state.subcategories,
+  );
+  const { items: childCategoriesItems } = useSelector(
+    (state) => state.childcategory,
   );
 
   const displayCategories =
@@ -159,9 +161,9 @@ const Header = () => {
 
   useEffect(() => {
     dispatch(fetchNavbar({ status: "active" }));
-    // dispatch(fetchProducts());
     dispatch(fetchCategories());
     dispatch(fetchsubCategories());
+    dispatch(fetchChildCategory());
   }, [dispatch]);
 
   useEffect(() => {
@@ -170,12 +172,7 @@ const Header = () => {
     }
   }, [dispatch, userId]);
 
-  // useEffect(() => {
-  //   const cart_id = localStorage.getItem("cart_id");
-  //   if (cart_id) {
-  //     dispatch(fetchCart(cart_id));
-  //   }
-  // }, [dispatch, user]);
+  
 
   const handleShopMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -261,6 +258,14 @@ const Header = () => {
     if (mobilelogoPath.startsWith("http")) return mobilelogoPath;
     return `${BASE}${mobilelogoPath}`;
   })();
+
+  const getChildCategories = (subCategoryId) => {
+    return childCategoriesItems.filter(
+      (child) =>
+        child.subCategoryId?._id === subCategoryId ||
+        child.subCategoryId === subCategoryId,
+    );
+  };
 
   return (
     <header
@@ -389,7 +394,7 @@ const Header = () => {
 
                                     return (
                                       <>
-                                        <div className="grid grid-cols-5 gap-6">
+                                        {/* <div className="grid grid-cols-5 gap-6">
                                           {paginated.length > 0 ? (
                                             paginated.map((sub) => (
                                               <div
@@ -417,6 +422,56 @@ const Header = () => {
                                                 </p>
                                               </div>
                                             ))
+                                          ) : (
+                                            <p className="col-span-5 text-center text-gray-500 py-10">
+                                              No sub-categories found.
+                                            </p>
+                                          )}
+                                        </div> */}
+
+                                        <div className="grid grid-cols-5 gap-6">
+                                          {paginated.length > 0 ? (
+                                            paginated.map((sub) => {
+                                              const childCats =
+                                                getChildCategories(sub._id); // 👈 get children
+                                              return (
+                                                <div
+                                                  key={sub._id}
+                                                  className="flex flex-col items-start"
+                                                >
+                                                  <p
+                                                    className="text-sm font-semibold text-[var(--secondary-color)] cursor-pointer hover:text-[var(--theme-color)] mb-2"
+                                                    onClick={() =>
+                                                      handleCategoryClick(
+                                                        sub.name,
+                                                      )
+                                                    }
+                                                  >
+                                                    {sub.name}
+                                                  </p>
+
+                                                  {childCats.length > 0 && (
+                                                    <ul className="flex flex-col gap-1">
+                                                      {childCats.map(
+                                                        (child) => (
+                                                          <li
+                                                            key={child._id}
+                                                            className="text-xs text-gray-500 cursor-pointer hover:text-[var(--theme-color)]"
+                                                            onClick={() =>
+                                                              handleCategoryClick(
+                                                                child.name,
+                                                              )
+                                                            }
+                                                          >
+                                                            {child.name}
+                                                          </li>
+                                                        ),
+                                                      )}
+                                                    </ul>
+                                                  )}
+                                                </div>
+                                              );
+                                            })
                                           ) : (
                                             <p className="col-span-5 text-center text-gray-500 py-10">
                                               No sub-categories found.

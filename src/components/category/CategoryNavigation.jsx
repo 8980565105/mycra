@@ -160,7 +160,6 @@ const CategoryNavigation = () => {
                         }}
                       />
                     ) : null}
-
                     <div
                       className={`${
                         cat.image_url ? "hidden" : "flex"
@@ -173,7 +172,6 @@ const CategoryNavigation = () => {
                       />
                     </div>
                   </div>
-
                   <span
                     className={`whitespace-nowrap font-medium transition-all duration-300 ease-in-out ${
                       isScrolled ? "pb-3 text-[13px]" : "pb-3 pt-1 text-[13px]"
@@ -183,7 +181,6 @@ const CategoryNavigation = () => {
                   >
                     {cat.name}
                   </span>
-
                   <span
                     className={`absolute bottom-0 left-1/2 h-[3px] -translate-x-1/2 rounded-t-full bg-color transition-all duration-300 ${
                       isActive ? "w-[42px] opacity-100" : "w-0 opacity-0"
