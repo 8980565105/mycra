@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -69,8 +68,8 @@ import ContinueWithKyc from "./pages/Wallets/ContinueWithKyc";
 import KycForm from "./pages/Wallets/KycForm";
 import SellerOnboarding from "./pages/SellerOnboarding";
 import SellerApplications from "./pages/Stores/SellerApplications";
-import Business from "./pages/Business/Business";
-import BusinessFromPage from "./pages/Business/BusinessFromPage";
+// import Business from "./pages/Business/Business";
+// import BusinessFromPage from "./pages/Business/BusinessFromPage";
 import CustomerReviewsFrom from "./pages/CustomerReviews/CustomerReviewsFrom";
 
 const queryClient = new QueryClient();
@@ -146,13 +145,10 @@ const App = () => (
               <Route path="users/add" element={<UserFormPage />} />
               <Route path="users/:id/edit" element={<UserFormPage />} />
               <Route path="users/:id/view" element={<UserView />} />
-             
-             
-             
+
               <Route path="customer-reviews" element={<CustomerReviews />} />
               <Route path="customer-reviews/add" element={<CustomerReviewsFrom />} />
               <Route path="customer-reviews/:id/edit" element={<CustomerReviewsFrom />} />
-
 
               <Route path="wishlists" element={<Wishlist />} />
               <Route path="carts" element={<Cart />} />
@@ -180,9 +176,9 @@ const App = () => (
               <Route path="wallets/users" element={<UserWallets />} />
               {/* <Route path="business" element={<Business />} /> */}
 
-              <Route path="business" element={<Business />} />
+              {/* <Route path="business" element={<Business />} />
               <Route path="business/add" element={<BusinessFromPage />} />
-              <Route path="business/:id/edit" element={<BusinessFromPage />} />
+              <Route path="business/:id/edit" element={<BusinessFromPage />} /> */}
 
 
             </Route>
@@ -211,6 +207,8 @@ const App = () => (
               <Route path="types" element={<Types />} />
               <Route path="types/add" element={<TypeFormPage />} />
               <Route path="types/:id/edit" element={<TypeFormPage />} />
+              <Route path="attributes" element={<Attributes />} />
+
               {/* <Route path="fabrics" element={<Fabrics />} />
               <Route path="fabrics/add" element={<FabricFormPage />} />
               <Route path="fabrics/:id/edit" element={<FabricFormPage />} /> */}
@@ -240,11 +238,6 @@ const App = () => (
               <Route path="customer-reviews" element={<CustomerReviews />} />
               <Route path="customer-reviews/add" element={<CustomerReviewsFrom />} />
               <Route path="customer-reviews/:id/edit" element={<CustomerReviewsFrom />} />
-
-
-
-
-
               <Route path="wishlists" element={<Wishlist />} />
               <Route path="carts" element={<Cart />} />
               <Route path="faqs" element={<Faqspage />} />

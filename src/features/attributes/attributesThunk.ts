@@ -8,6 +8,7 @@ export interface Attribute {
   inputType: "select" | "multi-select" | "text" | "number";
   status: "active" | "inactive";
   createdAt?: string;
+  categoryId: string | { _id: string; name: string };
 }
 
 export interface AttributeValue {

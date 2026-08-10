@@ -51,11 +51,11 @@ const adminSections = [
     label: "Main",
     items: [{ title: "Dashboard", url: "/admin", icon: LayoutDashboard }],
   },
-  {
-    label: "Business",
-    items: [{ title: "Business Type", url: "/admin/business", icon: LayoutDashboard }],
+  // {
+  //   label: "Business",
+  //   items: [{ title: "Business Type", url: "/admin/business", icon: LayoutDashboard }],
 
-  },
+  // },
   {
     label: "Catalog",
     items: [
@@ -122,6 +122,7 @@ const storeOwnerSections = [
   {
     label: "Catalog",
     items: [
+      { title: "Attributes", url: "/store_owner/attributes", icon: Shapes },
       { title: "Products", url: "/store_owner/products", icon: Package },
 
     ],

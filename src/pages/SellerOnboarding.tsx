@@ -17,10 +17,10 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { AppDispatch, RootState } from "@/store";
-import { fetchActiveBusinesses } from "@/features/Business/businessThunk";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/ImageUpload";
+import { fetchCategories } from "@/features/categories/categoriesThunk";
 
 export default function SellerOnboarding() {
   const navigate = useNavigate();
@@ -30,21 +30,18 @@ export default function SellerOnboarding() {
   const [submitting, setSubmitting] = useState(false);
   const [application, setApplication] = useState<any>(null);
   const [userStatus, setUserStatus] = useState<string>("not_started");
+  const { categories } = useSelector((state: RootState) => state.categories);
 
-  const { businesses } = useSelector((state: RootState) => state.business);
-
-  // Step 1: Business Details
   const [business, setBusiness] = useState({
     storeName: "",
     category: "",
-    businessType: "",
+    categoryId: "",
     description: "",
-    // website: "",
     phone: "",
     email: "",
+    businessType: "",
   });
 
-  // Step 2: Pickup Address
   const [pickup, setPickup] = useState({
     full_name: "",
     phone_number: "",
@@ -58,7 +55,6 @@ export default function SellerOnboarding() {
     zip_code: "",
   });
 
-  // Step 3: Bank Details
   const [bank, setBank] = useState({
     accountNumber: "",
     accountHolderName: "",
@@ -67,7 +63,6 @@ export default function SellerOnboarding() {
     branchName: "",
   });
 
-  // Step 4: Documents & Tax
   const [taxDocs, setTaxDocs] = useState({
     gstNumber: "",
     panNumber: "",
@@ -81,10 +76,7 @@ export default function SellerOnboarding() {
 
   useEffect(() => {
     fetchOnboardingStatus();
-  }, []);
-  useEffect(() => {
-    fetchOnboardingStatus();
-    dispatch(fetchActiveBusinesses());
+    dispatch(fetchCategories({ page: 1, limit: 100 }));
   }, []);
   const fetchOnboardingStatus = async () => {
     try {
@@ -95,10 +87,19 @@ export default function SellerOnboarding() {
         setUserStatus(user?.onboardingStatus || "not_started");
         if (appData) {
           setApplication(appData);
-          if (appData.businessDetails) setBusiness({ ...business, ...appData.businessDetails });
-          if (appData.pickupAddress) setPickup({ ...pickup, ...appData.pickupAddress });
-          if (appData.bankDetails) setBank({ ...bank, ...appData.bankDetails });
-          if (appData.taxAndDocs) setTaxDocs({ ...taxDocs, ...appData.taxAndDocs });
+          if (appData.businessDetails) {
+            setBusiness((prev) => ({
+              ...prev,
+              ...appData.businessDetails,
+              categoryId:
+                appData.businessDetails.categoryId?._id ||
+                appData.businessDetails.categoryId ||
+                "",
+            }));
+          }
+          if (appData.pickupAddress) setPickup((prev) => ({ ...prev, ...appData.pickupAddress }));
+          if (appData.bankDetails) setBank((prev) => ({ ...prev, ...appData.bankDetails }));
+          if (appData.taxAndDocs) setTaxDocs((prev) => ({ ...prev, ...appData.taxAndDocs }));
         }
       }
     } catch (err: any) {
@@ -107,10 +108,13 @@ export default function SellerOnboarding() {
       setLoading(false);
     }
   };
-
   const handleSaveBusiness = async () => {
     if (!business.storeName.trim()) {
       toast.error("Store name is required");
+      return false;
+    }
+    if (!business.categoryId) {
+      toast.error("Please select a business category");
       return false;
     }
     try {
@@ -166,7 +170,6 @@ export default function SellerOnboarding() {
     }
     return false;
   };
-
   const handleSaveDocs = async () => {
     try {
       setSubmitting(true);
@@ -183,7 +186,6 @@ export default function SellerOnboarding() {
     }
     return false;
   };
-
   const handleSubmitApplication = async () => {
     try {
       setSubmitting(true);
@@ -199,7 +201,6 @@ export default function SellerOnboarding() {
       setSubmitting(false);
     }
   };
-
   const handleNext = async () => {
     let saved = false;
     if (activeStep === 1) saved = await handleSaveBusiness();
@@ -211,7 +212,6 @@ export default function SellerOnboarding() {
       setActiveStep(activeStep + 1);
     }
   };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -219,8 +219,6 @@ export default function SellerOnboarding() {
       </div>
     );
   }
-
-  // Render Status Screens if Approved or Pending
   if (userStatus === "approved") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
@@ -242,7 +240,6 @@ export default function SellerOnboarding() {
       </div>
     );
   }
-
   if (userStatus === "pending_approval" || application?.status === "submitted") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
@@ -267,7 +264,6 @@ export default function SellerOnboarding() {
       </div>
     );
   }
-
   const steps = [
     { id: 1, name: "Business Details", icon: Building2 },
     { id: 2, name: "Pickup Address", icon: MapPin },
@@ -275,12 +271,9 @@ export default function SellerOnboarding() {
     { id: 4, name: "Tax & Documents", icon: FileCheck },
     { id: 5, name: "Review & Submit", icon: Send },
   ];
-
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">
       <div className="max-w-4xl mx-auto">
-
-        {/* Rejection Banner */}
         {application?.status === "rejected" && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-red-800">
             <XCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
@@ -293,13 +286,9 @@ export default function SellerOnboarding() {
             </div>
           </div>
         )}
-
-        {/* Onboarding Header */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 border border-slate-200">
           <h1 className="text-2xl font-bold text-slate-800">Seller Onboarding Dashboard</h1>
           <p className="text-slate-500 text-sm mt-1">Complete all steps to launch your store on our marketplace.</p>
-
-          {/* Stepper Header */}
           <div className="flex items-center justify-between mt-6 relative">
             {steps.map((step) => {
               const Icon = step.icon;
@@ -326,9 +315,7 @@ export default function SellerOnboarding() {
           </div>
         </div>
 
-        {/* Step Content */}
         <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-200">
-          {/* STEP 1: Business Details */}
           {activeStep === 1 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -345,31 +332,27 @@ export default function SellerOnboarding() {
                     className="w-full border rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
-                {/* <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Business Category</label>
-                  <input
-                    type="text"
-                    value={business.category}
-                    onChange={(e) => setBusiness({ ...business, category: e.target.value })}
-                    placeholder="Fashion, Electronics, Home & Living"
-                    className="w-full border rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div> */}
                 <div>
                   <Label>Business Category *</Label>
                   <Select
-                    value={business.category}
-                    onValueChange={(val) => setBusiness({ ...business, category: val })}
+                    value={business.categoryId}
+                    onValueChange={(val) => setBusiness({ ...business, categoryId: val })}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {businesses.map((b) => (
-                        <SelectItem key={b._id} value={b.name}>
-                          {b.name}
+                      {categories.length === 0 ? (
+                        <SelectItem value="__loading" disabled>
+                          Loading categories...
                         </SelectItem>
-                      ))}
+                      ) : (
+                        categories.map((c) => (
+                          <SelectItem key={c._id} value={c._id}>
+                            {c.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -387,16 +370,7 @@ export default function SellerOnboarding() {
                     <option value="Individual">Individual Seller</option>
                   </select>
                 </div>
-                {/* <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Website URL</label>
-                  <input
-                    type="text"
-                    value={business.website}
-                    onChange={(e) => setBusiness({ ...business, website: e.target.value })}
-                    placeholder="https://mystore.com"
-                    className="w-full border rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div> */}
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Business Phone</label>
                   <input
@@ -430,7 +404,6 @@ export default function SellerOnboarding() {
             </div>
           )}
 
-          {/* STEP 2: Pickup Address */}
           {activeStep === 2 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -511,7 +484,6 @@ export default function SellerOnboarding() {
             </div>
           )}
 
-          {/* STEP 3: Bank Details */}
           {activeStep === 3 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -562,7 +534,6 @@ export default function SellerOnboarding() {
             </div>
           )}
 
-          {/* STEP 4: Tax & Documents */}
           {activeStep === 4 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -599,37 +570,6 @@ export default function SellerOnboarding() {
                     className="w-full border rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
-                {/* <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">GST Document URL / Path</label>
-                  <input
-                    type="text"
-                    value={taxDocs.gstDocUrl}
-                    onChange={(e) => setTaxDocs({ ...taxDocs, gstDocUrl: e.target.value })}
-                    placeholder="/uploads/gst-doc.pdf"
-                    className="w-full border rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div> */}
-                {/* <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">PAN Card URL / Path</label>
-                  <input
-                    type="text"
-                    value={taxDocs.panDocUrl}
-                    onChange={(e) => setTaxDocs({ ...taxDocs, panDocUrl: e.target.value })}
-                    placeholder="/uploads/pan-doc.pdf"
-                    className="w-full border rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div> */}
-
-                {/* <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Aadhaar Card URL / Path</label>
-                  <input
-                    type="text"
-                    value={taxDocs.aadhaarDocUrl}
-                    onChange={(e) => setTaxDocs({ ...taxDocs, aadhaarDocUrl: e.target.value })}
-                    placeholder="/uploads/aadhaar-doc.pdf"
-                    className="w-full border rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div> */}
 
                 <div className="col-span-2">
                   <Label>GST Document</Label>

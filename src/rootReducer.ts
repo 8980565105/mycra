@@ -22,7 +22,7 @@ import warehouseReducer from "./features/warehouse/warehouseSlice";
 import subcategoriReducer from "./features/subcategories/subcategoriesSlice";
 import faqsReducer from "./features/faqs/faqsSlice";
 import walletReducer from "./features/wallets/walletsSlice";
-import businessReducer from "./features/Business/businessSlice";
+// import businessReducer from "./features/Business/businessSlice";
 import attributesReducer from "./features/attributes/attributesSlice";
 import brandsReducer from "./features/brands/brandsSlice";
 
@@ -56,5 +56,5 @@ export const rootReducer = {
   dashboard: dashboardReducer,
   faqs: faqsReducer,
   wallet: walletReducer,
-  business: businessReducer,
+  // business: businessReducer,
 };
