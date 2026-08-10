@@ -1,12 +1,10 @@
 import React from 'react';
 import OriginalSortByIcon from "../icons/SortByIcon";
 import { ChevronDown, Sliders, X, Star, Plus, Minus } from 'lucide-react';
-import FilterIconComponent from "../icons/filter"; // Import it with a unique, capitalized name
-// ---------- Icon Wrappers ---------
+import FilterIconComponent from "../icons/filter"; 
 const SortByIcon = (props) => (<OriginalSortByIcon {...props} className="h-4 w-4 md:text-gray-500" />);
 const CustomChevronDown = (props) => ( <ChevronDown {...props} />);
 const Filter = (props) => (<FilterIconComponent {...props} />);
-// ---------- Mobile Filter Bar ----------// --- 1. Mobile Responsive UI (Filter Bar) ---
 const MobileFilterBar = ({ sortBy, filterCount, onSortClick, onFilterClick, isHidden }) => (
     <div className={`flex flex-wrap items-center w-full gap-4 sm:gap-2 ${isHidden ? 'hidden' : 'flex'}`}>
         <div className="rounded-[10px] cursor-pointer transition duration-300 border border-[#989696] drop-shadow-[0_0_4px_rgba(0,0,0,0.1)] bg-white w-[140px] sm:w-[180px] md:w-[200px] "

@@ -60,29 +60,29 @@ const MobileFilterModal = ({
 
   const subCategoryCountsById = Array.isArray(products)
     ? products.reduce((acc, product) => {
-        const catId = product.category_id;
-        if (catId) acc[catId] = (acc[catId] || 0) + 1;
-        return acc;
-      }, {})
+      const catId = product.category_id;
+      if (catId) acc[catId] = (acc[catId] || 0) + 1;
+      return acc;
+    }, {})
     : {};
 
   const typeCountsByName = Array.isArray(products)
     ? products.reduce((acc, product) => {
-        const tName = product.variants?.[0]?.type?.[0]?.name?.trim();
-        if (tName) {
-          const lower = tName.toLowerCase();
-          acc[lower] = (acc[lower] || 0) + 1;
-        }
-        return acc;
-      }, {})
+      const tName = product.variants?.[0]?.type?.[0]?.name?.trim();
+      if (tName) {
+        const lower = tName.toLowerCase();
+        acc[lower] = (acc[lower] || 0) + 1;
+      }
+      return acc;
+    }, {})
     : {};
 
   const labelCounts = Array.isArray(products)
     ? products.reduce((acc, product) => {
-        const labelId = product.variants?.[0]?.labels?.[0];
-        if (labelId) acc[labelId] = (acc[labelId] || 0) + 1;
-        return acc;
-      }, {})
+      const labelId = product.variants?.[0]?.labels?.[0];
+      if (labelId) acc[labelId] = (acc[labelId] || 0) + 1;
+      return acc;
+    }, {})
     : {};
 
   if (!isOpen) return null;
@@ -113,7 +113,7 @@ const MobileFilterModal = ({
 
           <div className="space-y-4 py-[10px]">
             <CollapsibleFilter
-              title="Category"
+              title="Categories"
               defaultOpen={true}
               isOpen={openFilter === "Category"}
               onToggle={() => toggleFilter("Category")}
@@ -122,12 +122,48 @@ const MobileFilterModal = ({
               onCancelClick={handleResetCategories}
               onApplyClick={onClose}
             >
-              <div className="space-y-1 h-[140px] overflow-y-auto hide-scrollbar">
+              <div className="space-y-1.5 h-[200px] overflow-y-auto hide-scrollbar text-sm font-inter">
                 <div className="px-3 py-3">
                   {subcatLoading ? (
                     <p className="text-sm text-gray-500">
-                      Loading subcategories...
+                      Loading categories...
                     </p>
+                  ) : selectedCategories.length > 0 ? (
+                    <>
+                      <div className="flex items-center gap-1 mb-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <span
+                          className="cursor-pointer hover:text-black hover:underline flex items-center gap-1 text-[var(--primary-color)]"
+                          onClick={handleResetCategories}
+                        >
+                          ‹ Categories
+                        </span>
+                      </div>
+                      <div className="pl-2 border-l-2 border-[var(--primary-color)] space-y-2">
+                        <p className="font-semibold text-black text-sm mb-1">
+                          {selectedCategories[0]}
+                        </p>
+                        {groupedTypes.length > 0 ? (
+                          <div className="pl-2 space-y-1">
+                            <p className="text-xs font-bold text-gray-400 uppercase mt-2 mb-1">Product Types</p>
+                            {groupedTypes.map((gt) => {
+                              const name = gt.displayName;
+                              const count = typeCountsByName[name.toLowerCase()] || 0;
+                              return (
+                                <FilterItemCheckbox
+                                  key={name}
+                                  name={name}
+                                  count={count}
+                                  isChecked={selectedTypes.includes(name)}
+                                  onChange={() => handleTypeChange(name, gt.typeIds)}
+                                />
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">No sub-items</p>
+                        )}
+                      </div>
+                    </>
                   ) : subcategories.length > 0 ? (
                     subcategories.map((cat) => (
                       <FilterItemCheckbox
@@ -244,9 +280,8 @@ const MobileFilterModal = ({
                                 onClick={() => handleAttributeChange(code, valName)}
                               >
                                 <div
-                                  className={`w-[22px] h-[22px] rounded-full box-shadow ${
-                                    isChecked ? "ring-2 ring-offset-1 ring-black" : ""
-                                  } transition-transform duration-200`}
+                                  className={`w-[22px] h-[22px] rounded-full box-shadow ${isChecked ? "ring-2 ring-offset-1 ring-black" : ""
+                                    } transition-transform duration-200`}
                                   style={{ backgroundColor: hex }}
                                 />
                                 <p className="text-[10px] sec-text-color mt-1 text-center truncate max-w-[45px]">
@@ -295,36 +330,6 @@ const MobileFilterModal = ({
                 );
               })
             )}
-
-            {/* <CollapsibleFilter
-              title="Product Label"
-              isOpen={openFilter === "Product Label"}
-              onToggle={() => toggleFilter("Product Label")}
-              isSelected={selectedLabels.length > 0}
-              showButtons={true}
-              onCancelClick={handleResetLabels}
-              onApplyClick={onClose}
-            >
-              <div className="px-3 py-3">
-                {labelsLoading ? (
-                  <p className="text-sm text-gray-500">Loading labels...</p>
-                ) : productLabels.length > 0 ? (
-                  productLabels.map((label) => (
-                    <FilterItemCheckbox
-                      key={label._id}
-                      name={label.name}
-                      count={labelCounts[label._id] || 0}
-                      isChecked={selectedLabels.includes(label._id)}
-                      onChange={() => handleLabelChange(label._id)}
-                    />
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">
-                    No product labels found.
-                  </p>
-                )}
-              </div>
-            </CollapsibleFilter> */}
           </div>
         </div>
       </div>

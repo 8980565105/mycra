@@ -241,7 +241,14 @@ const Header = () => {
     setIsMegaMenuOpen(false);
     setIsMenuOpen(false);
     setIsMobileMegaMenuOpen(false);
-    navigate(`/shop?category=${encodeURIComponent(categoryName)}`);
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    
+    const targetUrl = `/shop?category=${encodeURIComponent(categoryName)}`;
+    if (location.pathname === "/shop") {
+      navigate(targetUrl, { replace: true });
+    } else {
+      navigate(targetUrl);
+    }
   };
   const BASE = process.env.REACT_APP_API_URL_IMAGE;
 

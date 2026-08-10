@@ -346,7 +346,6 @@ const PriceRangeFilter = ({
           />
         </div>
 
-        {/* Inputs Min & Max */}
         <div className="flex items-center gap-3">
           <div className="flex flex-col flex-1">
             <span className="text-xs sec-text-color font-medium mb-1">Min (Rs)</span>
@@ -582,8 +581,8 @@ export default function WomenCollections() {
     const urlCats = params.get("category") ? params.get("category").split(",") : [];
     const urlTypes = params.get("type") ? params.get("type").split(",") : [];
     const urlLabels = params.get("label") ? params.get("label").split(",") : [];
-    const urlMin = params.get("min") !== null ? Number(params.get("min")) : minCatalogPrice;
-    const urlMax = params.get("max") !== null ? Number(params.get("max")) : maxCatalogPrice;
+    const urlMin = params.get("min") !== null ? Number(params.get("min")) : null;
+    const urlMax = params.get("max") !== null ? Number(params.get("max")) : null;
 
     if (JSON.stringify(selectedCategories) !== JSON.stringify(urlCats)) {
       setSelectedCategories(urlCats);
@@ -595,15 +594,15 @@ export default function WomenCollections() {
     if (JSON.stringify(currentLabelNames) !== JSON.stringify(urlLabels)) {
       setSelectedLabels(urlLabels.map((name) => ({ id: name, name })));
     }
-    if (minPrice !== urlMin && params.get("min") !== null) {
+    if (urlMin !== null && minPrice !== urlMin) {
       setMinPrice(urlMin);
       setDebouncedMinPrice(urlMin);
     }
-    if (maxPrice !== urlMax && params.get("max") !== null) {
+    if (urlMax !== null && maxPrice !== urlMax) {
       setMaxPrice(urlMax);
       setDebouncedMaxPrice(urlMax);
     }
-  }, [location.search, minCatalogPrice, maxCatalogPrice]);
+  }, [location.search]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -612,8 +611,12 @@ export default function WomenCollections() {
     if (selectedTypes.length) params.set("type", selectedTypes.join(","));
     if (selectedLabels.length)
       params.set("label", selectedLabels.map((l) => l.name).join(","));
-    if (debouncedMinPrice > minCatalogPrice) params.set("min", debouncedMinPrice);
-    if (debouncedMaxPrice < maxCatalogPrice && debouncedMaxPrice > 0) params.set("max", debouncedMaxPrice);
+    if (debouncedMinPrice !== null && minCatalogPrice > 0 && debouncedMinPrice > minCatalogPrice) {
+      params.set("min", debouncedMinPrice);
+    }
+    if (debouncedMaxPrice !== null && maxCatalogPrice > 0 && debouncedMaxPrice < maxCatalogPrice) {
+      params.set("max", debouncedMaxPrice);
+    }
 
     const queryString = params.toString();
     const newUrl = `/shop${queryString ? `?${queryString}` : ""}`;
@@ -628,11 +631,6 @@ export default function WomenCollections() {
     selectedLabels,
     debouncedMinPrice,
     debouncedMaxPrice,
-    minCatalogPrice,
-    maxCatalogPrice,
-    navigate,
-    location.pathname,
-    location.search,
   ]);
 
   const currentFilters = useMemo(() => {
@@ -698,10 +696,37 @@ export default function WomenCollections() {
     }
 
     if (selectedCategories.length > 0) {
-      const catId = typeof p.category_id === "object" ? p.category_id?._id : p.category_id;
-      const catObj = subcategories.find((c) => c._id === catId);
-      const catName = (typeof p.category_id === "object" ? p.category_id?.name : null) || catObj?.name || p.category?.name;
-      if (!catName || !selectedCategories.includes(catName)) return false;
+      const matchCat = (val) => {
+        if (!val) return false;
+        const targetStr = (typeof val === "object" ? val?.name || val?._id : String(val)).toLowerCase().trim();
+        return selectedCategories.some((sc) => sc.toLowerCase().trim() === targetStr);
+      };
+
+      const matchInSubcats = () => {
+        const catId = typeof p.category_id === "object" ? p.category_id?._id : p.category_id;
+        const catObj = subcategories.find((c) => c._id === catId || c.name?.toLowerCase().trim() === selectedCategories[0]?.toLowerCase().trim());
+        return catObj ? selectedCategories.some((sc) => sc.toLowerCase().trim() === catObj.name?.toLowerCase().trim()) : false;
+      };
+
+      const hasDirectCategoryMatch =
+        matchCat(p.category_id) ||
+        matchCat(p.subcategory_id) ||
+        matchCat(p.child_category_id) ||
+        matchCat(p.category) ||
+        matchCat(p.type_id) ||
+        matchCat(p.product_type) ||
+        matchInSubcats();
+
+      const hasTypeMatchInVariants = (p?.variants || []).some((v) => {
+        const t = v?.type || v?.types || v?.type_id;
+        if (!t) return false;
+        if (Array.isArray(t)) {
+          return t.some((x) => matchCat(x));
+        }
+        return matchCat(t);
+      });
+
+      if (!hasDirectCategoryMatch && !hasTypeMatchInVariants) return false;
     }
 
     if (selectedTypes.length > 0) {

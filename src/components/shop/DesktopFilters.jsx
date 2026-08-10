@@ -93,7 +93,7 @@ const DesktopFilters = ({
       </div>
 
       <CollapsibleFilter
-        title="Category"
+        title="Categories"
         defaultOpen={true}
         isOpen={openFilter === "Category"}
         onToggle={() => toggleFilter("Category")}
@@ -101,23 +101,61 @@ const DesktopFilters = ({
         onReset={handleResetCategories}
         showButtons={true}
       >
-        <div className="space-y-1 px-3 py-3 h-[200px] overflow-y-auto hide-scrollbar">
+        <div className="space-y-1.5 px-3 py-3 max-h-[260px] overflow-y-auto hide-scrollbar text-sm font-inter">
           {subcatLoading ? (
-            <p className="text-sm text-gray-500">Loading subcategories...</p>
-          ) : subcategories.length > 0 ? (
-            subcategories
-              .filter((cat) => cat.parent_id !== null)
-              .map((cat) => (
-                <FilterItemCheckbox
-                  key={cat._id}
-                  name={cat.name}
-                  count={subCategoryCountsById[cat._id] || 0}
-                  isChecked={selectedCategories.includes(cat.name)}
-                  onChange={handleCategoryChange}
-                />
-              ))
+            <p className="text-sm text-gray-500">Loading categories...</p>
           ) : (
-            <p className="text-sm text-gray-500">No categories found.</p>
+            <>
+              {selectedCategories.length > 0 ? (
+                <>
+                  <div className="flex items-center gap-1 mb-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    <span
+                      className="cursor-pointer hover:text-black hover:underline flex items-center gap-1 text-[var(--primary-color)]"
+                      onClick={handleResetCategories}
+                    >
+                      ‹ Categories
+                    </span>
+                  </div>
+                  <div className="pl-2 border-l-2 border-[var(--primary-color)] space-y-2">
+                    <p className="font-semibold text-black text-sm mb-1">
+                      {selectedCategories[0]}
+                    </p>
+                    {groupedTypes.length > 0 ? (
+                      <div className="pl-2 space-y-1">
+                        <p className="text-xs font-bold text-gray-400 uppercase mt-2 mb-1">Product Types</p>
+                        {groupedTypes.map((gt) => {
+                          const name = gt.displayName;
+                          const count = typeCountsByName[name.toLowerCase()] || 0;
+                          return (
+                            <FilterItemCheckbox
+                              key={name}
+                              name={name}
+                              count={count}
+                              isChecked={selectedTypes.includes(name)}
+                              onChange={() => handleTypeChange(name, gt.typeIds)}
+                            />
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">No sub-items</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                subcategories
+                  .filter((cat) => cat.parent_id !== null)
+                  .map((cat) => (
+                    <FilterItemCheckbox
+                      key={cat._id}
+                      name={cat.name}
+                      count={subCategoryCountsById[cat._id] || 0}
+                      isChecked={selectedCategories.includes(cat.name)}
+                      onChange={handleCategoryChange}
+                    />
+                  ))
+              )}
+            </>
           )}
         </div>
       </CollapsibleFilter>
