@@ -1,149 +1,180 @@
 const Attribute = require("../models/Attribute");
 const AttributeValue = require("../models/AttributeValue");
 const SubCategory = require("../models/Subcategory");
+const Store = require("../models/Store");
 
-exports.createAttribute = async (req, res) => {
+const createAttribute = async (req, res) => {
   try {
-    const { name, code, status, storeId } = req.body;
-    const attribute = new Attribute({
+    if (req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Only admin can create attributes" });
+    }
+    const { name, code, categoryId } = req.body;
+    if (!categoryId) {
+      return res.status(400).json({ message: "category is required" });
+    }
+    const attribute = await Attribute.create({
       name,
       code,
-      status: status || "active",
-      storeId: storeId || req.user?.storeId || null,
-      createdBy: req.user?._id,
+      categoryId,
+      createdBy: req.user._id,
     });
-    await attribute.save();
-    res.status(201).json({ success: true, data: attribute });
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(201).json({ data: attribute });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 
-exports.getAttributes = async (req, res) => {
+const getAttributes = async (req, res) => {
   try {
-    const { page = 1, limit = 100, search, status } = req.query;
-    const query = {};
-    if (status) query.status = status;
-    if (search) query.name = { $regex: search, $options: "i" };
+    const { page = 1, limit = 20, search, status, categoryId } = req.query;
+    const filter = {};
 
-    const skip = (page - 1) * limit;
-    const attributes = await Attribute.find(query)
-      .skip(skip)
-      .limit(Number(limit))
-      .sort({ createdAt: -1 });
+    if (req.user.role === "store_owner") {
+      const store = await Store.findById(req.user.storeId);
+      if (!store || !store.categoryId) {
+        return res.status(400).json({ message: "Store category not set" });
+      }
+      filter.categoryId = store.categoryId;
+    } else if (categoryId) {
+      filter.categoryId = categoryId;
+    }
 
-    const total = await Attribute.countDocuments(query);
+    if (search) filter.name = { $regex: search, $options: "i" };
+    if (status) filter.status = status;
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const [data, total] = await Promise.all([
+      Attribute.find(filter)
+        .populate("categoryId", "name")
+        .skip(skip)
+        .limit(Number(limit)),
+      Attribute.countDocuments(filter),
+    ]);
 
     res.json({
-      success: true,
-      data: attributes,
+      data,
       pagination: {
         total,
         page: Number(page),
         pages: Math.ceil(total / limit),
       },
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 
-exports.updateAttribute = async (req, res) => {
+const updateAttribute = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Only admin can update attributes" });
+    }
     const attribute = await Attribute.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      {
+        new: true,
+      },
     );
-    if (!attribute)
-      return res.status(404).json({ success: false, message: "Attribute not found" });
-    res.json({ success: true, data: attribute });
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.json({ data: attribute });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 
-exports.deleteAttribute = async (req, res) => {
+const deleteAttribute = async (req, res) => {
   try {
-    const attribute = await Attribute.findByIdAndDelete(req.params.id);
-    if (!attribute)
-      return res.status(404).json({ success: false, message: "Attribute not found" });
+    if (req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Only admin can delete attributes" });
+    }
+    await Attribute.findByIdAndDelete(req.params.id);
     await AttributeValue.deleteMany({ attributeId: req.params.id });
-    res.json({ success: true, message: "Attribute and related values deleted" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.json({ message: "Deleted" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 
-
-exports.createAttributeValue = async (req, res) => {
+const createAttributeValue = async (req, res) => {
   try {
-    const { attributeId, value, colorHex, status, storeId } = req.body;
-    const attrVal = new AttributeValue({
+    const { attributeId, value, colorHex } = req.body;
+
+    const exists = await AttributeValue.findOne({
+      attributeId,
+      value: { $regex: `^${value}$`, $options: "i" },
+    });
+    if (exists) {
+      return res.status(400).json({ message: "This value already exists" });
+    }
+
+    const attrValue = await AttributeValue.create({
       attributeId,
       value,
       colorHex,
-      status: status || "active",
-      storeId: storeId || req.user?.storeId || null,
     });
-    await attrVal.save();
-    res.status(201).json({ success: true, data: attrVal });
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(201).json({ data: attrValue });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 
-exports.getAttributeValues = async (req, res) => {
+const getAttributeValues = async (req, res) => {
   try {
     const { attributeId, status } = req.query;
-    const query = {};
-    if (attributeId) query.attributeId = attributeId;
-    if (status) query.status = status;
-
-    const values = await AttributeValue.find(query)
-      .populate("attributeId", "name code")
-      .sort({ value: 1 });
-
-    res.json({ success: true, data: values });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    const filter = {};
+    if (attributeId) filter.attributeId = attributeId;
+    if (status) filter.status = status;
+    const data = await AttributeValue.find(filter);
+    res.json({ data });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 
-exports.updateAttributeValue = async (req, res) => {
+const updateAttributeValue = async (req, res) => {
   try {
-    const attrVal = await AttributeValue.findByIdAndUpdate(
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admin can edit values" });
+    }
+    const val = await AttributeValue.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      { new: true },
     );
-    if (!attrVal)
-      return res.status(404).json({ success: false, message: "Attribute value not found" });
-    res.json({ success: true, data: attrVal });
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.json({ data: val });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 
-exports.deleteAttributeValue = async (req, res) => {
+const deleteAttributeValue = async (req, res) => {
   try {
-    const attrVal = await AttributeValue.findByIdAndDelete(req.params.id);
-    if (!attrVal)
-      return res.status(404).json({ success: false, message: "Attribute value not found" });
-    res.json({ success: true, message: "Attribute value deleted" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admin can delete values" });
+    }
+    await AttributeValue.findByIdAndDelete(req.params.id);
+    res.json({ message: "Deleted" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 
-
-exports.getCategoryAttributesWithValues = async (req, res) => {
+const getCategoryAttributesWithValues = async (req, res) => {
   try {
     const { subcategoryId } = req.params;
-    const subcategory = await SubCategory.findById(subcategoryId).populate("allowedAttributes");
+    const subcategory =
+      await SubCategory.findById(subcategoryId).populate("allowedAttributes");
 
     if (!subcategory) {
-      return res.status(404).json({ success: false, message: "SubCategory not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "SubCategory not found" });
     }
 
     const attributes = subcategory.allowedAttributes || [];
@@ -157,9 +188,13 @@ exports.getCategoryAttributesWithValues = async (req, res) => {
           _id: attr._id,
           name: attr.name,
           code: attr.code,
-          values: values.map((v) => ({ _id: v._id, value: v.value, colorHex: v.colorHex })),
+          values: values.map((v) => ({
+            _id: v._id,
+            value: v.value,
+            colorHex: v.colorHex,
+          })),
         };
-      })
+      }),
     );
 
     res.json({ success: true, data: result });
@@ -168,19 +203,21 @@ exports.getCategoryAttributesWithValues = async (req, res) => {
   }
 };
 
-exports.getTypeAttributesWithValues = async (req, res) => {
+const getTypeAttributesWithValues = async (req, res) => {
   try {
     const { typeId } = req.params;
     const Type = require("../models/Type");
-    
+
     const typeIds = typeId.includes(",") ? typeId.split(",") : [typeId];
-    
+
     const types = await Type.find({ _id: { $in: typeIds } })
       .populate("allowedAttributes")
       .populate("variantAttributes");
 
     if (!types || types.length === 0) {
-      return res.status(404).json({ success: false, message: "Product Type(s) not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Product Type(s) not found" });
     }
 
     const attributeMap = new Map();
@@ -210,9 +247,13 @@ exports.getTypeAttributesWithValues = async (req, res) => {
           _id: attr._id,
           name: attr.name,
           code: attr.code,
-          values: values.map((v) => ({ _id: v._id, value: v.value, colorHex: v.colorHex })),
+          values: values.map((v) => ({
+            _id: v._id,
+            value: v.value,
+            colorHex: v.colorHex,
+          })),
         };
-      })
+      }),
     );
 
     res.json({ success: true, data: result.filter(Boolean) });
@@ -221,11 +262,13 @@ exports.getTypeAttributesWithValues = async (req, res) => {
   }
 };
 
-exports.getMultipleTypeAttributesWithValues = async (req, res) => {
+const getMultipleTypeAttributesWithValues = async (req, res) => {
   try {
     const { typeIds } = req.body;
     if (!Array.isArray(typeIds) || typeIds.length === 0) {
-      return res.status(400).json({ success: false, message: "typeIds array is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "typeIds array is required" });
     }
 
     const Type = require("../models/Type");
@@ -258,9 +301,13 @@ exports.getMultipleTypeAttributesWithValues = async (req, res) => {
           _id: attr._id,
           name: attr.name,
           code: attr.code,
-          values: values.map((v) => ({ _id: v._id, value: v.value, colorHex: v.colorHex })),
+          values: values.map((v) => ({
+            _id: v._id,
+            value: v.value,
+            colorHex: v.colorHex,
+          })),
         };
-      })
+      }),
     );
 
     res.json({ success: true, data: result.filter(Boolean) });
@@ -268,3 +315,16 @@ exports.getMultipleTypeAttributesWithValues = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+module.exports ={
+  createAttribute,
+  updateAttributeValue,
+  getCategoryAttributesWithValues,
+  getAttributes,
+  updateAttribute,
+  deleteAttribute,
+  getAttributeValues,
+  deleteAttributeValue,
+  createAttributeValue,
+  getMultipleTypeAttributesWithValues,
+  getTypeAttributesWithValues
+}

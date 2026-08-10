@@ -11,6 +11,11 @@ const sellerApplicationSchema = new mongoose.Schema(
     businessDetails: {
       storeName: { type: String, trim: true },
       category: { type: String, trim: true },
+      categoryId: {
+        // CHANGED: category (string) ni badle categoryId (ref)
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+      },
       businessType: { type: String, trim: true },
       description: { type: String, trim: true },
       website: { type: String, trim: true },
@@ -57,7 +62,7 @@ const sellerApplicationSchema = new mongoose.Schema(
       default: "",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("SellerApplication", sellerApplicationSchema);

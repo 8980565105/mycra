@@ -6,6 +6,12 @@ const attributeSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     code: { type: String, required: true, trim: true },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+      index: true,
+    },
     storeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
@@ -18,7 +24,7 @@ const attributeSchema = new mongoose.Schema(
       required: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 attributeSchema.pre("validate", function (next) {

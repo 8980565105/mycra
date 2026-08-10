@@ -32,7 +32,7 @@ const walletRoutes = require("./src/routes/walletRoutes");
 const transectionRoutes = require("./src/routes/transectionRoutes");
 const kycRoutes = require("./src/routes/kycRoutes");
 const sellerRoutes = require("./src/routes/sellerRoutes");
-const businessRoutes = require("./src/routes/businessRoutes");
+// const businessRoutes = require("./src/routes/businessRoutes");
 const attributeRoutes = require("./src/routes/attributeRoutes");
 const brandRoutes = require("./src/routes/brandRoutes");
 const faqs = require("./src/routes/faqsRoute");
@@ -174,7 +174,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/transactions", transectionRoutes);
 app.use("/api/kyc", kycRoutes);
 app.use("/api/seller", sellerRoutes);
-app.use("/api/business", businessRoutes);
+// app.use("/api/business", businessRoutes);
 
 app.use(errorHandler);
 

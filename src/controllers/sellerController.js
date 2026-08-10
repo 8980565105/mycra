@@ -30,7 +30,15 @@ const cleanDomain = (raw) => {
 const saveBusinessDetails = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { storeName, category, businessType, description, website, phone, email } = req.body;
+    const {
+      storeName,
+      categoryId,
+      businessType,
+      description,
+      website,
+      phone,
+      email,
+    } = req.body;
 
     if (!storeName) {
       return sendResponse(res, false, null, "Store name is required");
@@ -45,7 +53,7 @@ const saveBusinessDetails = async (req, res) => {
 
     app.businessDetails = {
       storeName: storeName.trim(),
-      category: category || "",
+      categoryId,
       businessType: businessType || "",
       description: description || "",
       website: website || "",
@@ -72,7 +80,18 @@ const saveBusinessDetails = async (req, res) => {
 const savePickupAddress = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { full_name, phone_number, house_no, apartment, street, landmark, city, state, country, zip_code } = req.body;
+    const {
+      full_name,
+      phone_number,
+      house_no,
+      apartment,
+      street,
+      landmark,
+      city,
+      state,
+      country,
+      zip_code,
+    } = req.body;
 
     let app = await SellerApplication.findOne({ user: userId });
     if (!app) {
@@ -110,10 +129,16 @@ const savePickupAddress = async (req, res) => {
 const saveBankDetails = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { accountNumber, accountHolderName, ifscCode, bankName, branchName } = req.body;
+    const { accountNumber, accountHolderName, ifscCode, bankName, branchName } =
+      req.body;
 
     if (!accountNumber || !ifscCode) {
-      return sendResponse(res, false, null, "Account number and IFSC code are required");
+      return sendResponse(
+        res,
+        false,
+        null,
+        "Account number and IFSC code are required",
+      );
     }
 
     let app = await SellerApplication.findOne({ user: userId });
@@ -147,7 +172,16 @@ const saveBankDetails = async (req, res) => {
 const saveDocuments = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { gstNumber, panNumber, aadhaarNumber, gstDocUrl, panDocUrl, aadhaarDocUrl, cancelledChequeUrl, addressProofUrl } = req.body;
+    const {
+      gstNumber,
+      panNumber,
+      aadhaarNumber,
+      gstDocUrl,
+      panDocUrl,
+      aadhaarDocUrl,
+      cancelledChequeUrl,
+      addressProofUrl,
+    } = req.body;
 
     let app = await SellerApplication.findOne({ user: userId });
     if (!app) {
@@ -172,9 +206,15 @@ const saveDocuments = async (req, res) => {
       : addressProofUrl || app.taxAndDocs?.addressProofUrl || "";
 
     app.taxAndDocs = {
-      gstNumber: gstNumber ? gstNumber.trim().toUpperCase() : app.taxAndDocs?.gstNumber || "",
-      panNumber: panNumber ? panNumber.trim().toUpperCase() : app.taxAndDocs?.panNumber || "",
-      aadhaarNumber: aadhaarNumber ? aadhaarNumber.trim() : app.taxAndDocs?.aadhaarNumber || "",
+      gstNumber: gstNumber
+        ? gstNumber.trim().toUpperCase()
+        : app.taxAndDocs?.gstNumber || "",
+      panNumber: panNumber
+        ? panNumber.trim().toUpperCase()
+        : app.taxAndDocs?.panNumber || "",
+      aadhaarNumber: aadhaarNumber
+        ? aadhaarNumber.trim()
+        : app.taxAndDocs?.aadhaarNumber || "",
       gstDocUrl: uploadedGstDoc,
       panDocUrl: uploadedPanDoc,
       aadhaarDocUrl: uploadedAadhaarDoc,
@@ -201,8 +241,9 @@ const getOnboardingStatus = async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await User.findById(userId).populate("storeId");
-    let application = await SellerApplication.findOne({ user: userId });
-
+    let application = await SellerApplication.findOne({
+      user: userId,
+    }).populate("businessDetails.categoryId", "name");
     return sendResponse(
       res,
       true,
@@ -217,7 +258,7 @@ const getOnboardingStatus = async (req, res) => {
         },
         application: application || null,
       },
-      "Onboarding status retrieved successfully"
+      "Onboarding status retrieved successfully",
     );
   } catch (error) {
     return sendResponse(res, false, null, error.message);
@@ -231,7 +272,12 @@ const submitApplication = async (req, res) => {
     const app = await SellerApplication.findOne({ user: userId });
 
     if (!app) {
-      return sendResponse(res, false, null, "Please complete onboarding steps before submitting.");
+      return sendResponse(
+        res,
+        false,
+        null,
+        "Please complete onboarding steps before submitting.",
+      );
     }
 
     if (!app.businessDetails?.storeName) {
@@ -242,9 +288,16 @@ const submitApplication = async (req, res) => {
     app.rejectionReason = "";
     await app.save();
 
-    await User.findByIdAndUpdate(userId, { onboardingStatus: "pending_approval" });
+    await User.findByIdAndUpdate(userId, {
+      onboardingStatus: "pending_approval",
+    });
 
-    return sendResponse(res, true, app, "Seller application submitted for admin approval.");
+    return sendResponse(
+      res,
+      true,
+      app,
+      "Seller application submitted for admin approval.",
+    );
   } catch (error) {
     return sendResponse(res, false, null, error.message);
   }
@@ -257,9 +310,16 @@ const getSellerApplications = async (req, res) => {
   try {
     const { status } = req.query;
     const query = status ? { status } : {};
-    const applications = await SellerApplication.find(query).populate("user", "name email mobile_number onboardingStatus").sort({ updatedAt: -1 });
+    const applications = await SellerApplication.find(query)
+      .populate("user", "name email mobile_number onboardingStatus")
+      .sort({ updatedAt: -1 });
 
-    return sendResponse(res, true, applications, "Seller applications fetched successfully");
+    return sendResponse(
+      res,
+      true,
+      applications,
+      "Seller applications fetched successfully",
+    );
   } catch (error) {
     return sendResponse(res, false, null, error.message);
   }
@@ -269,7 +329,8 @@ const approveSellerApplication = async (req, res) => {
   try {
     const { applicationId } = req.params;
 
-    const app = await SellerApplication.findById(applicationId).populate("user");
+    const app =
+      await SellerApplication.findById(applicationId).populate("user");
     if (!app) {
       return sendResponse(res, false, null, "Application not found");
     }
@@ -277,11 +338,22 @@ const approveSellerApplication = async (req, res) => {
     if (app.status === "approved") {
       return sendResponse(res, false, null, "Application is already approved.");
     }
+    if (!app.businessDetails?.categoryId) {
+      // NEW safety check
+      return sendResponse(
+        res,
+        false,
+        null,
+        "Application has no category selected.",
+      );
+    }
 
     const { businessDetails, pickupAddress, taxAndDocs } = app;
     const storeName = businessDetails.storeName;
     const storeEmail = businessDetails.email || app.user.email;
-    const domain = businessDetails.domain || slugify(storeName, { lower: true, strict: true });
+    const domain =
+      businessDetails.domain ||
+      slugify(storeName, { lower: true, strict: true });
 
     // Create Store
     const store = await Store.create({
@@ -292,6 +364,7 @@ const approveSellerApplication = async (req, res) => {
       website: businessDetails.website || "",
       domain: domain,
       description: businessDetails.description || "",
+      categoryId: businessDetails.categoryId,
       address: pickupAddress
         ? {
             street: pickupAddress.street || "",
@@ -321,7 +394,7 @@ const approveSellerApplication = async (req, res) => {
       res,
       true,
       { store, application: app },
-      "Seller application approved successfully! Store created."
+      "Seller application approved successfully! Store created.",
     );
   } catch (error) {
     return sendResponse(res, false, null, error.message);

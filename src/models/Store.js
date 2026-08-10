@@ -15,7 +15,12 @@ const storeSchema = new mongoose.Schema(
     phone: { type: String },
     gst_number: { type: String },
     website: { type: String },
-
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+      index: true,
+    },
     domain: {
       type: String,
       unique: true,
