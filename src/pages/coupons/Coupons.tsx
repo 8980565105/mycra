@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { GenericTable } from "@/components/ui/adminTable";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/store";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store";
 import { useBasePath } from "@/hooks/useBasePath";
 import {
   fetchCoupons,
@@ -11,38 +11,43 @@ import {
   bulkDeleteCoupons,
   updateCouponStatus,
 } from "@/features/coupons/couponsThunk";
-import { fetchUsers } from "@/features/users/usersThunk";
 
 export default function CouponsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const basePath = useBasePath();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const isAdmin = user?.role === "admin";
-
-
   const columns = [
-    { key: "name", label: "Name", width: "w-40" },
-    { key: "code", label: "Code", width: "w-28" },
+    { key: "name", label: "Name", },
+    { key: "code", label: "Code", },
     {
       key: "discount_type",
-      label: "Type",
-    },
-    {
-      key: "createdBy",
-      label: "Created By",
-      render: (item: any) => item.createdByUser?.name || "-",
+      label: "Discount Type",
+
     },
     {
       key: "discount_value",
       label: "Value",
+
       render: (item: any) =>
         item.discount_type === "percentage"
           ? `${item.discount_value}%`
           : item.discount_value,
     },
     {
+      key: "min_purchase_amount",
+      label: "Min Purchase",
+
+      render: (item: any) => item.min_purchase_amount ?? 0,
+    },
+    {
+      key: "max_discount_amount",
+      label: "Max Discount",
+
+      render: (item: any) => item.max_discount_amount ?? "-",
+    },
+    {
       key: "start_date",
       label: "Start Date",
+
       render: (item: any) =>
         item.start_date
           ? new Date(item.start_date).toLocaleDateString()
@@ -51,6 +56,7 @@ export default function CouponsPage() {
     {
       key: "end_date",
       label: "End Date",
+
       render: (item: any) =>
         item.end_date ? new Date(item.end_date).toLocaleDateString() : "-",
     },
@@ -63,38 +69,14 @@ export default function CouponsPage() {
       rowKey="_id"
       searchEnabled
       statusToggleEnabled
-      storeFilterEnabled={isAdmin}
-
       filters={[
         { label: "Active", value: "active" },
         { label: "Inactive", value: "inactive" },
       ]}
-      filters1={isAdmin
-        ? [
-          { label: "Admin", value: "admin" },
-          { label: "store", value: "store_owner" },
-        ]
-        : undefined
-      }
-
-      fetchStores={async () => {
-        const res = await dispatch(
-          fetchUsers({
-            role: "store_owner",
-            page: 1,
-            limit: 1000,
-          })
-        ).unwrap();
-        return res.users.map((u: any) => ({
-          label: u.storeName || u.name,
-          value: u._id
-        }));
-      }}
-
-      fetchData={async ({ page, limit, search, status, role, store }) => {
+      fetchData={async ({ page, limit, search, status }) => {
         try {
           const res = await dispatch(
-            fetchCoupons({ page, limit, search, status, role, store })
+            fetchCoupons({ page, limit, search, status })
           ).unwrap();
           return { data: res.coupons, total: res.total };
         } catch (err: any) {

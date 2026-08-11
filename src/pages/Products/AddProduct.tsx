@@ -58,12 +58,10 @@ export default function ProductFormPage() {
   const [typeId, setTypeId] = useState<string>("");
   const [fabricId, setFabricId] = useState<string>("");
   const [images, setImages] = useState<string[]>([]);
-
   const [status, setStatus] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
-
   const [selectedTypeDetails, setSelectedTypeDetails] = useState<any>(null);
   const [selectedSpecAttrs, setSelectedSpecAttrs] = useState<{ [attrId: string]: string }>({});
   const [selectedDynAttrs, setSelectedDynAttrs] = useState<{ [attrId: string]: string[] }>({});
@@ -71,6 +69,8 @@ export default function ProductFormPage() {
   const [bulkPrice, setBulkPrice] = useState("");
   const [bulkOfferPrice, setBulkOfferPrice] = useState("");
   const [bulkStock, setBulkStock] = useState("");
+  const [shippingType, setShippingType] = useState<string>("");
+  const [shippingValue, setShippingValue] = useState<string>("");
 
   useEffect(() => {
     dispatch(fetchCategories({ page: 1, limit: 100, status: "active" }));
@@ -97,14 +97,12 @@ export default function ProductFormPage() {
     }
   }, [dispatch, typeId, categoryId]);
 
-  // Selected Product Category / Type object details
   const activeTypeObject = useMemo(() => {
     if (selectedTypeDetails) return selectedTypeDetails;
     if (!typeId) return null;
     return types.find((t: any) => (t._id || t) === typeId) || null;
   }, [selectedTypeDetails, types, typeId]);
 
-  // Brands filtered strictly by selected Type (only linked brands appear)
   const availableBrands = useMemo(() => {
     if (!activeTypeObject) return [];
     const rawTypeBrands = Array.isArray(activeTypeObject.brandIds)
@@ -187,16 +185,15 @@ export default function ProductFormPage() {
           setIsFeatured(!!p.is_featured);
           setIsBestSeller(!!p.is_best_seller);
           setIsTrending(!!p.is_trending);
-
+          setShippingType(p.shipping_type || "");
+          setShippingValue(p.shipping_value != null ? String(p.shipping_value) : "");
           if (Array.isArray(p.variants) && p.variants.length > 0) {
             const firstV = p.variants[0];
             if (firstV.brand_id) setBrandId(firstV.brand_id._id || firstV.brand_id);
             if (firstV.type_id) setTypeId(firstV.type_id._id || firstV.type_id);
             if (firstV.fabric_id) setFabricId(firstV.fabric_id._id || firstV.fabric_id);
-
             const dynAttrsUnion: { [attrId: string]: Set<string> } = {};
             const loadedSpecAttrs: { [attrId: string]: string } = {};
-
             const mappedVariants = p.variants.map((v: any, idx: number) => {
               let dynAttrsObj: { [attrId: string]: string } = {};
               if (Array.isArray(v.attributes)) {
@@ -211,7 +208,6 @@ export default function ProductFormPage() {
                   }
                 });
               }
-
               return {
                 _id: v._id,
                 brand_id: v.brand_id?._id || v.brand_id || "",
@@ -408,7 +404,23 @@ export default function ProductFormPage() {
     e.preventDefault();
     if (!name.trim()) return toast.error("Product Name is required");
     if (!categoryId) return toast.error("SubCategory is required");
+    if (!shippingType) {
+      return toast.error("Please select Shipping Charge Type");
+    }
+    if (shippingType === "flat" || shippingType === "percentage") {
+      if (!shippingValue || shippingValue.trim() === "") {
+        return toast.error("Please enter shipping charge value");
+      }
+      const numValue = Number(shippingValue);
+      if (isNaN(numValue) || numValue <= 0) {
+        return toast.error("Shipping charge value must be greater than 0");
+      }
+      if (shippingType === "percentage" && numValue > 100) {
+        return toast.error("Shipping percentage cannot be more than 100");
+      }
+    }
     if (variants.length === 0) return toast.error("Generate or add at least one variant");
+
 
     for (let i = 0; i < variants.length; i++) {
       const v = variants[i];
@@ -445,6 +457,8 @@ export default function ProductFormPage() {
       is_featured: isFeatured,
       is_best_seller: isBestSeller,
       is_trending: isTrending,
+      shipping_type: shippingType || "free",
+      shipping_value: shippingType === "free" ? 0 : Number(shippingValue) || 0,
       variants: processedVariants,
     };
 
@@ -642,10 +656,56 @@ export default function ProductFormPage() {
                   Trending
                 </label>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Shipping Charge Type</Label>
+                  <Select
+                    value={shippingType}
+                    onValueChange={(val) => {
+                      setShippingType(val);
+                      setShippingValue("");
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Shipping" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="flat">Flat</SelectItem>
+                      <SelectItem value="percentage">Percentage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {shippingType === "flat" && (
+                  <div>
+                    <Label>Flat Shipping Charge (₹)</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 500"
+                      value={shippingValue}
+                      onChange={(e) => setShippingValue(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {shippingType === "percentage" && (
+                  <div>
+                    <Label>Shipping Charge (%)</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 10"
+                      value={shippingValue}
+                      onChange={(e) => setShippingValue(e.target.value)}
+                      min={0}
+                      max={100}
+                    />
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
-
-          {/* Step 2: Specification Attributes (Single Select) */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader className="bg-slate-50/50 border-b border-gray-100">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -694,7 +754,7 @@ export default function ProductFormPage() {
             </CardContent>
           </Card>
 
-          {/* Step 3: Variant Builder (Multi-Select Attributes) */}
+       
           <Card className="shadow-sm border border-gray-200">
             <CardHeader className="bg-slate-50/50 border-b border-gray-100 flex flex-row items-center justify-between">
               <div>

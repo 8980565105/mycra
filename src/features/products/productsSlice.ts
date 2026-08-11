@@ -46,6 +46,8 @@ interface Product {
   updatedAt: string;
   category_id: { _id: string; name: string } | string;
   discount: { _id: string; name: string };
+  shipping_type?: "free" | "flat" | "percentage";
+  shipping_value?: number;
   createdByUser?: {
     _id: string;
     name: string;

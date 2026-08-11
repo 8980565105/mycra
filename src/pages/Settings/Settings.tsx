@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { fetchSettings, updateSettings } from "@/features/settings/settingsThunk";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 // import { fetchMyStore, updateMyStore } from "@/features/stores/storesThunk";
 export default function Settings() {
   const dispatch = useDispatch<AppDispatch>();
@@ -50,6 +51,13 @@ export default function Settings() {
   const [metaKeyphrase, setMetaKeyphrase] = useState("");
   const [seoImage, setSeoImage] = useState<string | null>(null);
   const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
+  const [platformType, setPlatformType] =
+    useState<"free" | "flat" | "percentage">("free");
+
+  const [platformValue, setPlatformValue] =
+    useState<string>("");
+
+
   useEffect(() => {
     dispatch(fetchMe()).then((res: any) => {
       if (res.payload?.user) {
@@ -122,6 +130,16 @@ export default function Settings() {
       setStoreName(s.site_name || "");
       setStoreEmail(s.contact_email || "");
       setStorePhone(s.contact_phone || "");
+
+      setPlatformType(
+        s.platform_charge_type || "free"
+      );
+
+      setPlatformValue(
+        s.platform_charge_type === "free"
+          ? ""
+          : String(s.platform_charge_value ?? "")
+      );
 
       setLogo(s.logourl || null);
       setMobilelogo(s.mobilelogoUrl || null);
@@ -202,35 +220,112 @@ export default function Settings() {
       toast({ title: "Update Failed", description: res.payload as string, variant: "destructive" });
     }
   };
+  
   const handleSaveContact = async () => {
-    const res = await dispatch(updateSettings({
-      //   name: storeName,
-      //   email: storeEmail,
-      //   phone: storePhone,
-      //   gst_number: gstNumber,
-      //   address: {
-      //     street: contactStreet,
-      //     city: contactCity,
-      //     state: contactState,
-      //     country: contactCountry,
-      //     zip_code: contactPostal,
-      //   },
-      // }));
-      site_name: storeName,
-      contact_email: storeEmail,
-      contact_phone: storePhone,
-      contact_address: {
-        street: contactStreet,
-        city: contactCity,
-        state: contactState,
-        country: contactCountry,
-        postal_code: contactPostal
-      }
-    }));
+
+    if (
+      platformType !== "free" &&
+      platformValue === ""
+    ) {
+      toast({
+        title: "Platform Charge Required",
+        description:
+          "Please enter platform charge value.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const numericValue =
+      platformType === "free"
+        ? 0
+        : Number(platformValue);
+
+    if (numericValue < 0) {
+      toast({
+        title: "Invalid Platform Charge",
+        description:
+          "Platform charge cannot be negative.",
+        variant: "destructive",
+      });
+
+      return;
+    }
+
+    if (
+      platformType === "percentage" &&
+      numericValue > 100
+    ) {
+      toast({
+        title: "Invalid Percentage",
+        description:
+          "Platform percentage cannot be greater than 100%.",
+        variant: "destructive",
+      });
+
+      return;
+    }
+
+    const res = await dispatch(
+      updateSettings({
+
+        site_name: storeName,
+
+        contact_email: storeEmail,
+
+        contact_phone: storePhone,
+
+        platform_charge_type:
+          platformType,
+
+        platform_charge_value:
+          numericValue,
+
+        contact_address: {
+          street: contactStreet,
+          city: contactCity,
+          state: contactState,
+          country: contactCountry,
+          postal_code: contactPostal,
+        },
+
+      })
+    );
+
     if (updateSettings.fulfilled.match(res)) {
-      toast({ title: "Contact Updated", description: "Store info saved successfully." });
-    } else {
-      toast({ title: "Update Failed", description: res.payload as string, variant: "destructive" });
+
+
+      const saved =
+        res.payload;
+
+      setPlatformType(
+        saved?.platform_charge_type ||
+        platformType
+      );
+
+      setPlatformValue(
+        saved?.platform_charge_type === "free"
+          ? ""
+          : String(
+            saved?.platform_charge_value ??
+            numericValue
+          )
+      );
+      toast({
+        title: "Settings Updated",
+        description:
+          "Store information and platform charge saved successfully.",
+      });
+
+    }
+    else {
+
+      toast({
+        title: "Update Failed",
+        description:
+          res.payload as string,
+        variant: "destructive",
+      });
+
     }
   };
   const handleSaveSocial = async () => {
@@ -242,14 +337,7 @@ export default function Settings() {
     }
   };
   const handleSaveSeo = async () => {
-    // const res = await dispatch(updateMyStore({
     const res = await dispatch(updateSettings({
-      // seo: {
-      //   meta_title: metaTitle,
-      //   meta_description: metaDescription,
-      //   meta_keyphrase: metaKeyphrase,
-      //   seo_image: seoImage,
-      // },
       meta_title: metaTitle,
       meta_description: metaDescription,
       meta_keyphrase: metaKeyphrase,
@@ -282,7 +370,7 @@ export default function Settings() {
           <TabsTrigger value="appearance" className="gap-2">
             <Palette className="h-4 w-4" /> Appearance
           </TabsTrigger>
-          <TabsTrigger value="contact">Contact</TabsTrigger>
+          <TabsTrigger value="contact">Platform Information</TabsTrigger>
           <TabsTrigger value="social">Social Links</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
         </TabsList>
@@ -387,7 +475,6 @@ export default function Settings() {
                   <Label>Secondary Color</Label>
                   <Input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} />
                 </div>
-
               </div>
               <div className="space-y-2">
                 <Label>Font Family</Label>
@@ -420,7 +507,122 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="contact">
           <Card>
-            <CardHeader><CardTitle>WebSite Information</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-start gap-6">
+                <div>
+                  Platform Information
+                </div>
+                <div className="flex gap-3">
+                  <div className="space-y-2">
+                    <Label>
+                      Platform Charge Type
+                    </Label>
+                    <Select
+                      value={platformType}
+                      onValueChange={(
+                        val: "free" | "flat" | "percentage"
+                      ) => {
+                        setPlatformType(val);
+                        if (val === "free") {
+                          setPlatformValue("");
+                        } else {
+                          setPlatformValue("");
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Platform Charge" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">
+                          Free
+                        </SelectItem>
+                        <SelectItem value="flat">
+                          Flat
+                        </SelectItem>
+                        <SelectItem value="percentage">
+                          Percentage
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {platformType === "free" && (
+                    <div className="space-y-2">
+                      <Label>
+                        Free Platform Charge
+                      </Label>
+                      <Input
+                        type="text"
+                        value={0}
+                        readOnly
+                      />
+                    </div>
+                  )}
+
+                  {platformType === "flat" && (
+                    <div className="space-y-2">
+                      <Label>
+                        Flat Platform Charge (₹)
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="1"
+                        placeholder="e.g. 100"
+                        value={platformValue}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "") {
+                            setPlatformValue("");
+                            return;
+                          }
+                          const num = Number(value);
+                          if (
+                            !Number.isNaN(num) &&
+                            num >= 0
+                          ) {
+                            setPlatformValue(value);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {platformType === "percentage" && (
+                    <div className="space-y-2">
+                      <Label>
+                        Platform Charge (%)
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step="1"
+                        placeholder="e.g. 10"
+                        value={platformValue}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "") {
+                            setPlatformValue("");
+                            return;
+                          }
+                          const num = Number(value);
+                          if (
+                            !Number.isNaN(num) &&
+                            num >= 0 &&
+                            num <= 100
+                          ) {
+                            setPlatformValue(value);
+                          }
+                        }}
+                      />
+
+                    </div>
+                  )}
+                </div>
+              </CardTitle>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
@@ -435,10 +637,6 @@ export default function Settings() {
                   <Label>Phone</Label>
                   <Input value={storePhone} onChange={(e) => setStorePhone(e.target.value)} placeholder="Enter phone number" />
                 </div>
-                {/* <div className="space-y-2">
-                  <Label>GST Number</Label>
-                  <Input value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} placeholder="Enter GST number" />
-                </div> */}
               </div>
               <div className="space-y-2">
                 <Label>Street</Label>
