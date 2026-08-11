@@ -15,8 +15,6 @@ export const fetchSettings = createAsyncThunk(
   },
 );
 
-
-// ✅ Public (no auth) — Footer mate
 export const fetchPublicSettings = createAsyncThunk(
   "settings/fetchPublicSettings",
   async (_, { rejectWithValue }) => {

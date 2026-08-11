@@ -74,12 +74,9 @@ export default function CartItem() {
   };
 
   const getDiscountedPrice = (item) => {
-    const discount = item?.product_id?.discount_id?.value || 0;
+    const discount = item?.variant_id?.offerprice || 0;
     const originalPrice = item?.variant_id?.price || 0;
-    const discountedPrice =
-      discount > 0
-        ? originalPrice - (originalPrice * discount) / 100
-        : originalPrice;
+    const discountedPrice = discount;
     return { discount, originalPrice, discountedPrice };
   };
 
@@ -155,7 +152,6 @@ export default function CartItem() {
         </tbody>
       </table>
 
-      {/* Mobile View */}
       <div className="custom-lg:hidden space-y-[20px]">
         {items.map((item, index) => (
           <div

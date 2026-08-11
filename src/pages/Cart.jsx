@@ -11,12 +11,20 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchCoupons } from "../features/coupons/couponsThunk";
 
 export default function Cart() {
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [appliedCoupon, setAppliedCoupon] = useState(() => {
+    const saved = localStorage.getItem("appliedCoupon");
+    return saved ? JSON.parse(saved) : null;
+  });
   const dispatch = useDispatch();
   const { coupons = [] } = useSelector((state) => state.coupons);
-  const [cartCouponCode, setCartCouponCode] = useState("");
+  const [cartCouponCode, setCartCouponCode] = useState(() =>
+    localStorage.getItem("appliedCoupon")
+      ? JSON.parse(localStorage.getItem("appliedCoupon")).code
+      : "",
+  );
   const { items = [] } = useSelector((state) => state.cart);
   const [couponMsg, setCouponMsg] = useState({ text: "", type: "" });
+
   useEffect(() => {
     dispatch(fetchCoupons({ status: "active" }));
   }, [dispatch]);
@@ -24,18 +32,30 @@ export default function Cart() {
   const applyCouponByCode = (code) => {
     const coupon = coupons.find((c) => c.code === code);
     if (!coupon) {
-      setCouponMsg({ text: "Enter the coupon code!", type: "error" });
+      setCouponMsg({ text: "Invalid coupon code!", type: "error" });
       return;
     }
     setAppliedCoupon(coupon);
+    localStorage.setItem("appliedCoupon", JSON.stringify(coupon));
     setCouponMsg({
       text: `Coupon "${coupon.code}" applied successfully!`,
       type: "success",
     });
   };
 
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCartCouponCode("");
+    localStorage.removeItem("appliedCoupon");
+    setCouponMsg({ text: "Coupon removed", type: "success" });
+  };
+
   const handleApplyCartCoupon = () => {
-    applyCouponByCode(cartCouponCode);
+    if (appliedCoupon) {
+      removeCoupon();
+    } else {
+      applyCouponByCode(cartCouponCode);
+    }
   };
 
   const handleSelectCoupon = (code) => {
@@ -69,7 +89,8 @@ export default function Cart() {
                           setCouponMsg({ text: "", type: "" });
                         }}
                         placeholder="COUPON CODE"
-                        className="text-center border border-theme rounded-[3px] px-[10px] py-[7px]  md:py-[14px] text-18 w-[200px] md:w-[181px] "
+                        disabled={!!appliedCoupon}
+                        className="text-center border border-theme rounded-[3px] px-[10px] py-[7px]  md:py-[14px] text-18 w-[200px] md:w-[181px] disabled:bg-gray-100"
                       />
                       {couponMsg.text && (
                         <p
@@ -88,7 +109,7 @@ export default function Cart() {
                       variant="common"
                       className="uppercase text-18 md:min-w-[181px]"
                     >
-                      APPLY COUPON
+                      {appliedCoupon ? "REMOVE COUPON" : "APPLY COUPON"}
                     </Button>
                   </div>
 

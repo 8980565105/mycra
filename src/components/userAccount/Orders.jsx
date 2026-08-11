@@ -91,17 +91,6 @@ export default function Orders() {
 
     dispatch(addReview(finalData));
   };
-  // useEffect(() => {
-  //   function handleClickOutside(event) {
-  //     if (sortRef.current && !sortRef.current.contains(event.target)) {
-  //       setIsSortOpen(false);
-  //     }
-  //     if (filterRef.current && !filterRef.current.contains(event.target))
-  //       setIsFilterOpen(false);
-  //   }
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => document.removeEventListener("mousedown", handleClickOutside);
-  // }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {

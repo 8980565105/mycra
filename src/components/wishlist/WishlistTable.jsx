@@ -164,16 +164,10 @@ const Wishlist = ({ product }) => {
   };
 
   const getDiscountedPrice = (item) => {
-    const discount = item?.product_id?.discount_id?.value || 0;
+    const discount = item?.variant_id?.offerprice || 0;
     const originalPrice = Number(item?.variant_id?.price || 0);
-
-    let discountedPrice =
-      discount > 0
-        ? originalPrice - (originalPrice * discount) / 100
-        : originalPrice;
-
+    let discountedPrice = discount;
     discountedPrice = Math.round(discountedPrice);
-
     return { discount, originalPrice, discountedPrice };
   };
 

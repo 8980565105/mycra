@@ -8,48 +8,77 @@ import { createPayment } from "../../features/payments/paymentThunk";
 import { createOrder } from "../../features/orders/orderThunk";
 import toast, { Toaster } from "react-hot-toast";
 import { clearCart } from "../../features/cart/cartSlice";
+import { getItemShipping, getPlatformCharge } from "../../utils/chargecalculet";
+import { fetchPublicSettings } from "../../features/setting/settingThunk";
 
-export default function OrderSummary({ formData }) {
+export default function OrderSummary({ formData, appliedCoupon }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { items = [], loading } = useSelector((state) => state.cart);
   const { loading: paymentLoading } = useSelector((state) => state.payments);
   const { user } = useSelector((state) => state.auth);
+  const { data: settings } = useSelector((state) => state.settings);
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [paymentError, setPaymentError] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [cvv, setCvv] = useState("");
+
   useEffect(() => {
     const cart_id = localStorage.getItem("cart_id");
     if (user && cart_id) {
       dispatch(fetchCart(cart_id));
     }
+    dispatch(fetchPublicSettings());
   }, [dispatch, user]);
+
   if (loading) return <p>Loading cart...</p>;
   if (!items.length)
     return <p className="text-center mb-[100px]">Your cart is empty.</p>;
+
   const getDiscountedPrice = (item) => {
-    const discount = item?.product_id?.discount_id?.value || 0;
+    const discount = item?.variant_id?.offerprice || 0;
     const originalPrice = item?.variant_id?.price || 0;
-    const discountedPrice =
-      discount > 0
-        ? originalPrice - (originalPrice * discount) / 100
-        : originalPrice;
+    const discountedPrice = discount;
     return { discount, originalPrice, discountedPrice };
   };
+
   const subtotal = items.reduce(
     (sum, item) =>
       sum + getDiscountedPrice(item).discountedPrice * (item.quantity || 1),
     0,
   );
-  const taxes = Number((subtotal * 0.1).toFixed(2)); // 10 %
-  const shipping = 0;
-  const total = Number((subtotal + shipping + taxes).toFixed(2));
+
+  let discountAmount = 0;
+  if (appliedCoupon) {
+    discountAmount =
+      appliedCoupon.discount_type === "fixed"
+        ? appliedCoupon.discount_value
+        : (subtotal * appliedCoupon.discount_value) / 100;
+    if (appliedCoupon.max_discount_amount) {
+      discountAmount = Math.min(
+        discountAmount,
+        appliedCoupon.max_discount_amount,
+      );
+    }
+  }
+  const discountedTotal = subtotal - discountAmount;
+
+  const shipping = items.reduce((sum, item) => {
+    return sum + getItemShipping(item, discountedTotal) * (item.quantity || 1);
+  }, 0);
+
+  const platformCharge = getPlatformCharge(settings, discountedTotal);
+
+  const total = Number(
+    (discountedTotal + shipping + platformCharge).toFixed(2),
+  );
+
   const getBackendPaymentMethod = (method) => {
     if (method === "cod") return "COD";
     return "Online";
   };
+
   const getStoreOwnerId = () => {
     if (!items || items.length === 0) return null;
     const storeOwnerId =
@@ -58,6 +87,16 @@ export default function OrderSummary({ formData }) {
       null;
     return storeOwnerId;
   };
+
+  const getVariantInfo = (item) => {
+    const sku = item?.variant_id?.sku;
+    if (!sku) return null;
+    const parts = sku.split("-");
+    const color = parts[1] || "";
+    const size = parts[2] || "";
+    return { color, size };
+  };
+
   const handlePlaceOrder = async () => {
     const userLS = JSON.parse(localStorage.getItem("user"));
     if (!userLS || !userLS._id) {
@@ -93,7 +132,7 @@ export default function OrderSummary({ formData }) {
       user_id: userLS._id,
       items,
       total_price: total,
-      coupon_id: null,
+      coupon_id: appliedCoupon?._id || null,
       payment_method: getBackendPaymentMethod(selectedPayment),
       shippingAddress: {
         firstName: formData.firstName,
@@ -106,7 +145,6 @@ export default function OrderSummary({ formData }) {
       },
     };
     const orderAction = await dispatch(createOrder(orderData));
-    console.log("ORDER ACTION:", orderAction);
     if (!createOrder.fulfilled.match(orderAction)) {
       toast.error(
         "Order failed: " + (orderAction.payload?.message || "Unknown error"),
@@ -126,8 +164,9 @@ export default function OrderSummary({ formData }) {
       store_owner_id: storeOwnerId,
       items,
       subtotal,
-      taxes,
+      discount: discountAmount,
       shipping,
+      platform_charge: platformCharge,
       total,
       amount_paid: selectedPayment === "cod" ? 0 : total,
       payment_method: selectedPayment,
@@ -135,9 +174,11 @@ export default function OrderSummary({ formData }) {
     };
     await dispatch(createPayment(paymentPayload));
     dispatch(clearCart());
+    localStorage.removeItem("appliedCoupon");
     toast.success("Order placed successfully!");
     navigate("/my-account/orders");
   };
+
   return (
     <>
       <Toaster position="top center" />
@@ -151,61 +192,95 @@ export default function OrderSummary({ formData }) {
         <div className="pb-[10px] text-p">
           {items.reduce((sum, item) => sum + (item.quantity || 1), 0)} items
         </div>
-        {items.map((item, index) => (
-          <div
-            key={item._id || index}
-            className="flex border-b border-[#BCBCBC] pb-[10px] mb-[30px]"
-          >
-            <div className="relative w-[80px] md:w-[105px] h-auto flex-shrink-0">
-              <Link to={`/products/${item.product_id?._id}`}>
-                <img
-                  src={
-                    item.variant_id?.images?.length > 0
-                      ? getImageUrl(item.variant_id.images[0])
-                      : getImageUrl(item.product_id?.images?.[0])
-                  }
-                  alt={item.product_id?.name}
-                  className="w-full h-[122px] md:h-[150px] object-cover"
-                />
-              </Link>
-              <span className="absolute top-[-10px] right-[-10px] w-[22px] h-[22px] bg-white text-black text-p rounded-full flex items-center justify-center">
-                {item.quantity || 1}
-              </span>
-            </div>
-            <div className="flex justify-between gap-[10px] flex-1 ml-4">
-              <p className="text-14 text-gray-700">{item.product_id?.name}</p>
-              <p className="text-p text-right">
-                ₹
-                {Math.round(
-                  getDiscountedPrice(item).discountedPrice * item.quantity,
-                ).toLocaleString("en-IN")}
-              </p>
-            </div>
-          </div>
-        ))}
-        <div className="border-t pb-[30px] space-y-[14px] text-p text-light">
+        {items.map((item, index) => {
+          const variant = getVariantInfo(item);
+          return (
+            <>
+              <div key={item._id || index} className="flex py-[15px]">
+                <div className="relative w-[80px] md:w-[105px] h-auto flex-shrink-0">
+                  <Link to={`/products/${item.product_id?._id}`}>
+                    <img
+                      src={
+                        item.variant_id?.images?.length > 0
+                          ? getImageUrl(item.variant_id.images[0])
+                          : getImageUrl(item.product_id?.images?.[0])
+                      }
+                      alt={item.product_id?.name}
+                      className="w-full h-[122px] md:h-[150px] object-cover"
+                    />
+                  </Link>
+                  <span className="absolute top-[-10px] right-[-10px] w-[22px] h-[22px] bg-white text-black text-p rounded-full flex items-center justify-center">
+                    {item.quantity || 1}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-[10px] flex-1 ml-4">
+                  <div>
+                    <p className="text-14 text-gray-700 line-clamp-3">
+                      {item.product_id?.name}
+                    </p>
+                    {variant && (
+                      <p className="text-12 text-gray-500 mt-1 flex flex-col">
+                        {variant.color && <span>Color: {variant.color}</span>}
+                        {variant.size && <span>Size: {variant.size}</span>}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-p text-right">
+                    ₹
+                    {Math.round(
+                      getDiscountedPrice(item).discountedPrice * item.quantity,
+                    ).toLocaleString("en-IN")}
+                  </p>
+                </div>
+              </div>
+              <div className="border border-1 light-border" />
+            </>
+          );
+        })}
+        <div className="space-y-[14px] text-p mt-3 text-light">
           <div className="flex justify-between text-black">
             <span>Subtotal</span>
             <span>₹ {Math.round(subtotal).toLocaleString("en-IN")}</span>
           </div>
+
+          {appliedCoupon && (
+            <div className="flex justify-between text-green-600">
+              <span>Coupon ({appliedCoupon.code})</span>
+              <span>
+                - ₹ {Math.round(discountAmount).toLocaleString("en-IN")}
+              </span>
+            </div>
+          )}
+
           <div className="flex justify-between">
             <span>Shipping</span>
-            <span>Free</span>
+            <span>
+              {shipping > 0
+                ? `₹ ${Math.round(shipping).toLocaleString("en-IN")}`
+                : "Free"}
+            </span>
           </div>
+
           <div className="flex justify-between">
-            <span>Taxes (10%)</span>
-            <span>₹ {Math.round(taxes).toLocaleString("en-IN")}</span>
+            <span>Platform Charge</span>
+            <span>
+              {platformCharge > 0
+                ? `₹ ${Math.round(platformCharge).toLocaleString("en-IN")}`
+                : "Free"}
+            </span>
           </div>
-          <div className="text-theme text-[12px] border-b border-[#BCBCBC] pb-[30px]">
-            Promo Gift Certificate
-          </div>
-          <div className="flex justify-between text-p text-black">
+          <div className="border border-1 light-border" />
+
+          <div className="flex justify-between text-p text-black ">
             <span>Total (₹)</span>
             <span className="text-20px font-medium">
               ₹{Math.round(total).toLocaleString("en-IN")}
             </span>
           </div>
         </div>
+
+        <div className="border border-1 light-border my-3" />
+
         <div className="text-light text-14 space-y-[10px]">
           {["cod", "paypal", "credit_card"].map((method) => (
             <label
