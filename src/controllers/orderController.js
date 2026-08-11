@@ -528,10 +528,10 @@ const getOrderById = async (req, res) => {
       .populate("product_id", "name price sku")
       .populate({
         path: "variant_id",
-        populate: [
-          { path: "color_id", select: "name" },
-          { path: "size_id", select: "name" },
-        ],
+        // populate: [
+        //   { path: "color_id", select: "name" },
+        //   { path: "size_id", select: "name" },
+        // ],
       });
 
     sendResponse(res, true, { order, items }, "Order retrieved successfully");
@@ -581,19 +581,7 @@ const createOrder = async (req, res) => {
           variant.product_id.createdBy._id || variant.product_id.createdBy;
       }
 
-      let price = variant.price;
-      // const discount_id = variant.product_id.discount_id;
-      // if (discount_id) {
-      //   const discount = await Discount.findById(discount_id);
-      //   if (isDiscountValid(discount)) {
-      //     if (discount.type === "percentage")
-      //       price = price - (price * discount.value) / 100;
-      //     else if (discount.type === "fixed") price = price - discount.value;
-      //     if (price < 0) price = 0;
-      //   }
-      // }
-
-      // total_price += price * item.quantity;
+      let price = variant.offerprice;
       subtotal += price * item.quantity;
       variant.stock_quantity -= item.quantity;
       await variant.save();
@@ -607,7 +595,7 @@ const createOrder = async (req, res) => {
       });
     }
     const safeSubtotal = Number(subtotal.toFixed(2));
-    const safeTaxes = Number((safeSubtotal * 0.1).toFixed(2)); // 10% tax rule
+    const safeTaxes = Number((safeSubtotal * 0.1).toFixed(2));
     const safeShipping = Number(shipping) || 0;
     const total_price = Number(
       (safeSubtotal + safeTaxes + safeShipping).toFixed(2),
@@ -647,9 +635,6 @@ const createOrder = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 4. CONFIRM ORDER → creates Packing record automatically
-// ═══════════════════════════════════════════════════════════════════════════════
 const confirmOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(

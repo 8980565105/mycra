@@ -22,11 +22,8 @@ const productSchema = new mongoose.Schema(
       ref: "Type",
       default: null,
     },
-
     images: [{ type: String }],
-
     slug: { type: String, required: true },
-
     status: {
       type: String,
       enum: ["active", "inactive"],
@@ -35,6 +32,12 @@ const productSchema = new mongoose.Schema(
     is_featured: { type: Boolean, default: false },
     is_best_seller: { type: Boolean, default: false },
     is_trending: { type: Boolean, default: false },
+    shipping_type: {
+      type: String,
+      enum: ["free", "flat", "percentage"],
+      default: "free",
+    },
+    shipping_value: { type: Number, default: 0 },
     storeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
@@ -55,7 +58,6 @@ productSchema.pre("save", function (next) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
 });
-
 productSchema.index({ name: 1, storeId: 1 }, { unique: true });
 
 module.exports = mongoose.model("Product", productSchema);

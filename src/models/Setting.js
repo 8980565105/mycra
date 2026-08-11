@@ -16,7 +16,6 @@ const settingSchema = new mongoose.Schema(
       ref: "Store",
       default: null,
     },
-
     site_name: { type: String },
     logourl: { type: String },
     mobilelogoUrl: { type: String },
@@ -25,17 +24,24 @@ const settingSchema = new mongoose.Schema(
     secondary_color: { type: String },
     button_color: { type: String },
     font_family: { type: String },
-
     meta_title: { type: String },
     meta_description: { type: String },
     meta_keyphrase: { type: String },
     seo_image: { type: String },
-
     footer_text: { type: String },
     copyright_text: { type: String },
-
     contact_email: { type: String },
     contact_phone: { type: String },
+    platform_charge_type: {
+      type: String,
+      enum: ["free", "flat", "percentage"],
+      default: "free",
+    },
+    platform_charge_value: {
+      type: Number,
+      default: 0,
+      min: [0, "Platform charge cannot be negative"],
+    },
     contact_address: {
       street: { type: String },
       city: { type: String },
@@ -43,7 +49,6 @@ const settingSchema = new mongoose.Schema(
       country: { type: String },
       postal_code: { type: String },
     },
-
     social_links: [socialLinkSchema],
     custom_css: { type: String },
     custom_js: { type: String },
@@ -56,18 +61,17 @@ settingSchema.index(
   {
     unique: true,
     partialFilterExpression: { storeId: { $type: "objectId" } },
-  }
+  },
 );
 settingSchema.index(
   { user: 1 },
   {
     unique: true,
     partialFilterExpression: { user: { $type: "objectId" } },
-  }
+  },
 );
 
 const Setting = mongoose.model("Setting", settingSchema);
-
 Setting.collection.dropIndex("storeId_1").catch(() => {});
 Setting.collection.dropIndex("user_1").catch(() => {});
 

@@ -7,25 +7,19 @@ const getCarts = async (req, res) => {
   try {
     let { page = 1, limit = 10, search = "", isDownload = "false" } = req.query;
     const download = isDownload.toLowerCase() === "true";
-
     const userRole = req.user?.role;
     const userId = req.user?._id;
-
     if (userRole !== "store_owner" && userRole !== "admin") {
       return sendResponse(res, false, null, "Forbidden: Insufficient role");
     }
-
     page = parseInt(page);
     limit = parseInt(limit);
-
     const pipeline = [{ $unwind: "$items" }];
-
     if (userRole === "store_owner") {
       pipeline.push({
         $match: { "items.store_owner_id": new mongoose.Types.ObjectId(userId) },
       });
     }
-
     pipeline.push(
       {
         $lookup: {
@@ -37,7 +31,6 @@ const getCarts = async (req, res) => {
       },
       { $unwind: "$user_id" },
     );
-
     if (search) {
       pipeline.push({
         $match: {
@@ -97,22 +90,17 @@ const getCarts = async (req, res) => {
         "All carts for download",
       );
     }
-
     const countPipeline = [...pipeline, { $count: "total" }];
     const countResult = await Cart.aggregate(countPipeline);
     const total = countResult[0]?.total || 0;
-
     pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
-
     const rows = await Cart.aggregate(pipeline);
-
     const carts = rows.map((r) => ({
       _id: r._id,
       user_id: r.user_id,
       createdAt: r.createdAt,
       items: [r.items],
     }));
-
     sendResponse(res, true, {
       carts,
       total,
@@ -123,16 +111,18 @@ const getCarts = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-
 const getCartById = async (req, res) => {
   try {
     const cart = await Cart.findById(req.params.id)
       .populate("user_id", "name email")
       .populate({
         path: "items.product_id",
-        select: "name price image images createdBy",
+        select: "name images createdBy shipping_type shipping_value",
       })
-      .populate("items.variant_id", "color size sku price image images");
+      .populate(
+        "items.variant_id",
+        "color size sku price image images offerprice",
+      );
 
     if (!cart) return sendResponse(res, false, null, "Cart not found");
     sendResponse(res, true, cart, "Cart retrieved successfully");
@@ -154,10 +144,8 @@ const createCart = async (req, res) => {
 const addCartItem = async (req, res) => {
   try {
     const { cart_id, product_id, variant_id, quantity } = req.body;
-
     const cart = await Cart.findById(cart_id);
     if (!cart) return sendResponse(res, false, null, "Cart not found");
-
     let store_owner_id = null;
     try {
       const product = await Product.findById(product_id).select("createdBy");
@@ -167,11 +155,9 @@ const addCartItem = async (req, res) => {
     } catch (e) {
       console.error("store_owner_id resolve failed:", e.message);
     }
-
     const existingItem = cart.items.find(
       (item) => item.variant_id.toString() === variant_id,
     );
-
     if (existingItem) {
       existingItem.quantity += quantity;
       if (!existingItem.store_owner_id && store_owner_id) {
@@ -180,7 +166,6 @@ const addCartItem = async (req, res) => {
     } else {
       cart.items.push({ product_id, variant_id, quantity, store_owner_id });
     }
-
     await cart.save();
     const populatedCart = await Cart.findById(cart._id)
       .populate({
@@ -198,16 +183,12 @@ const addCartItem = async (req, res) => {
 const updateCartItem = async (req, res) => {
   try {
     const { cart_id, item_id, quantity } = req.body;
-
     const cart = await Cart.findById(cart_id);
     if (!cart) return sendResponse(res, false, null, "Cart not found");
-
     const item = cart.items.id(item_id);
     if (!item) return sendResponse(res, false, null, "Item not found");
-
     item.quantity = quantity;
     await cart.save();
-
     sendResponse(res, true, { item }, "Cart item updated successfully");
   } catch (err) {
     sendResponse(res, false, null, err.message);
@@ -217,20 +198,16 @@ const updateCartItem = async (req, res) => {
 const deleteCartItem = async (req, res) => {
   try {
     const { cart_id, item_id } = req.body;
-
     const cart = await Cart.findById(cart_id);
     if (!cart) return sendResponse(res, false, null, "Cart not found");
-
     cart.items = cart.items.filter((item) => item._id.toString() !== item_id);
     await cart.save();
-
     const populatedCart = await Cart.findById(cart._id)
       .populate({
         path: "items.product_id",
         select: "name price image images",
       })
       .populate("items.variant_id", "color size sku price image images");
-
     sendResponse(res, true, populatedCart, "Cart item deleted successfully");
   } catch (err) {
     sendResponse(res, false, null, err.message);
@@ -250,20 +227,16 @@ const deleteCart = async (req, res) => {
 const bulkDeleteCartItems = async (req, res) => {
   try {
     const { ids } = req.body;
-
     if (!Array.isArray(ids) || ids.length === 0) {
       return sendResponse(res, false, null, "No item IDs provided");
     }
-
     const result = await Cart.updateMany(
       { "items._id": { $in: ids } },
       { $pull: { items: { _id: { $in: ids } } } },
     );
-
     if (result.modifiedCount === 0) {
       return sendResponse(res, false, null, "No matching cart items found");
     }
-
     sendResponse(res, true, result, "Selected cart items deleted successfully");
   } catch (err) {
     sendResponse(res, false, null, err.message);
@@ -280,4 +253,3 @@ module.exports = {
   deleteCart,
   bulkDeleteCartItems,
 };
-

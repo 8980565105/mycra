@@ -1,17 +1,5 @@
 const Coupon = require("../models/Coupon");
 const { sendResponse } = require("../utils/response");
-const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
-const { default: mongoose } = require("mongoose");
-
-const generateCouponCode = (length = 8) => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-  for (let i = 0; i < length; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-};
-
 const getCoupons = async (req, res) => {
   try {
     let {
@@ -20,85 +8,79 @@ const getCoupons = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
-      role,
-      store,
     } = req.query;
     const download = isDownload.toLowerCase() === "true";
-    page = parseInt(page);
-    limit = parseInt(limit);
 
-    const matchStage = {};
-
-    if (!req.user) {
-      matchStage.status = "active";
-    } else {
-      if (status && ["active", "inactive"].includes(status)) {
-        matchStage.status = status;
-      }
-      applyOwnershipFilter(req, matchStage);
-    }
-
-    const pipeline = [
-      { $match: matchStage },
-      {
-        $lookup: {
-          from: "users",
-          localField: "createdBy",
-          foreignField: "_id",
-          as: "createdByUser",
-        },
-      },
-      { $unwind: { path: "$createdByUser", preserveNullAndEmptyArrays: true } },
-      {
-        $lookup: {
-          from: "stores",
-          localField: "storeId",
-          foreignField: "_id",
-          as: "storeId",
-        },
-      },
-      { $unwind: { path: "$storeId", preserveNullAndEmptyArrays: true } },
-    ];
-
-    if (role && ["admin", "store_owner"].includes(role)) {
-      pipeline.push({
-        $match: { "createdBy.role": role },
-      });
-    }
-
-    if (store) {
-      pipeline.push({
-        $match: {
-          createdBy: {
-            $exists: true,
-          },
-        },
-      });
-
-      pipeline.push({
-        $match: {
-          "createdBy._id": new mongoose.Types.ObjectId(store),
-        },
-      });
-    }
+    const query = {};
 
     if (search) {
-      pipeline.push({
-        $match: {
-          $or: [
-            { code: { $regex: search, $options: "i" } },
-            { name: { $regex: search, $options: "i" } },
-            { "createdByUser.name": { $regex: search, $options: "i" } },
-            { "createdByUser.email": { $regex: search, $options: "i" } },
-          ],
-        },
-      });
+      query.$or = [
+        { code: { $regex: search, $options: "i" } },
+        { name: { $regex: search, $options: "i" } },
+      ];
     }
 
-    pipeline.push({ $sort: { createdAt: -1 } });
+    const userRole = req.user?.role;
+
+    if (!req.user || userRole === "user") {
+      query.status = "active";
+      query.coupon_type = { $ne: "private" };
+      query.$and = [
+        {
+          $or: [
+            { end_date: { $exists: false } },
+            { end_date: null },
+            { end_date: { $gt: new Date() } },
+          ],
+        },
+        {
+          $or: [
+            { start_date: { $exists: false } },
+            { start_date: null },
+            { start_date: { $lte: new Date() } },
+          ],
+        },
+        {
+          $or: [
+            { usage_limit: null },
+            { $expr: { $lt: ["$used_count", "$usage_limit"] } },
+          ],
+        },
+      ];
+
+      if (req.user?._id) {
+        const Order = require("../models/Order");
+        const userOrderCount = await Order.countDocuments({
+          user_id: req.user._id,
+          status: { $nin: ["cancelled"] },
+        });
+
+        if (userOrderCount > 0) {
+          if (!query.$and) query.$and = [];
+          query.$and.push({
+            $or: [
+              { coupon_type: { $ne: "first_order" } },
+              { coupon_type: { $exists: false } },
+            ],
+          });
+        }
+      } else {
+        if (!query.$and) query.$and = [];
+        query.$and.push({
+          $or: [
+            { coupon_type: { $ne: "first_order" } },
+            { coupon_type: { $exists: false } },
+          ],
+        });
+      }
+    } else if (userRole === "admin") {
+      if (status && ["active", "inactive"].includes(status)) {
+        query.status = status;
+      }
+    }
 
     if (download) {
-      const coupons = await Coupon.aggregate(pipeline);
+      const coupons = await Coupon.find(query).sort({ createdAt: -1 });
       return sendResponse(
         res,
         true,
@@ -107,14 +89,14 @@ const getCoupons = async (req, res) => {
       );
     }
 
-    const countPipeline = [...pipeline, { $count: "total" }];
-    const countResult = await Coupon.aggregate(countPipeline);
-    const total = countResult[0]?.total || 0;
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-    pipeline.push({ $skip: (page - 1) * limit });
-    pipeline.push({ $limit: limit });
-
-    const coupons = await Coupon.aggregate(pipeline);
+    const total = await Coupon.countDocuments(query);
+    const coupons = await Coupon.find(query)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
     sendResponse(res, true, {
       coupons,
@@ -129,7 +111,12 @@ const getCoupons = async (req, res) => {
 
 const getCouponById = async (req, res) => {
   try {
-    const coupon = await Coupon.findById(req.params.id);
+    const coupon = await Coupon.findById(req.params.id)
+      .populate("products", "name")
+      .populate("subcategories", "name")
+      .populate("gift_product_ids", "name _id images price")
+      .populate("buy_x_get_y.free_products", "name _id images price");
+
     if (!coupon) return sendResponse(res, false, null, "Coupon not found");
     sendResponse(res, true, coupon, "Coupon retrieved successfully");
   } catch (err) {
@@ -139,43 +126,47 @@ const getCouponById = async (req, res) => {
 
 const createCoupon = async (req, res) => {
   try {
-    let { code } = req.body;
+    let { code, discount_type, coupon_type } = req.body;
 
-  
-    const storeId =
-      req.user.role === "admin" ? req.body.storeId || null : req.user.storeId;
-
-    if (!code) {
-      code = generateCouponCode();
-      req.body.code = code;
+    if (discount_type === "freeshiping" || coupon_type === "free_gift") {
+      req.body.discount_value = 0;
     }
 
-    const existingCoupon = await Coupon.findOne({ code, storeId });
+    if (coupon_type === "buy_x_get_y") {
+      req.body.discount_value = 0;
+      req.body.buy_x_get_y = {
+        buy_quantity: Number(req.body.buy_x_get_y?.buy_quantity || 0),
+        get_quantity: Number(req.body.buy_x_get_y?.get_quantity || 0),
+        free_products: req.body.buy_x_get_y?.free_products || [],
+      };
+    }
+
+    if (coupon_type === "free_gift") {
+      req.body.discount_type = "fixed";
+      req.body.discount_value = 0;
+
+      if (!req.body.gift_product_ids || !req.body.gift_product_ids.length) {
+        if (req.body.gift_product_id) {
+          req.body.gift_product_ids = [req.body.gift_product_id];
+        }
+      }
+      delete req.body.gift_product_id;
+    } else {
+      req.body.gift_product_ids = [];
+      delete req.body.gift_product_id;
+    }
+
+    const existingCoupon = await Coupon.findOne({ code });
     if (existingCoupon) {
-      return sendResponse(
-        res,
-        false,
-        null,
-        "Coupon code already exists in this store",
-      );
+      return sendResponse(res, false, null, "Coupon code already exists");
     }
 
-    const coupon = new Coupon({
-      ...req.body,
-      createdBy: req.user.id,
-      storeId,
-    });
+    req.body.code = code.toUpperCase();
+
+    const coupon = new Coupon({ ...req.body, createdBy: req.user.id });
     const savedCoupon = await coupon.save();
     sendResponse(res, true, savedCoupon, "Coupon created successfully");
   } catch (err) {
-    if (err.code === 11000) {
-      return sendResponse(
-        res,
-        false,
-        null,
-        "Coupon code already exists in this store",
-      );
-    }
     sendResponse(res, false, null, err.message);
   }
 };
@@ -183,22 +174,39 @@ const createCoupon = async (req, res) => {
 const updateCoupon = async (req, res) => {
   try {
     if (req.body.code) {
-      const coupon = await Coupon.findById(req.params.id);
-      if (!coupon) return sendResponse(res, false, null, "Coupon not found");
-
       const existingCoupon = await Coupon.findOne({
         code: req.body.code,
-        storeId: coupon.storeId,
         _id: { $ne: req.params.id },
       });
       if (existingCoupon) {
-        return sendResponse(
-          res,
-          false,
-          null,
-          "Coupon code already exists in this store",
-        );
+        return sendResponse(res, false, null, "Coupon code already exists");
       }
+    }
+
+    const { coupon_type } = req.body;
+
+    if (coupon_type === "free_gift") {
+      req.body.discount_type = "fixed";
+      req.body.discount_value = 0;
+
+      if (!req.body.gift_product_ids || !req.body.gift_product_ids.length) {
+        if (req.body.gift_product_id) {
+          req.body.gift_product_ids = [req.body.gift_product_id];
+        }
+      }
+      delete req.body.gift_product_id;
+    } else {
+      req.body.gift_product_ids = [];
+      delete req.body.gift_product_id;
+    }
+
+    if (coupon_type === "buy_x_get_y") {
+      req.body.discount_value = 0;
+      req.body.buy_x_get_y = {
+        buy_quantity: Number(req.body.buy_x_get_y?.buy_quantity || 0),
+        get_quantity: Number(req.body.buy_x_get_y?.get_quantity || 0),
+        free_products: req.body.buy_x_get_y?.free_products || [],
+      };
     }
 
     const updatedCoupon = await Coupon.findByIdAndUpdate(
@@ -231,9 +239,7 @@ const updateCouponStatus = async (req, res) => {
       { returnDocument: "after" },
     );
 
-    if (!coupon) {
-      return sendResponse(res, false, null, "Coupon not found");
-    }
+    if (!coupon) return sendResponse(res, false, null, "Coupon not found");
 
     sendResponse(res, true, coupon, "Coupon status updated successfully");
   } catch (err) {
@@ -270,6 +276,94 @@ const bulkDeleteCoupons = async (req, res) => {
   }
 };
 
+const applyCoupon = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return sendResponse(res, false, null, "Please login to apply coupon");
+    }
+
+    const coupon = await Coupon.findOne({ code: code.toUpperCase() });
+    if (!coupon) {
+      return sendResponse(res, false, null, "Invalid coupon code");
+    }
+
+    if (coupon.status !== "active") {
+      return sendResponse(res, false, null, "Coupon is not active");
+    }
+
+    if (coupon.coupon_type === "private" && coupon.assigned_users?.length > 0) {
+      const isAssigned = coupon.assigned_users.some(
+        (uid) => uid.toString() === userId.toString(),
+      );
+      if (!isAssigned) {
+        return sendResponse(
+          res,
+          false,
+          null,
+          "This coupon is not valid for your account",
+        );
+      }
+    }
+
+    const now = new Date();
+    if (coupon.start_date && now < coupon.start_date) {
+      return sendResponse(res, false, null, "Coupon is not started yet");
+    }
+    if (coupon.end_date && now > coupon.end_date) {
+      return sendResponse(res, false, null, "Coupon has expired");
+    }
+
+    if (
+      coupon.usage_limit !== null &&
+      coupon.used_count >= coupon.usage_limit
+    ) {
+      return sendResponse(res, false, null, "Coupon usage limit reached");
+    }
+
+    if (coupon.userusage_limit !== null) {
+      const userEntry = coupon.user_usage.find(
+        (u) => u.user_id.toString() === userId.toString(),
+      );
+      const userUsedCount = userEntry ? userEntry.count : 0;
+
+      if (userUsedCount >= coupon.userusage_limit) {
+        return sendResponse(
+          res,
+          false,
+          null,
+          "You have already used this coupon maximum times",
+        );
+      }
+    }
+
+    sendResponse(res, true, coupon, "Coupon is valid");
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
+
+const markCouponUsed = async (couponId, userId) => {
+  const coupon = await Coupon.findById(couponId);
+  if (!coupon) return;
+
+  coupon.used_count += 1;
+
+  const userEntry = coupon.user_usage.find(
+    (u) => u.user_id.toString() === userId.toString(),
+  );
+
+  if (userEntry) {
+    userEntry.count += 1;
+  } else {
+    coupon.user_usage.push({ user_id: userId, count: 1 });
+  }
+
+  await coupon.save();
+};
+
 module.exports = {
   getCoupons,
   getCouponById,
@@ -278,4 +372,6 @@ module.exports = {
   deleteCoupon,
   bulkDeleteCoupons,
   updateCouponStatus,
+  applyCoupon,
+  markCouponUsed,
 };

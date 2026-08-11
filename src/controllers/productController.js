@@ -3,7 +3,6 @@ const Product = require("../models/Product");
 const { sendResponse } = require("../utils/response");
 const ProductVariant = require("../models/ProductVariant");
 const mongoose = require("mongoose");
-
 const isOwnerOrAdmin = (req, product) => {
   if (req.user.role === "admin") return true;
   return product.storeId?.toString() === req.user.storeId?.toString();
@@ -63,7 +62,7 @@ const buildPipeline = ({
               ...variantMatch,
             },
           },
-          
+
           {
             $lookup: {
               from: "types",
@@ -72,7 +71,7 @@ const buildPipeline = ({
               as: "type",
             },
           },
-        
+
           {
             $addFields: {
               type_id: { $arrayElemAt: ["$type", 0] },
@@ -279,8 +278,6 @@ const getPublicProducts = async (req, res) => {
     const countResult = await Product.aggregate(countPipeline);
     const totalCount = countResult[0]?.total || 0;
 
-   
-   
     const priceStatsPipeline = [
       { $match: productMatch },
       {
@@ -343,7 +340,6 @@ const getPublicProducts = async (req, res) => {
     const filteredMin = filteredStatsRes[0]?.filteredMin ?? actualMin;
     const filteredMax = filteredStatsRes[0]?.filteredMax ?? actualMax;
 
-
     const priceRange = filteredMax - filteredMin;
     let step = 500;
     if (priceRange > 10000) step = 2000;
@@ -352,7 +348,8 @@ const getPublicProducts = async (req, res) => {
     else step = 100;
 
     const displayMin = Math.max(0, Math.floor(filteredMin / step) * step);
-    const displayMax = Math.ceil(filteredMax / step) * step || (actualMax || 5000);
+    const displayMax =
+      Math.ceil(filteredMax / step) * step || actualMax || 5000;
 
     const priceMetadata = {
       actualMin,
@@ -412,7 +409,6 @@ const getProducts = async (req, res) => {
     });
 
     if (role && ["admin", "store_owner"].includes(role)) {
-  
       pipeline.push({
         $match: {
           "createdByUser.role": role,
@@ -500,9 +496,6 @@ const getProducts = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// GET /products/public/:id — No auth needed
-// ═══════════════════════════════════════════════════════════════════
 const getPublicProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
@@ -528,9 +521,6 @@ const getPublicProductById = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// GET /products/:id — Auth required
-// ═══════════════════════════════════════════════════════════════════
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
@@ -562,9 +552,6 @@ const getProductById = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// POST /products
-// ═══════════════════════════════════════════════════════════════════
 const createProduct = async (req, res) => {
   try {
     const {
@@ -575,6 +562,8 @@ const createProduct = async (req, res) => {
       category_id,
       type_id,
       status,
+      shipping_type,
+      shipping_value,
       variants,
     } = req.body;
 
@@ -601,6 +590,8 @@ const createProduct = async (req, res) => {
       is_featured: !!req.body.is_featured,
       is_best_seller: !!req.body.is_best_seller,
       is_trending: !!req.body.is_trending,
+      shipping_type: shipping_type || "free",
+      shipping_value: Number(shipping_value) || 0,
       images: productImages,
       createdBy: req.user._id,
       storeId,
@@ -610,7 +601,9 @@ const createProduct = async (req, res) => {
     let savedVariants = [];
     if (Array.isArray(variants) && variants.length > 0) {
       const variantDocs = variants.map((v, idx) => {
-        let formattedAttributes = Array.isArray(v.attributes) ? [...v.attributes] : [];
+        let formattedAttributes = Array.isArray(v.attributes)
+          ? [...v.attributes]
+          : [];
         if (v.dynamicAttributes && typeof v.dynamicAttributes === "object") {
           const dynFormatted = Object.entries(v.dynamicAttributes)
             .filter(([_, valId]) => valId)
@@ -619,7 +612,9 @@ const createProduct = async (req, res) => {
               valueId: valId,
             }));
           const existingAttrIds = new Set(
-            formattedAttributes.map((a) => (a.attributeId?._id || a.attributeId)?.toString())
+            formattedAttributes.map((a) =>
+              (a.attributeId?._id || a.attributeId)?.toString(),
+            ),
           );
           dynFormatted.forEach((item) => {
             if (!existingAttrIds.has(item.attributeId?.toString())) {
@@ -664,10 +659,6 @@ const createProduct = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// PUT /products/:id
-// ═══════════════════════════════════════════════════════════════════
-
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -692,7 +683,9 @@ const updateProduct = async (req, res) => {
       });
 
       for (const v of variants) {
-        let formattedAttributes = Array.isArray(v.attributes) ? [...v.attributes] : [];
+        let formattedAttributes = Array.isArray(v.attributes)
+          ? [...v.attributes]
+          : [];
         if (v.dynamicAttributes && typeof v.dynamicAttributes === "object") {
           const dynFormatted = Object.entries(v.dynamicAttributes)
             .filter(([_, valId]) => valId)
@@ -701,7 +694,9 @@ const updateProduct = async (req, res) => {
               valueId: valId,
             }));
           const existingAttrIds = new Set(
-            formattedAttributes.map((a) => (a.attributeId?._id || a.attributeId)?.toString())
+            formattedAttributes.map((a) =>
+              (a.attributeId?._id || a.attributeId)?.toString(),
+            ),
           );
           dynFormatted.forEach((item) => {
             if (!existingAttrIds.has(item.attributeId?.toString())) {
@@ -773,9 +768,6 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// PUT /products/:id/status
-// ═══════════════════════════════════════════════════════════════════
 const updateProductStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -803,9 +795,6 @@ const updateProductStatus = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// DELETE /products/:id
-// ═══════════════════════════════════════════════════════════════════
 const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -827,9 +816,6 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// POST /products/bulk-delete
-// ═══════════════════════════════════════════════════════════════════
 const bulkDeleteProducts = async (req, res) => {
   try {
     const { ids } = req.body;
