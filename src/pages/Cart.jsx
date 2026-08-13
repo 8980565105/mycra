@@ -9,7 +9,11 @@ import CouponCard from "../components/cart/CouponCard";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCoupons } from "../features/coupons/couponsThunk";
-import { applyGiftCoupon, removeGiftCoupon } from "../features/cart/cartThunk"; // <-- ADD THIS
+import {
+  applyGiftCoupon,
+  applyBuyXGetYCoupon,
+  removeGiftCoupon,
+} from "../features/cart/cartThunk";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function Cart() {
@@ -124,6 +128,31 @@ export default function Cart() {
           toast.error(err || "Failed to add gift product");
           return;
         });
+    } else if (coupon.coupon_type === "buy_x_get_y") {
+      const buyQty = coupon?.buy_x_get_y?.buy_quantity || 0;
+      const cartQty = items
+        .filter((i) => !i.is_gift)
+        .reduce((sum, i) => sum + (i.quantity || 0), 0);
+
+      if (cartQty < buyQty) {
+        toast.error(`Add at least ${buyQty} items in cart to use this coupon`);
+        return;
+      }
+
+      dispatch(applyBuyXGetYCoupon({ cart_id, code: coupon.code }))
+        .unwrap()
+        .then(() => {
+          setCouponMsg({
+            text: `🎁 Coupon "${coupon.code}" applied! Free item added as per offer.`,
+            type: "success",
+          });
+          toast.success(`Coupon "${coupon.code}" applied successfully!`);
+        })
+        .catch((err) => {
+          setCouponMsg({ text: err || "Failed to apply offer", type: "error" });
+          toast.error(err || "Failed to apply offer");
+          return;
+        });
     } else {
       setCouponMsg({
         text: `Coupon "${coupon.code}" applied successfully!`,
@@ -136,8 +165,22 @@ export default function Cart() {
     localStorage.setItem("appliedCoupon", JSON.stringify(coupon));
   };
 
+  // const removeCoupon = () => {
+  //   if (appliedCoupon?.coupon_type === "free_gift" && cart_id) {
+  //     dispatch(removeGiftCoupon({ cart_id }));
+  //   }
+
+  //   setAppliedCoupon(null);
+  //   setCartCouponCode("");
+  //   localStorage.removeItem("appliedCoupon");
+  //   toast.success("Coupon removed");
+  // };
   const removeCoupon = () => {
-    if (appliedCoupon?.coupon_type === "free_gift" && cart_id) {
+    if (
+      (appliedCoupon?.coupon_type === "free_gift" ||
+        appliedCoupon?.coupon_type === "buy_x_get_y") &&
+      cart_id
+    ) {
       dispatch(removeGiftCoupon({ cart_id }));
     }
 

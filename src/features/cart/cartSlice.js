@@ -6,6 +6,7 @@ import {
   deleteCartItem,
   createCart,
   applyGiftCoupon,
+  applyBuyXGetYCoupon,
   removeGiftCoupon,
 } from "./cartThunk";
 
@@ -110,6 +111,19 @@ const cartSlice = createSlice({
         state.items = action.payload?.items || [];
       })
       .addCase(removeGiftCoupon.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(applyBuyXGetYCoupon.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(applyBuyXGetYCoupon.fulfilled, (state, action) => {
+        state.loading = false;
+        state.cart = action.payload;
+        state.items = action.payload?.items || [];
+      })
+      .addCase(applyBuyXGetYCoupon.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

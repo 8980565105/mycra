@@ -59,6 +59,7 @@ export const ROUTES = {
     updateItem: "/carts/update-item",
     deleteItem: "/carts/delete-item",
     applyGift: "/carts/apply-gift",
+    applyBuyXGetY: "/carts/apply-buy-x-get-y",
     removeGift: "/carts/remove-gift",
   },
   updatecart: {

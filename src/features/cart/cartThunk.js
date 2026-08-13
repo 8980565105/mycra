@@ -130,3 +130,17 @@ export const removeGiftCoupon = createAsyncThunk(
     }
   },
 );
+
+
+
+export const applyBuyXGetYCoupon = createAsyncThunk(
+  "cart/applyBuyXGetYCoupon",
+  async ({ cart_id, code }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(ROUTES.cart.applyBuyXGetY, { cart_id, code });
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  },
+);
