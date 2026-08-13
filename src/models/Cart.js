@@ -20,6 +20,19 @@ const cartItemSchema = new mongoose.Schema(
       required: false,
       default: null,
     },
+
+    is_gift: {
+      type: Boolean,
+      default: false,
+    },
+    gift_price: {
+      type: Number,
+      default: 0,
+    },
+    coupon_code: {
+      type: String,
+      default: null,
+    },
   },
   { _id: true },
 );

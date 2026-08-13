@@ -1,5 +1,7 @@
 const Cart = require("../models/Cart");
+const Coupon = require("../models/Coupon");
 const Product = require("../models/Product");
+const ProductVariant = require("../models/ProductVariant");
 const User = require("../models/User");
 const { sendResponse } = require("../utils/response");
 
@@ -117,7 +119,7 @@ const getCartById = async (req, res) => {
       .populate("user_id", "name email")
       .populate({
         path: "items.product_id",
-        select: "name images createdBy shipping_type shipping_value",
+        select: "name images createdBy storeId shipping_type shipping_value",
       })
       .populate(
         "items.variant_id",
@@ -170,7 +172,7 @@ const addCartItem = async (req, res) => {
     const populatedCart = await Cart.findById(cart._id)
       .populate({
         path: "items.product_id",
-        select: "name price image images createdBy",
+        select: "name price image images createdBy storeId",
       })
       .populate("items.variant_id", "color size sku price image images");
 
@@ -205,7 +207,7 @@ const deleteCartItem = async (req, res) => {
     const populatedCart = await Cart.findById(cart._id)
       .populate({
         path: "items.product_id",
-        select: "name price image images",
+        select: "name price image images createdBy storeId",
       })
       .populate("items.variant_id", "color size sku price image images");
     sendResponse(res, true, populatedCart, "Cart item deleted successfully");
@@ -243,9 +245,99 @@ const bulkDeleteCartItems = async (req, res) => {
   }
 };
 
+const applyGiftCoupon = async (req, res) => {
+  try {
+    const { cart_id, code } = req.body;
+
+    const coupon = await Coupon.findOne({ code: code.toUpperCase() }).populate(
+      "gift_product_ids",
+      "name _id images price",
+    );
+
+    if (!coupon) {
+      return sendResponse(res, false, null, "Invalid coupon code");
+    }
+    if (coupon.coupon_type !== "free_gift") {
+      return sendResponse(res, false, null, "This is not a gift coupon");
+    }
+    if (coupon.status !== "active") {
+      return sendResponse(res, false, null, "Coupon is not active");
+    }
+    if (!coupon.gift_product_ids || coupon.gift_product_ids.length === 0) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        "No gift product configured for this coupon",
+      );
+    }
+
+    const cart = await Cart.findById(cart_id);
+    if (!cart) return sendResponse(res, false, null, "Cart not found");
+
+    cart.items = cart.items.filter((item) => !item.is_gift);
+
+    for (const product of coupon.gift_product_ids) {
+      const defaultVariant = await ProductVariant.findOne({
+        product_id: product._id,
+      }).sort({ createdAt: 1 });
+
+      if (!defaultVariant) {
+        return sendResponse(
+          res,
+          false,
+          null,
+          `No variant found for gift product "${product.name}"`,
+        );
+      }
+
+      cart.items.push({
+        product_id: product._id,
+        variant_id: defaultVariant._id,
+        quantity: 1,
+        is_gift: true,
+        gift_price: 0,
+        coupon_code: coupon.code,
+      });
+    }
+
+    await cart.save();
+
+    const updatedCart = await Cart.findById(cart_id)
+      .populate("items.product_id", "name images price")
+      .populate("items.variant_id", "offerprice price images");
+
+    sendResponse(res, true, updatedCart, "Gift product added to cart");
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
+
+const removeGiftCoupon = async (req, res) => {
+  try {
+    const { cart_id } = req.body;
+
+    const cart = await Cart.findById(cart_id);
+    if (!cart) return sendResponse(res, false, null, "Cart not found");
+
+    cart.items = cart.items.filter((item) => !item.is_gift);
+    await cart.save();
+
+    const updatedCart = await Cart.findById(cart_id)
+      .populate("items.product_id", "name images price")
+      .populate("items.variant_id", "offerprice price images");
+
+    sendResponse(res, true, updatedCart, "Gift product removed from cart");
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
+
 module.exports = {
   getCarts,
   getCartById,
+  applyGiftCoupon,
+  removeGiftCoupon,
   createCart,
   addCartItem,
   updateCartItem,

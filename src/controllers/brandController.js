@@ -37,8 +37,6 @@ const getBrands = async (req, res) => {
       query.status = status;
     }
 
-    applyOwnershipFilter(req, query);
-
     if (download) {
       const brands = await Brand.find(query).sort({ name: 1 });
       return sendResponse(

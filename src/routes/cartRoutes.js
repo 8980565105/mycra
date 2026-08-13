@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 const {
@@ -10,6 +9,8 @@ const {
   deleteCartItem,
   deleteCart,
   bulkDeleteCartItems,
+  applyGiftCoupon,
+  removeGiftCoupon,
 } = require("../controllers/cartController");
 
 const {
@@ -19,9 +20,15 @@ const {
 
 router.use(authMiddleware);
 router.get("/", authorizeMinRole("store_owner"), getCarts);
-router.post("/bulk-delete", authorizeMinRole("store_owner"), bulkDeleteCartItems);
+router.post(
+  "/bulk-delete",
+  authorizeMinRole("store_owner"),
+  bulkDeleteCartItems,
+);
 router.get("/:id", getCartById);
 router.post("/", createCart);
+router.post("/apply-gift", applyGiftCoupon);
+router.post("/remove-gift", removeGiftCoupon);
 router.post("/add-item", addCartItem);
 router.put("/update-item", updateCartItem);
 router.delete("/delete-item", deleteCartItem);

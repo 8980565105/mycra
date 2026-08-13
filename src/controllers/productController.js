@@ -415,28 +415,14 @@ const getProducts = async (req, res) => {
         },
       });
     }
-    if (store) {
+    if (store && store !== "all" && mongoose.Types.ObjectId.isValid(store)) {
+      const storeObjId = new mongoose.Types.ObjectId(store);
       pipeline.push({
-        $match: {
-          createdBy: {
-            $exists: true,
-          },
-        },
-      });
-
-      pipeline.push({
-        $match: {
-          "createdByUser._id": new mongoose.Types.ObjectId(store),
-        },
-      });
-    }
-    if (search) {
-      countPipeline.push({
         $match: {
           $or: [
-            { name: { $regex: search, $options: "i" } },
-            { "createdByUser.name": { $regex: search, $options: "i" } },
-            { "createdByUser.email": { $regex: search, $options: "i" } },
+            { storeId: storeObjId },
+            { "createdByUser._id": storeObjId },
+            { "createdByUser.storeId": storeObjId },
           ],
         },
       });
@@ -456,6 +442,39 @@ const getProducts = async (req, res) => {
       },
       { $unwind: { path: "$createdByUser", preserveNullAndEmptyArrays: true } },
     ];
+
+    if (search) {
+      countPipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { "createdByUser.name": { $regex: search, $options: "i" } },
+            { "createdByUser.email": { $regex: search, $options: "i" } },
+          ],
+        },
+      });
+    }
+
+    if (role && ["admin", "store_owner"].includes(role)) {
+      countPipeline.push({
+        $match: {
+          "createdByUser.role": role,
+        },
+      });
+    }
+
+    if (store && store !== "all" && mongoose.Types.ObjectId.isValid(store)) {
+      const storeObjId = new mongoose.Types.ObjectId(store);
+      countPipeline.push({
+        $match: {
+          $or: [
+            { storeId: storeObjId },
+            { "createdByUser._id": storeObjId },
+            { "createdByUser.storeId": storeObjId },
+          ],
+        },
+      });
+    }
 
     countPipeline.push(
       {

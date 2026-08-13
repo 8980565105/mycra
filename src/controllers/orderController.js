@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-// const Discount = require("../models/Discount");
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const Packing = require("../models/paking");
@@ -30,23 +29,14 @@ const {
   sendAdminOrderRTO,
 } = require("../utils/orderEmailService");
 
-// ─── Type-safe helpers ────────────────────────────────────────────────────────
 
-/**
- * Safely convert a query/body param to a trimmed string.
- * Returns "" if the value is not a primitive string or number.
- */
+
 const safeString = (val) => {
   if (typeof val === "string") return val.trim();
   if (typeof val === "number") return String(val);
   return "";
 };
 
-/**
- * Safely split a comma-separated query param into an array of trimmed strings.
- * Validates each entry as a valid MongoDB ObjectId before mapping.
- * Returns [] if input is not a non-empty string.
- */
 const safeObjectIdArray = (val) => {
   const str = safeString(val);
   if (!str) return [];
@@ -57,13 +47,8 @@ const safeObjectIdArray = (val) => {
     .map((id) => new mongoose.Types.ObjectId(id));
 };
 
-/**
- * Safely ensure a value is an array with a .length check.
- * Fixes CWE-1287 on req.body array fields like `items` and `ids`.
- */
 const safeArray = (val) => (Array.isArray(val) ? val : []);
 
-// ─── Existing helpers ─────────────────────────────────────────────────────────
 
 const getCustomerInfo = (order) => {
   const email = order.user_id?.email || null;
@@ -88,16 +73,6 @@ const getTrackingUrl = (partner, awb) => {
   };
   return urls[safeString(partner)] || "";
 };
-
-// const isDiscountValid = (discount) => {
-//   const now = new Date();
-//   return (
-//     discount &&
-//     discount.status === "active" &&
-//     discount.start_date <= now &&
-//     discount.end_date >= now
-//   );
-// };
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 1. GET ALL ORDERS  — admin & store_owner only (authenticated)
@@ -128,7 +103,6 @@ const getOrders = async (req, res) => {
     if (isNaN(page) || page < 1) page = 1;
     if (isNaN(limit) || limit < 1) limit = 10;
     const download = safeString(isDownload).toLowerCase() === "true";
-    // const role = req.user?.role;
     const userRole = req.user?.role;
     if (role === "store_user") {
       return sendResponse(
@@ -151,7 +125,6 @@ const getOrders = async (req, res) => {
       };
     }
 
-    // Store Filter
     if (store) {
       orderMatch.store_owner_id = new mongoose.Types.ObjectId(store);
     }
@@ -343,20 +316,7 @@ const getOrders = async (req, res) => {
       { $sort: { createdAt: -1 } },
     ];
 
-    // if (role && ["admin", "store_owner"].includes(role)) {
-    //   pipeline.push({
-    //     $match: {
-    //       "storeOwner.role": role,
-    //     },
-    //   });
-    // }
-    // if (store) {
-    //   pipeline.push({
-    //     $match: {
-    //       "storeOwner._id": new mongoose.Types.ObjectId(store),
-    //     },
-    //   });
-    // }
+   
 
     if (!download) {
       pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
@@ -528,10 +488,6 @@ const getOrderById = async (req, res) => {
       .populate("product_id", "name price sku")
       .populate({
         path: "variant_id",
-        // populate: [
-        //   { path: "color_id", select: "name" },
-        //   { path: "size_id", select: "name" },
-        // ],
       });
 
     sendResponse(res, true, { order, items }, "Order retrieved successfully");
@@ -576,9 +532,12 @@ const createOrder = async (req, res) => {
           `Not enough stock for ${variant.sku}`,
         );
 
-      if (!store_owner_id && variant.product_id?.createdBy) {
+      if (!store_owner_id && variant.product_id) {
         store_owner_id =
-          variant.product_id.createdBy._id || variant.product_id.createdBy;
+          variant.product_id.storeId?._id ||
+          variant.product_id.storeId ||
+          variant.product_id.createdBy?._id ||
+          variant.product_id.createdBy;
       }
 
       let price = variant.offerprice;

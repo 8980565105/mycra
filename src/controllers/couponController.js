@@ -1,5 +1,7 @@
 const Coupon = require("../models/Coupon");
+
 const { sendResponse } = require("../utils/response");
+
 const getCoupons = async (req, res) => {
   try {
     let {
@@ -8,23 +10,34 @@ const getCoupons = async (req, res) => {
       search = "",
       isDownload = "false",
       status,
+      role,
+      storeId,
     } = req.query;
     const download = isDownload.toLowerCase() === "true";
-
     const query = {};
-
     if (search) {
       query.$or = [
         { code: { $regex: search, $options: "i" } },
         { name: { $regex: search, $options: "i" } },
       ];
     }
-
     const userRole = req.user?.role;
-
-    if (!req.user || userRole === "user") {
+    if (userRole === "store_owner") {
+      if (req.user?.storeId) {
+        query.storeId = req.user.storeId;
+      }
+      if (status && ["active", "inactive"].includes(status)) {
+        query.status = status;
+      }
+    } else if (userRole === "admin") {
+      if (storeId) {
+        query.storeId = storeId;
+      }
+      if (status && ["active", "inactive"].includes(status)) {
+        query.status = status;
+      }
+    } else {
       query.status = "active";
-      query.coupon_type = { $ne: "private" };
       query.$and = [
         {
           $or: [
@@ -47,40 +60,12 @@ const getCoupons = async (req, res) => {
           ],
         },
       ];
-
-      if (req.user?._id) {
-        const Order = require("../models/Order");
-        const userOrderCount = await Order.countDocuments({
-          user_id: req.user._id,
-          status: { $nin: ["cancelled"] },
-        });
-
-        if (userOrderCount > 0) {
-          if (!query.$and) query.$and = [];
-          query.$and.push({
-            $or: [
-              { coupon_type: { $ne: "first_order" } },
-              { coupon_type: { $exists: false } },
-            ],
-          });
-        }
-      } else {
-        if (!query.$and) query.$and = [];
-        query.$and.push({
-          $or: [
-            { coupon_type: { $ne: "first_order" } },
-            { coupon_type: { $exists: false } },
-          ],
-        });
-      }
-    } else if (userRole === "admin") {
-      if (status && ["active", "inactive"].includes(status)) {
-        query.status = status;
-      }
     }
 
     if (download) {
-      const coupons = await Coupon.find(query).sort({ createdAt: -1 });
+      const coupons = await Coupon.find(query)
+        .populate("storeId", "name store_name")
+        .sort({ createdAt: -1 });
       return sendResponse(
         res,
         true,
@@ -92,14 +77,62 @@ const getCoupons = async (req, res) => {
     page = parseInt(page);
     limit = parseInt(limit);
 
-    const total = await Coupon.countDocuments(query);
-    const coupons = await Coupon.find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
+    let coupons = await Coupon.find(query)
+      .populate("storeId", "name store_name")
+      .populate("storeIds", "name store_name")
       .sort({ createdAt: -1 });
 
+    if (userRole !== "admin" && userRole !== "store_owner") {
+      if (req.user?._id) {
+        const Order = require("../models/Order");
+        const userOrders = await Order.find({
+          user_id: req.user._id,
+          status: { $nin: ["cancelled"] },
+        }).select("storeId store_owner_id");
+
+        const orderedStoreIds = userOrders
+          .flatMap((o) => [
+            o.storeId ? String(o.storeId) : null,
+            o.store_owner_id ? String(o.store_owner_id) : null,
+          ])
+          .filter(Boolean);
+
+        const hasAnyOrder = userOrders.length > 0;
+
+        coupons = coupons.filter((c) => {
+          if (c.coupon_type === "first_order") {
+            let cStoreId = c.storeId?._id
+              ? String(c.storeId._id)
+              : c.storeId
+                ? String(c.storeId)
+                : null;
+
+            if (!cStoreId && c.storeIds && c.storeIds.length > 0) {
+              const firstStore = c.storeIds[0];
+              cStoreId =
+                typeof firstStore === "object"
+                  ? String(firstStore._id)
+                  : String(firstStore);
+            }
+
+            if (cStoreId) {
+              return !orderedStoreIds.includes(cStoreId);
+            } else {
+              return !hasAnyOrder;
+            }
+          }
+          return true;
+        });
+      }
+    }
+
+    const total = coupons.length;
+    const paginatedCoupons = download
+      ? coupons
+      : coupons.slice((page - 1) * limit, page * limit);
+
     sendResponse(res, true, {
-      coupons,
+      coupons: paginatedCoupons,
       total,
       page,
       pages: Math.ceil(total / limit),
@@ -112,6 +145,8 @@ const getCoupons = async (req, res) => {
 const getCouponById = async (req, res) => {
   try {
     const coupon = await Coupon.findById(req.params.id)
+      .populate("storeId", "name store_name")
+      .populate("storeIds", "name store_name")
       .populate("products", "name")
       .populate("subcategories", "name")
       .populate("gift_product_ids", "name _id images price")
@@ -127,6 +162,32 @@ const getCouponById = async (req, res) => {
 const createCoupon = async (req, res) => {
   try {
     let { code, discount_type, coupon_type } = req.body;
+
+    if (req.user?.role === "store_owner") {
+      req.body.storeId = req.user.storeId;
+      req.body.storeIds = [req.user.storeId];
+      req.body.is_global = false;
+    } else if (req.user?.role === "admin") {
+      const hasStores =
+        Array.isArray(req.body.storeIds) && req.body.storeIds.length > 0;
+      const includeAdmin = req.body.include_admin_products === true;
+
+      if (hasStores) {
+        req.body.storeId = req.body.storeIds[0];
+        req.body.is_global = false;
+        req.body.include_admin_products = includeAdmin;
+      } else if (includeAdmin) {
+        req.body.storeId = null;
+        req.body.storeIds = [];
+        req.body.is_global = false;
+        req.body.include_admin_products = true;
+      } else {
+        req.body.storeId = null;
+        req.body.storeIds = [];
+        req.body.is_global = true;
+        req.body.include_admin_products = false;
+      }
+    }
 
     if (discount_type === "freeshiping" || coupon_type === "free_gift") {
       req.body.discount_value = 0;
@@ -180,6 +241,29 @@ const updateCoupon = async (req, res) => {
       });
       if (existingCoupon) {
         return sendResponse(res, false, null, "Coupon code already exists");
+      }
+    }
+
+    if (req.user?.role === "store_owner") {
+      req.body.storeId = req.user.storeId;
+      req.body.storeIds = [req.user.storeId];
+      req.body.is_global = false;
+    } else if (req.user?.role === "admin") {
+      const hasStores =
+        Array.isArray(req.body.storeIds) && req.body.storeIds.length > 0;
+
+      const includeAdmin = req.body.include_admin_products === true;
+
+      if (!hasStores && !includeAdmin) {
+        req.body.storeId = null;
+        req.body.storeIds = [];
+        req.body.is_global = true;
+        req.body.include_admin_products = false;
+      } else {
+        req.body.is_global = false;
+        req.body.include_admin_products = includeAdmin;
+
+        req.body.storeId = hasStores ? req.body.storeIds[0] : null;
       }
     }
 
@@ -278,14 +362,19 @@ const bulkDeleteCoupons = async (req, res) => {
 
 const applyCoupon = async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, cart_total } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
       return sendResponse(res, false, null, "Please login to apply coupon");
     }
 
-    const coupon = await Coupon.findOne({ code: code.toUpperCase() });
+    const coupon = await Coupon.findOne({ code: code.toUpperCase() })
+      .populate("products", "name storeId")
+      .populate("subcategories", "name")
+      .populate("gift_product_ids", "name _id images price storeId")
+      .populate("buy_x_get_y.free_products", "name _id images price storeId");
+
     if (!coupon) {
       return sendResponse(res, false, null, "Invalid coupon code");
     }
@@ -294,16 +383,54 @@ const applyCoupon = async (req, res) => {
       return sendResponse(res, false, null, "Coupon is not active");
     }
 
-    if (coupon.coupon_type === "private" && coupon.assigned_users?.length > 0) {
-      const isAssigned = coupon.assigned_users.some(
-        (uid) => uid.toString() === userId.toString(),
+    if (
+      coupon.min_purchase_amount &&
+      Number(cart_total) < coupon.min_purchase_amount
+    ) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        `Minimum purchase of ₹${coupon.min_purchase_amount} required for this coupon`,
       );
-      if (!isAssigned) {
+    }
+
+    if (coupon.coupon_type === "first_order") {
+      const Order = require("../models/Order");
+      const orderQuery = {
+        user_id: userId,
+        status: { $nin: ["cancelled"] },
+      };
+
+      let targetStoreId = coupon.storeId?._id
+        ? String(coupon.storeId._id)
+        : coupon.storeId
+          ? String(coupon.storeId)
+          : null;
+
+      if (!targetStoreId && coupon.storeIds && coupon.storeIds.length > 0) {
+        const firstStore = coupon.storeIds[0];
+        targetStoreId =
+          typeof firstStore === "object"
+            ? String(firstStore._id)
+            : String(firstStore);
+      }
+
+      if (targetStoreId) {
+        orderQuery.$or = [
+          { storeId: targetStoreId },
+          { store_owner_id: targetStoreId },
+        ];
+      }
+
+      const existingOrderCount = await Order.countDocuments(orderQuery);
+
+      if (existingOrderCount > 0) {
         return sendResponse(
           res,
           false,
           null,
-          "This coupon is not valid for your account",
+          "This coupon is only valid on your first order",
         );
       }
     }

@@ -18,10 +18,13 @@ const attributeValueSchema = new mongoose.Schema(
       index: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-attributeValueSchema.index({ attributeId: 1, value: 1, storeId: 1 }, { unique: true });
+attributeValueSchema.index(
+  { attributeId: 1, value: 1, storeId: 1 },
+  { unique: true },
+);
 
 module.exports =
   mongoose.models.AttributeValue ||

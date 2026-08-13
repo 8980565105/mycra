@@ -26,15 +26,28 @@ const couponSchema = new mongoose.Schema(
     },
     coupon_type: {
       type: String,
-      enum: [
-        "normal",
-        "first_order",
-        "free_gift",
-        "referral",
-        "buy_x_get_y",
-        "private",
-      ],
+      enum: ["normal", "first_order", "free_gift", "buy_x_get_y"],
       default: "normal",
+    },
+    storeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      default: null,
+      index: true,
+    },
+    storeIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Store",
+      },
+    ],
+    is_global: {
+      type: Boolean,
+      default: false,
+    },
+    include_admin_products: {
+      type: Boolean,
+      default: false,
     },
 
     gift_product_ids: [
@@ -103,7 +116,7 @@ const couponSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
 
-        ref: "subCategory",
+        ref: "SubCategory",
       },
     ],
 
