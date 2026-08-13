@@ -11,6 +11,8 @@ export const fetchCoupons = createAsyncThunk(
       search?: string;
       status?: "active" | "inactive";
       isDownload?: boolean;
+      role?: string;
+      storeId?: string;
     } = {},
     { rejectWithValue },
   ) => {

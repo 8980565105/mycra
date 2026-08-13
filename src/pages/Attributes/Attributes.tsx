@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirmDialog";
-import { Plus, Trash2, Edit } from "lucide-react";
+import { Plus, Trash2, Edit, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   Attribute,
@@ -53,9 +53,23 @@ export default function AttributesPage() {
   const [editingValue, setEditingValue] = useState<AttributeValue | null>(null);
   const [editValueText, setEditValueText] = useState("");
   const [editColorHex, setEditColorHex] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategoryId, setFilterCategoryId] = useState<string>("all");
 
   useEffect(() => {
-    dispatch(fetchAttributes({}));
+    const timer = setTimeout(() => {
+      dispatch(
+        fetchAttributes({
+          categoryId: filterCategoryId !== "all" ? filterCategoryId : undefined,
+          search: searchQuery.trim() || undefined,
+        })
+      );
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [dispatch, filterCategoryId, searchQuery]);
+
+  useEffect(() => {
     if (isAdmin) {
       dispatch(fetchCategories({ page: 1, limit: 100 }));
     }
@@ -188,6 +202,9 @@ export default function AttributesPage() {
           <h1 className="text-2xl font-bold tracking-tight">
             {isAdmin ? "Attributes Master" : "Product Attributes"}
           </h1>
+          <p className="text-sm text-gray-500">
+            Manage all products Attributes
+          </p>
         </div>
         {isAdmin && (
           <Button onClick={() => handleOpenAttrModal()}>
@@ -195,6 +212,50 @@ export default function AttributesPage() {
           </Button>
         )}
       </div>
+      <Card className="shadow-sm border border-gray-200">
+        <CardContent className="space-y-4 p-4">
+          <div className="flex flex-col md:flex-row gap-4 flex-wrap">
+            <div className="relative w-full md:max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Search attribute name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {isAdmin && (
+              <div>
+                <Select
+                  value={filterCategoryId}
+                  onValueChange={(val) => setFilterCategoryId(val)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select category..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.length === 0 ? (
+                      <SelectItem value="__loading" disabled>
+                        Loading categories...
+                      </SelectItem>
+                    ) : (
+                      categories.map((cat) => (
+                        <SelectItem key={cat._id} value={cat._id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {attributes.map((attr) => (
           <Card key={attr._id} className="shadow-sm border">

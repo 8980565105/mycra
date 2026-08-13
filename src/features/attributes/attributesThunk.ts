@@ -27,6 +27,7 @@ export const fetchAttributes = createAsyncThunk(
       limit?: number;
       search?: string;
       status?: string;
+      categoryId?: string
     } = {},
   ) => {
     const response = await api.get("/attributes", { params });

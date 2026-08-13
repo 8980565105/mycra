@@ -85,8 +85,8 @@ export default function CartPage() {
           "User Email": cart.user_id?.email || "N/A",
           "Product": item.product_id?.name || "N/A",
           "Quantity": item.quantity,
-          "Unit Price": item.variant_id?.price || 0,
-          "Total": item.quantity * (item.variant_id?.price || 0),
+          "Unit Price": item.variant_id?.offerprice || 0,
+          "Total": item.quantity * (item.variant_id?.offerprice || 0),
           "Added At": new Date(cart.createdAt).toLocaleString(),
         });
       });
@@ -105,7 +105,7 @@ export default function CartPage() {
     return (
       sum +
       cart.items.reduce((cartSum, item) => {
-        return cartSum + item.quantity * (item.variant_id?.price || 0);
+        return cartSum + item.quantity * (item.variant_id?.offerprice || 0);
       }, 0)
     );
   }, 0);
@@ -159,7 +159,6 @@ export default function CartPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold">
             Cart Items
-            {/* <span className="text-gray-400 font-normal">({total})</span> */}
           </CardTitle>
         </CardHeader>
         <CardContent>

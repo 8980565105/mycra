@@ -14,7 +14,7 @@ interface Coupon {
   name: string;
   code: string;
   description: string;
-  discount_type: "percentage" | "fixed";
+  discount_type: "percentage" | "fixed" | "freeshiping";
   discount_value: number;
   usage_limit: number;
   used_count: number;
@@ -23,6 +23,7 @@ interface Coupon {
   status?: "active" | "inactive";
   start_date: string;
   end_date: string;
+  storeId?: any;
   createdAt: string;
   updatedAt: string;
 }

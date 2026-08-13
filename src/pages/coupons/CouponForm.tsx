@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,10 @@ import {
 } from "@/features/coupons/couponsThunk";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchProducts } from "@/features/products/productsThunk";
+import { fetchStores } from "@/features/stores/storesThunk";
 import Select from "react-select";
 import { fetchsubCategories } from "@/features/subcategories/subcategoriesThunk";
-import { TiptapEditor } from "@/components/ui/TiptapEditor";
+
 const generateCouponCode = (length = 8) => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
@@ -35,9 +36,19 @@ export default function CouponFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
   const basePath = useBasePath();
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  const isStoreOwner = user?.role === "store_owner";
+  const isAdmin = user?.role === "admin";
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [header_title, setheader_title] = useState("");
+  const [stores, setStores] = useState<any[]>([]);
+  const [selectedStores, setSelectedStores] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [isGlobal, setIsGlobal] = useState<boolean>(true);
 
   const [discountType, setDiscountType] = useState<
     "percentage" | "fixed" | "freeshiping" | "product" | "buy x get y"
@@ -48,7 +59,7 @@ export default function CouponFormPage() {
   const [buyQuantity, setBuyQuantity] = useState(0);
   const [getQuantity, setGetQuantity] = useState(0);
   const [couponType, setCouponType] = useState<
-    "normal" | "first_order" | "free_gift" | "referral" | "buy_x_get_y"
+    "normal" | "first_order" | "free_gift" | "buy_x_get_y"
   >("normal");
   const [discountValue, setDiscountValue] = useState<string>("");
   const [minPurchaseAmount, setMinPurchaseAmount] = useState<string>("0");
@@ -67,19 +78,33 @@ export default function CouponFormPage() {
   const [freeProducts, setFreeProducts] = useState<any[]>([]);
   const [selectedSubCategories, setSelectedSubCategories] = useState<any[]>([]);
   const [usedCount, setUsedCount] = useState(0);
-  // const [isPrepaidOnly, setIsPrepaidOnly] = useState(false);
 
   useEffect(() => {
-    loadProducts();
+    if (isAdmin) {
+      loadStores();
+    }
+    const primaryStoreId = selectedStores.length === 1 ? selectedStores[0].value : undefined;
+    loadProducts(primaryStoreId);
     loadSubCategories();
-  }, []);
+  }, [selectedStores, isAdmin]);
 
-  const loadProducts = async () => {
+  const loadStores = async () => {
     try {
-      const res = await dispatch(fetchProducts({})).unwrap();
+      const res = await dispatch(fetchStores({ page: 1, limit: 1000 })).unwrap();
+      setStores(res.stores || []);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to load stores");
+    }
+  };
+
+  const loadProducts = async (storeId?: string) => {
+    try {
+      const params: any = {};
+      if (storeId) params.store = storeId;
+      const res = await dispatch(fetchProducts(params)).unwrap();
       setProducts(res.products || []);
-    } catch (error) {
-      toast.error(error);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to load products");
     }
   };
 
@@ -96,80 +121,136 @@ export default function CouponFormPage() {
 
   useEffect(() => {
     if (isEditMode && id) {
-      dispatch(getCouponById(id)).then((res: any) => {
-        if (res.payload) {
-          const coupon = res.payload;
-          setName(coupon.name || "");
-          setCode(coupon.code || "");
-          setDescription(coupon.description || "");
-          setheader_title(coupon.header_title || "");
-          setDiscountType(coupon.discount_type || "percentage");
-          setCouponType(coupon.coupon_type || "normal");
-          setBuyQuantity(Number(coupon.buy_x_get_y?.buy_quantity));
-          setGetQuantity(Number(coupon.buy_x_get_y?.get_quantity));
-          setUsageLimit(String(coupon.usage_limit || 0));
-          setuserUsageLimit(String(coupon.userusage_limit || 0));
-          setUsedCount(Number(coupon.used_count || 0));
-          setStatus(coupon.status === "active");
+      dispatch(getCouponById(id))
+        .unwrap()
+        .then((res: any) => {
+          const coupon = res?.data || res?.coupon || res;
+          if (coupon && typeof coupon === "object") {
+            setName(coupon.name || "");
+            setCode(coupon.code || "");
+            setDescription(coupon.description || "");
+            setheader_title(coupon.header_title || "");
+            setDiscountType(coupon.discount_type || "percentage");
+            setCouponType(coupon.coupon_type || "normal");
 
-          if (coupon.gift_product_ids && coupon.gift_product_ids.length > 0) {
-            setGiftProducts(
-              coupon.gift_product_ids.map((p: any) => ({
+
+            if (coupon.is_global) {
+              setIsGlobal(true);
+              setSelectedStores([]);
+            } else {
+              setIsGlobal(false);
+
+              const storeOptions =
+                coupon.storeIds && coupon.storeIds.length > 0
+                  ? coupon.storeIds.map((s: any) => ({
+                    value: s._id || s,
+                    label: s.name || s.store_name || "Store",
+                  }))
+                  : coupon.storeId
+                    ? [
+                      {
+                        value: coupon.storeId._id || coupon.storeId,
+                        label:
+                          coupon.storeId.name ||
+                          coupon.storeId.store_name ||
+                          "Store",
+                      },
+                    ]
+                    : [];
+
+              if (coupon.include_admin_products === true) {
+                storeOptions.unshift({ value: "admin", label: "Admin" });
+              }
+
+              setSelectedStores(storeOptions);
+            }
+
+            setBuyQuantity(Number(coupon.buy_x_get_y?.buy_quantity || 0));
+            setGetQuantity(Number(coupon.buy_x_get_y?.get_quantity || 0));
+            setUsageLimit(String(coupon.usage_limit ?? "1"));
+            setuserUsageLimit(String(coupon.userusage_limit ?? "1"));
+            setUsedCount(Number(coupon.used_count || 0));
+            setStatus(coupon.status === "active");
+
+            if (coupon.gift_product_ids && coupon.gift_product_ids.length > 0) {
+              setGiftProducts(
+                coupon.gift_product_ids.map((p: any) => ({
+                  value: p._id || p,
+                  label: p.name || "Gift Product",
+                }))
+              );
+            }
+            if (coupon.coupon_type === "buy_x_get_y") {
+              setBuyQuantity(coupon.buy_x_get_y?.buy_quantity || 0);
+              setGetQuantity(coupon.buy_x_get_y?.get_quantity || 0);
+
+              setFreeProducts(
+                (coupon.buy_x_get_y?.free_products || []).map((product: any) => ({
+                  value: product._id || product,
+                  label: product.name || "Free Product",
+                }))
+              );
+            }
+
+            setDiscountValue(
+              coupon.discount_value !== undefined && coupon.discount_value !== null
+                ? String(coupon.discount_value)
+                : ""
+            );
+            setMinPurchaseAmount(
+              coupon.min_purchase_amount !== undefined && coupon.min_purchase_amount !== null
+                ? String(coupon.min_purchase_amount)
+                : "0"
+            );
+            setMaxDiscountAmount(
+              coupon.max_discount_amount !== null && coupon.max_discount_amount !== undefined
+                ? String(coupon.max_discount_amount)
+                : ""
+            );
+
+            if (coupon.start_date) {
+              const d = new Date(coupon.start_date);
+              if (!isNaN(d.getTime())) {
+                const tzOffset = d.getTimezoneOffset() * 60000;
+                const localISOTime = new Date(d.getTime() - tzOffset)
+                  .toISOString()
+                  .slice(0, 16);
+                setStartDate(localISOTime);
+              }
+            }
+
+            if (coupon.end_date) {
+              const d = new Date(coupon.end_date);
+              if (!isNaN(d.getTime())) {
+                const tzOffset = d.getTimezoneOffset() * 60000;
+                const localISOTime = new Date(d.getTime() - tzOffset)
+                  .toISOString()
+                  .slice(0, 16);
+                setEndDate(localISOTime);
+              }
+            }
+
+            setApplyCoupon(coupon.apply_type || "allproducts");
+
+            setSelectedProducts(
+              (coupon.products || []).map((p: any) => ({
                 value: p._id || p,
-                label: p.name || "Gift Product",
+                label: p.name || p.title || "Product",
+              }))
+            );
+
+            setSelectedSubCategories(
+              (coupon.subcategories || []).map((s: any) => ({
+                value: s._id || s,
+                label: s.name || s.title || "SubCategory",
               }))
             );
           }
-          if (coupon.coupon_type === "buy_x_get_y") {
-            setBuyQuantity(coupon.buy_x_get_y?.buy_quantity || 0);
-            setGetQuantity(coupon.buy_x_get_y?.get_quantity || 0);
-
-            setFreeProducts(
-              (coupon.buy_x_get_y?.free_products || []).map((product) => ({
-                value: product._id,
-                label: product.name,
-              }))
-            );
-          }
-
-          setDiscountValue(String(coupon.discount_value || ""));
-          setMinPurchaseAmount(String(coupon.min_purchase_amount ?? "0"));
-          setMaxDiscountAmount(
-            coupon.max_discount_amount !== null
-              ? String(coupon.max_discount_amount)
-              : ""
-          );
-          setUsageLimit(String(coupon.usage_limit || "1"));
-          setStartDate(
-            coupon.start_date
-              ? new Date(coupon.start_date).toISOString().slice(0, 16)
-              : ""
-          );
-          setEndDate(
-            coupon.end_date
-              ? new Date(coupon.end_date).toISOString().slice(0, 16)
-              : ""
-          );
-
-          setApplyCoupon(coupon.apply_type || "allproducts");
-
-          setSelectedProducts(
-            coupon.products?.map((p: any) => ({
-              value: p._id || p,
-              label: p.name || p.title || "Product",
-            })) || []
-          );
-
-          setSelectedSubCategories(
-            coupon.subcategories?.map((s: any) => ({
-              value: s._id || s,
-              label: s.name || s.title || "SubCategory",
-            })) || []
-          );
-
-          setStatus(coupon.status === "active");
-        }
-      });
+        })
+        .catch((err: any) => {
+          console.error("Failed to load coupon for edit:", err);
+          toast.error(typeof err === "string" ? err : "Failed to load coupon data");
+        });
     }
   }, [dispatch, id, isEditMode]);
 
@@ -200,21 +281,66 @@ export default function CouponFormPage() {
       return toast.error("Please select at least one gift product");
     }
 
+
+    const isAdminSelected = selectedStores.some(
+      (s) => s.value === "admin"
+    );
+
+    const storeIdValues = selectedStores
+      .filter((s) => s.value !== "admin")
+      .map((s) => s.value);
+
     const payload: any = {
       name,
       code: code.toUpperCase(),
       description,
       header_title,
+
       discount_type: discountType,
       coupon_type: couponType,
+
+      is_global: isAdmin
+        ? !isAdminSelected &&
+        storeIdValues.length === 0 &&
+        isGlobal
+        : false,
+
+      include_admin_products: isAdmin
+        ? isAdminSelected
+        : false,
+
+      storeIds: isStoreOwner
+        ? [(user as any)?.storeId]
+        : storeIdValues,
+
+      storeId: isStoreOwner
+        ? (user as any)?.storeId
+        : storeIdValues.length > 0
+          ? storeIdValues[0]
+          : null,
+
       discount_value: Number(discountValue),
+
       min_purchase_amount: Number(minPurchaseAmount),
-      max_discount_amount: maxDiscountAmount ? Number(maxDiscountAmount) : null,
+
+      max_discount_amount: maxDiscountAmount
+        ? Number(maxDiscountAmount)
+        : null,
+
       usage_limit: Number(usageLimit),
+
       userusage_limit: Number(userusageLimit),
-      start_date: startDate ? new Date(startDate).toISOString() : null,
-      end_date: endDate ? new Date(endDate).toISOString() : null,
+
+      start_date: startDate
+        ? new Date(startDate).toISOString()
+        : null,
+
+      end_date: endDate
+        ? new Date(endDate).toISOString()
+        : null,
+
       status: status ? "active" : "inactive",
+
       gift_product_ids:
         couponType === "free_gift"
           ? giftProducts.map((p) => p.value)
@@ -222,18 +348,24 @@ export default function CouponFormPage() {
 
       buy_x_get_y:
         couponType === "buy_x_get_y"
-          ? { buy_quantity: buyQuantity, get_quantity: getQuantity, free_products: freeProducts.map((p) => p.value), }
+          ? {
+            buy_quantity: buyQuantity,
+            get_quantity: getQuantity,
+            free_products: freeProducts.map((p) => p.value),
+          }
           : undefined,
 
       apply_type: apply,
 
       products:
-        apply === "specificproducts" || apply === "Excludeproduct"
+        apply === "specificproducts" ||
+          apply === "Excludeproduct"
           ? selectedProducts.map((p) => p.value)
           : [],
 
       subcategories:
-        apply === "specificsubcategory" || apply === "Excludecategories"
+        apply === "specificsubcategory" ||
+          apply === "Excludecategories"
           ? selectedSubCategories.map((s) => s.value)
           : [],
     };
@@ -350,6 +482,60 @@ export default function CouponFormPage() {
                   placeholder="Enter coupon description..."
                 />
               </div>
+              {isAdmin && (
+                <div className="space-y-3 border p-4 rounded-md bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="isGlobalCheck"
+                      type="checkbox"
+                      className="w-4 h-4 cursor-pointer"
+                      checked={isGlobal}
+                      onChange={(e) => {
+                        setIsGlobal(e.target.checked);
+                        if (e.target.checked) {
+                          setSelectedStores([]);
+                        }
+                      }}
+                    />
+                    <Label htmlFor="isGlobalCheck" className="font-semibold cursor-pointer">
+                      Global Coupon (Applies to All Stores)
+                    </Label>
+                  </div>
+
+                  {!isGlobal && (
+                    <div>
+                      <Label className="mb-1 block">
+                        Select Target Stores / Admin
+                      </Label>
+
+                      <Select
+                        isMulti
+                        options={[
+                          {
+                            value: "admin",
+                            label: "Admin",
+                          },
+                          ...stores.map((s: any) => ({
+                            value: s._id,
+                            label: s.name || s.store_name,
+                          })),
+                        ]}
+                        value={selectedStores}
+                        onChange={(selected: any) => {
+                          const selectedOptions = selected || [];
+                          setSelectedStores(selectedOptions);
+                          if (selectedOptions.length === 0) {
+                            setIsGlobal(true);
+                          }
+                        }}
+                        placeholder="Search and select Admin / Stores..."
+                        isClearable
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="discountType">Discount Type</Label>
@@ -364,7 +550,7 @@ export default function CouponFormPage() {
                   >
                     <option value="percentage">Percentage</option>
                     <option value="fixed">Fixed</option>
-                    <option value="freeshiping">Free Shipping</option>
+                    <option value="freeshiping">Free </option>
                     {couponType === "free_gift" && (
                       <option value="product">Free Gift Product</option>
                     )}
@@ -384,9 +570,7 @@ export default function CouponFormPage() {
                     <option value="normal">Normal</option>
                     <option value="first_order">First Order Coupon</option>
                     <option value="free_gift">Free Gift Coupon</option>
-                    <option value="referral">Referral Coupon</option>
                     <option value="buy_x_get_y">Buy X Get Y Free</option>
-                    <option value="private">privet</option>
                   </select>
                 </div>
               </div>
@@ -576,9 +760,13 @@ export default function CouponFormPage() {
                   >
                     <option value="allproducts">All Products</option>
                     <option value="specificproducts">Specific Products</option>
-                    <option value="specificsubcategory">Specific SubCategory</option>
                     <option value="Excludeproduct">Exclude Selected Products</option>
-                    <option value="Excludecategories">Exclude Selected SubCategories</option>
+                    {!isStoreOwner && (
+                      <>
+                        <option value="specificsubcategory">Specific SubCategory</option>
+                        <option value="Excludecategories">Exclude Selected SubCategories</option>
+                      </>
+                    )}
                   </select>
                 </div>
 

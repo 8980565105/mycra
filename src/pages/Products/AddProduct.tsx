@@ -563,6 +563,7 @@ export default function ProductFormPage() {
                   <Label>3. Product Category (Product Type) *</Label>
                   <Select
                     value={typeId}
+                    disabled={!categoryId}
                     onValueChange={(val) => {
                       setTypeId(val);
                       setBrandId("");
@@ -570,7 +571,7 @@ export default function ProductFormPage() {
                       setSelectedDynAttrs({});
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger disabled={!categoryId}>
                       <SelectValue placeholder="Select Product Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -593,9 +594,10 @@ export default function ProductFormPage() {
                   <Label>Brand *</Label>
                   <Select
                     value={brandId}
+                    disabled={!typeId}
                     onValueChange={(val) => setBrandId(val)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger disabled={!typeId}>
                       <SelectValue placeholder={typeId ? "Select Brand" : "Please select Product Category first"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -754,7 +756,7 @@ export default function ProductFormPage() {
             </CardContent>
           </Card>
 
-       
+
           <Card className="shadow-sm border border-gray-200">
             <CardHeader className="bg-slate-50/50 border-b border-gray-100 flex flex-row items-center justify-between">
               <div>

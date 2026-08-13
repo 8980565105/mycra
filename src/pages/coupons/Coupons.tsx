@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { GenericTable } from "@/components/ui/adminTable";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
 import { useBasePath } from "@/hooks/useBasePath";
 import {
   fetchCoupons,
@@ -15,13 +15,30 @@ import {
 export default function CouponsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const basePath = useBasePath();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isAdmin = user?.role === "admin";
   const columns = [
     { key: "name", label: "Name", },
     { key: "code", label: "Code", },
     {
+      key: "store",
+      label: "Store",
+      render: (item: any) => {
+        if (item.is_global || (!item.storeId && (!item.storeIds || item.storeIds.length === 0))) {
+          return "Global (All Stores)";
+        }
+        if (item.storeIds && item.storeIds.length > 0) {
+          return item.storeIds
+            .map((s: any) => (typeof s === "object" ? s.name || s.store_name : s))
+            .filter(Boolean)
+            .join(", ");
+        }
+        return item.storeId?.name || item.storeId?.store_name || "Global (All Stores)";
+      },
+    },
+    {
       key: "discount_type",
       label: "Discount Type",
-
     },
     {
       key: "discount_value",
@@ -69,10 +86,18 @@ export default function CouponsPage() {
       rowKey="_id"
       searchEnabled
       statusToggleEnabled
+      storeFilterEnabled={isAdmin}
       filters={[
         { label: "Active", value: "active" },
         { label: "Inactive", value: "inactive" },
       ]}
+      filters1={isAdmin
+        ? [
+          { label: "Admin", value: "admin" },
+          { label: "store", value: "store_owner" },
+        ]
+        : undefined
+      }
       fetchData={async ({ page, limit, search, status }) => {
         try {
           const res = await dispatch(
