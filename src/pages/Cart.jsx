@@ -9,6 +9,8 @@ import CouponCard from "../components/cart/CouponCard";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCoupons } from "../features/coupons/couponsThunk";
+import { applyGiftCoupon, removeGiftCoupon } from "../features/cart/cartThunk"; // <-- ADD THIS
+import toast, { Toaster } from "react-hot-toast";
 
 export default function Cart() {
   const [appliedCoupon, setAppliedCoupon] = useState(() => {
@@ -25,6 +27,8 @@ export default function Cart() {
   const { items = [] } = useSelector((state) => state.cart);
   const [couponMsg, setCouponMsg] = useState({ text: "", type: "" });
 
+  const cart_id = localStorage.getItem("cart_id");
+
   useEffect(() => {
     dispatch(fetchCoupons({ status: "active" }));
   }, [dispatch]);
@@ -32,22 +36,115 @@ export default function Cart() {
   const applyCouponByCode = (code) => {
     const coupon = coupons.find((c) => c.code === code);
     if (!coupon) {
-      setCouponMsg({ text: "Invalid coupon code!", type: "error" });
+      toast.error("Invalid coupon code!");
       return;
     }
+    const cartSubtotal = items.reduce((sum, item) => {
+      const price = item?.variant_id?.offerprice || 0;
+      return sum + price * (item.quantity || 1);
+    }, 0);
+
+    const cartProductStoreIds = [
+      ...new Set(
+        items
+          .map((item) => {
+            const storeId =
+              item?.product_id?.storeId?._id || item?.product_id?.storeId;
+            return storeId ? String(storeId) : null;
+          })
+          .filter(Boolean),
+      ),
+    ];
+
+    const hasAdminProduct = items.some((item) => {
+      const storeId =
+        item?.product_id?.storeId?._id || item?.product_id?.storeId;
+      return !storeId;
+    });
+
+    if (coupon.is_global === true) {
+    } else {
+      const couponStoreIds = [
+        ...(coupon.storeIds || []).map((s) =>
+          typeof s === "object" ? String(s._id) : String(s),
+        ),
+      ];
+
+      if (coupon.storeId) {
+        const singleStoreId =
+          typeof coupon.storeId === "object"
+            ? String(coupon.storeId._id)
+            : String(coupon.storeId);
+
+        if (!couponStoreIds.includes(singleStoreId)) {
+          couponStoreIds.push(singleStoreId);
+        }
+      }
+      const adminAllowed =
+        coupon.include_admin_products === true && hasAdminProduct;
+      const storeAllowed = couponStoreIds.some((storeId) =>
+        cartProductStoreIds.includes(storeId),
+      );
+
+      if (!adminAllowed && !storeAllowed) {
+        toast.error("This coupon is not applicable to products in your cart.");
+        return;
+      }
+    }
+    if (
+      coupon.min_purchase_amount &&
+      cartSubtotal < coupon.min_purchase_amount
+    ) {
+      toast.error(
+        `This coupon requires minimum ₹${coupon.min_purchase_amount} purchase`,
+      );
+      return;
+    }
+
+    if (!cart_id) {
+      toast.error("Cart not found. Please refresh the page.");
+      return;
+    }
+
+    if (coupon.coupon_type === "free_gift") {
+      dispatch(applyGiftCoupon({ cart_id, code: coupon.code }))
+        .unwrap()
+        .then(() => {
+          setCouponMsg({
+            text: `🎁 Coupon "${coupon.code}" applied! Free gift added to cart.`,
+            type: "success",
+          });
+          toast.success(`Coupon "${coupon.code}" applied successfully!`);
+        })
+        .catch((err) => {
+          setCouponMsg({
+            text: err || "Failed to add gift product",
+            type: "error",
+          });
+          toast.error(err || "Failed to add gift product");
+          return;
+        });
+    } else {
+      setCouponMsg({
+        text: `Coupon "${coupon.code}" applied successfully!`,
+        type: "success",
+      });
+      toast.success(`Coupon "${coupon.code}" applied successfully!`);
+    }
+
     setAppliedCoupon(coupon);
     localStorage.setItem("appliedCoupon", JSON.stringify(coupon));
-    setCouponMsg({
-      text: `Coupon "${coupon.code}" applied successfully!`,
-      type: "success",
-    });
   };
 
   const removeCoupon = () => {
+    if (appliedCoupon?.coupon_type === "free_gift" && cart_id) {
+      dispatch(removeGiftCoupon({ cart_id }));
+    }
+
     setAppliedCoupon(null);
     setCartCouponCode("");
     localStorage.removeItem("appliedCoupon");
-    setCouponMsg({ text: "Coupon removed", type: "success" });
+    toast.success("Coupon removed");
   };
 
   const handleApplyCartCoupon = () => {
@@ -65,6 +162,7 @@ export default function Cart() {
 
   return (
     <>
+      <Toaster position="top-center" />
       <CartProgress currentStep={1} />
       <Section>
         <Row>
@@ -76,7 +174,6 @@ export default function Cart() {
         <Row className="grid grid-cols-1 custom-lg:grid-cols-[3fr_1fr] gap-[30px] items-start">
           <div className="flex-1">
             <CartItem />
-
             {items.length > 0 && (
               <div>
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-[12px] mt-[20px] md:mt-[30px]">
@@ -86,23 +183,11 @@ export default function Cart() {
                         value={cartCouponCode}
                         onChange={(e) => {
                           setCartCouponCode(e.target.value);
-                          setCouponMsg({ text: "", type: "" });
                         }}
                         placeholder="COUPON CODE"
                         disabled={!!appliedCoupon}
                         className="text-center border border-theme rounded-[3px] px-[10px] py-[7px]  md:py-[14px] text-18 w-[200px] md:w-[181px] disabled:bg-gray-100"
                       />
-                      {couponMsg.text && (
-                        <p
-                          className={`text-[13px] font-medium mt-[4px] ${
-                            couponMsg.type === "success"
-                              ? "text-green-600"
-                              : "text-red-500"
-                          }`}
-                        >
-                          {couponMsg.text}
-                        </p>
-                      )}
                     </div>
                     <Button
                       onClick={handleApplyCartCoupon}
@@ -112,7 +197,6 @@ export default function Cart() {
                       {appliedCoupon ? "REMOVE COUPON" : "APPLY COUPON"}
                     </Button>
                   </div>
-
                   <Link to="/updatecart">
                     <Button
                       variant="secondary"

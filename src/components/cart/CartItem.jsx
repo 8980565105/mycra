@@ -29,6 +29,7 @@ export default function CartItem() {
     return <p className="text-center mb-[100px] py-10">Your cart is empty.</p>;
 
   const handleIncrease = (item) => {
+    if (item.is_gift) return;
     const cart_id = localStorage.getItem("cart_id");
     if (!cart_id) return;
     const newQuantity = item.quantity + 1;
@@ -47,6 +48,7 @@ export default function CartItem() {
   };
 
   const handleDecrease = (item) => {
+    if (item.is_gift) return;
     const cart_id = localStorage.getItem("cart_id");
     if (!cart_id || item.quantity <= 1) return;
     const newQuantity = item.quantity - 1;
@@ -64,16 +66,24 @@ export default function CartItem() {
       });
   };
 
-  const handleDelete = (item_id) => {
+  const handleDelete = (item) => {
+    if (item.is_gift) return; 
     const cart_id = localStorage.getItem("cart_id");
     if (!cart_id) return toast.error("No cart found!");
 
-    dispatch(deleteCartItem({ cart_id, item_id }))
+    dispatch(deleteCartItem({ cart_id, item_id: item._id }))
       .unwrap()
       .then(() => dispatch(fetchCart(cart_id)));
   };
 
   const getDiscountedPrice = (item) => {
+    if (item.is_gift) {
+      return {
+        discount: 0,
+        originalPrice: item.gift_price || 0,
+        discountedPrice: 0,
+      };
+    }
     const discount = item?.variant_id?.offerprice || 0;
     const originalPrice = item?.variant_id?.price || 0;
     const discountedPrice = discount;
@@ -100,12 +110,14 @@ export default function CartItem() {
               className="border-b light-border font-18 sec-text-color"
             >
               <td className="text-center pt-[40px] pb-[20px]">
-                <button
-                  className="w-[20px] h-[20px]"
-                  onClick={() => handleDelete(item._id)}
-                >
-                  <img src={remove} alt="remove" />
-                </button>
+                {!item.is_gift && (
+                  <button
+                    className="w-[20px] h-[20px]"
+                    onClick={() => handleDelete(item)}
+                  >
+                    <img src={remove} alt="remove" />
+                  </button>
+                )}
               </td>
               <td className="px-3 xl:px-6 w-[182px] pt-[40px] pb-[20px]">
                 <Link to={`/products/${item.product_id?._id}`}>
@@ -122,30 +134,51 @@ export default function CartItem() {
               </td>
               <td className="px-3 xl:px-6 break pt-[40px] pb-[20px] max-w-[230px] truncate overflow-hidden text-ellipsis">
                 {item.product_id?.name}
+                {item.is_gift && (
+                  <span className="ml-2 text-[11px] bg-green-100 text-green-700 px-2 py-[2px] rounded-full font-semibold whitespace-nowrap">
+                    🎁 FREE GIFT
+                  </span>
+                )}
               </td>
               <td className="px-3 xl:px-6 pt-[40px] pb-[20px]">
-                <div className="inline-flex items-center gap-[10px] px-[8px] py-[5px] light-border border text-black rounded-[5px] leading">
-                  <button onClick={() => handleDecrease(item)}>
-                    <Minus size={14} />
-                  </button>
-                  <span>{item.quantity ?? 1}</span>
-                  <button onClick={() => handleIncrease(item)}>
-                    <Plus size={14} />
-                  </button>
-                </div>
+                {item.is_gift ? (
+                  <span>1</span>
+                ) : (
+                  <div className="inline-flex items-center gap-[10px] px-[8px] py-[5px] light-border border text-black rounded-[5px] leading">
+                    <button onClick={() => handleDecrease(item)}>
+                      <Minus size={14} />
+                    </button>
+                    <span>{item.quantity ?? 1}</span>
+                    <button onClick={() => handleIncrease(item)}>
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                )}
               </td>
               <td className="px-3 xl:px-6 pt-[40px] pb-[20px] text-left">
-                ₹
-                {Math.round(
-                  getDiscountedPrice(item).discountedPrice,
-                ).toLocaleString("en-IN")}{" "}
-                × {item.quantity}
+                {item.is_gift ? (
+                  "FREE"
+                ) : (
+                  <>
+                    ₹
+                    {Math.round(
+                      getDiscountedPrice(item).discountedPrice,
+                    ).toLocaleString("en-IN")}{" "}
+                    × {item.quantity}
+                  </>
+                )}
               </td>
               <td className="px-3 xl:px-6 pt-[40px] pb-[20px] text-center">
-                ₹
-                {Math.round(
-                  getDiscountedPrice(item).discountedPrice * item.quantity,
-                ).toLocaleString("en-IN")}
+                {item.is_gift ? (
+                  "₹0"
+                ) : (
+                  <>
+                    ₹
+                    {Math.round(
+                      getDiscountedPrice(item).discountedPrice * item.quantity,
+                    ).toLocaleString("en-IN")}
+                  </>
+                )}
               </td>
             </tr>
           ))}
@@ -159,16 +192,18 @@ export default function CartItem() {
             className="bg-white p-4 rounded-[5px] box-shadow relative flex sm:flex-nowrap gap-[20px] items-start"
           >
             <div className="flex items-center gap-[10px] flex-shrink-0">
-              <button
-                className="w-[10px] h-[10px] flex items-center justify-center"
-                onClick={() => handleDelete(item._id)}
-              >
-                <img
-                  src={remove}
-                  alt="remove"
-                  className="w-full h-full object-contain"
-                />
-              </button>
+              {!item.is_gift && (
+                <button
+                  className="w-[10px] h-[10px] flex items-center justify-center"
+                  onClick={() => handleDelete(item)}
+                >
+                  <img
+                    src={remove}
+                    alt="remove"
+                    className="w-full h-full object-contain"
+                  />
+                </button>
+              )}
               <Link to={`/products/${item.product_id?._id}`}>
                 <img
                   src={
@@ -184,22 +219,28 @@ export default function CartItem() {
             <div className="flex flex-col flex-wrap">
               <div className="mb-[8px] text-14 break">
                 {item.product_id?.name}
+                {item.is_gift && (
+                  <span className="ml-2 text-[10px] bg-green-100 text-green-700 px-2 py-[2px] rounded-full font-semibold whitespace-nowrap">
+                    🎁 FREE GIFT
+                  </span>
+                )}
               </div>
               <div className="text-p mb-[12px] text-color">
-                ₹
-                {(
-                  getDiscountedPrice(item).discountedPrice * item.quantity
-                ).toFixed(0)}
+                {item.is_gift
+                  ? "₹0"
+                  : `₹${(getDiscountedPrice(item).discountedPrice * item.quantity).toFixed(0)}`}
               </div>
-              <div className="flex items-center gap-[10px] text-14">
-                <button className="light-color rounded-[2px] flex items-center justify-center p-[2px]">
-                  <Minus size={12} onClick={() => handleDecrease(item)} />
-                </button>
-                <span>{item.quantity}</span>
-                <button className="bg-color-100 rounded-[2px] flex items-center justify-center p-[2px] text-white">
-                  <Plus size={12} onClick={() => handleIncrease(item)} />
-                </button>
-              </div>
+              {!item.is_gift && (
+                <div className="flex items-center gap-[10px] text-14">
+                  <button className="light-color rounded-[2px] flex items-center justify-center p-[2px]">
+                    <Minus size={12} onClick={() => handleDecrease(item)} />
+                  </button>
+                  <span>{item.quantity}</span>
+                  <button className="bg-color-100 rounded-[2px] flex items-center justify-center p-[2px] text-white">
+                    <Plus size={12} onClick={() => handleIncrease(item)} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))}

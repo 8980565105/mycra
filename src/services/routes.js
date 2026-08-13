@@ -27,7 +27,6 @@ export const ROUTES = {
   subcategories: {
     getAll: "/subcategories/public",
   },
-
   pages: {
     getAll: "/pages",
     getById: (id) => `/pages/${id}`,
@@ -59,6 +58,8 @@ export const ROUTES = {
     addItem: "/carts/add-item",
     updateItem: "/carts/update-item",
     deleteItem: "/carts/delete-item",
+    applyGift: "/carts/apply-gift",
+    removeGift: "/carts/remove-gift",
   },
   updatecart: {
     getAll: "/carts",
@@ -141,6 +142,6 @@ export const ROUTES = {
     getBySubCategory: "/attributes/subcategory",
   },
   childcategory: {
-    getAll: "child-categories/public"
-  }
+    getAll: "child-categories/public",
+  },
 };

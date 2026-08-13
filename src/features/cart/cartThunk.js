@@ -106,3 +106,27 @@ export const deleteCartItem = createAsyncThunk(
     }
   },
 );
+
+export const applyGiftCoupon = createAsyncThunk(
+  "cart/applyGiftCoupon",
+  async ({ cart_id, code }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(ROUTES.cart.applyGift, { cart_id, code });
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  },
+);
+
+export const removeGiftCoupon = createAsyncThunk(
+  "cart/removeGiftCoupon",
+  async ({ cart_id }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(ROUTES.cart.removeGift, { cart_id });
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  },
+);

@@ -12,11 +12,7 @@ import Button from "../ui/Button.jsx";
 const Bestsellers = () => {
   const navigate = useNavigate();
   const { products = [] } = useSelector((state) => state.products);
-  // const sellersProducts = products.filter(
-  //   (product) =>
-  //     product.status === "active" &&
-  //     product.variants?.some((variant) => variant.is_best_seller),
-  // );
+ 
   const sellersProducts = products.filter(
     (product) => product.status === "active" && product.is_best_seller === true,
   );

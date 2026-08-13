@@ -37,6 +37,9 @@ export default function OrderSummary({ formData, appliedCoupon }) {
     return <p className="text-center mb-[100px]">Your cart is empty.</p>;
 
   const getDiscountedPrice = (item) => {
+    if (item.is_gift) {
+      return { discount: 0, originalPrice: 0, discountedPrice: 0 };
+    }
     const discount = item?.variant_id?.offerprice || 0;
     const originalPrice = item?.variant_id?.price || 0;
     const discountedPrice = discount;
@@ -51,10 +54,64 @@ export default function OrderSummary({ formData, appliedCoupon }) {
 
   let discountAmount = 0;
   if (appliedCoupon) {
-    discountAmount =
-      appliedCoupon.discount_type === "fixed"
-        ? appliedCoupon.discount_value
-        : (subtotal * appliedCoupon.discount_value) / 100;
+    const couponStoreIds = (appliedCoupon?.storeIds || []).map((s) =>
+      typeof s === "object" ? String(s._id) : String(s),
+    );
+    if (appliedCoupon?.storeId) {
+      const sId =
+        typeof appliedCoupon.storeId === "object"
+          ? String(appliedCoupon.storeId._id)
+          : String(appliedCoupon.storeId);
+      if (!couponStoreIds.includes(sId)) couponStoreIds.push(sId);
+    }
+
+    const isGlobalCoupon = Boolean(
+      appliedCoupon?.is_global ||
+      (!appliedCoupon?.storeId && couponStoreIds.length === 0),
+    );
+
+    const couponProductIds = (appliedCoupon.products || []).map((p) =>
+      typeof p === "object" ? String(p._id) : String(p),
+    );
+
+    const eligibleItems = items.filter((item) => {
+      const itemStoreId = item?.product_id?.storeId?._id
+        ? String(item.product_id.storeId._id)
+        : item?.product_id?.storeId
+          ? String(item.product_id.storeId)
+          : null;
+
+      if (!isGlobalCoupon && couponStoreIds.length > 0) {
+        if (!itemStoreId || !couponStoreIds.includes(itemStoreId)) {
+          return false;
+        }
+      }
+
+      const productId = item?.product_id?._id
+        ? String(item.product_id._id)
+        : String(item.product_id);
+
+      if (appliedCoupon.apply_type === "specificproducts") {
+        return couponProductIds.includes(productId);
+      }
+      if (appliedCoupon.apply_type === "Excludeproduct") {
+        return !couponProductIds.includes(productId);
+      }
+
+      return true;
+    });
+
+    const eligibleSubtotal = eligibleItems.reduce((sum, item) => {
+      const { discountedPrice } = getDiscountedPrice(item);
+      return sum + discountedPrice * (item.quantity || 1);
+    }, 0);
+
+    if (appliedCoupon.discount_type === "fixed") {
+      discountAmount = Math.min(appliedCoupon.discount_value, eligibleSubtotal);
+    } else if (appliedCoupon.discount_type === "percentage") {
+      discountAmount = (eligibleSubtotal * appliedCoupon.discount_value) / 100;
+    }
+
     if (appliedCoupon.max_discount_amount) {
       discountAmount = Math.min(
         discountAmount,

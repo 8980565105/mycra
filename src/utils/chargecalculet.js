@@ -1,15 +1,45 @@
-export const getItemShipping = (item, baseAmount) => {
+// export const getItemShipping = (item, baseAmount) => {
+//   const shippingType = item?.product_id?.shipping_type;
+//   const shippingValue = item?.product_id?.shipping_value || 0;
+//   if (!shippingType || shippingType === "free") {
+//     return 0;
+//   }
+//   if (shippingType === "flat") {
+//     return shippingValue;
+//   }
+//   if (shippingType === "percentage") {
+//     return (baseAmount * shippingValue) / 100;
+//   }
+//   return 0;
+// };
+
+export const getItemShipping = (item) => {
   const shippingType = item?.product_id?.shipping_type;
-  const shippingValue = item?.product_id?.shipping_value || 0;
+  const shippingValue = Number(item?.product_id?.shipping_value || 0);
+
+  const price = Number(
+    item?.variant_id?.offerprice ||
+      item?.variant_id?.price ||
+      item?.product_id?.price ||
+      0,
+  );
+
+  const quantity = Number(item?.quantity || 1);
+
+  const productTotal = price * quantity;
+
   if (!shippingType || shippingType === "free") {
     return 0;
   }
+
   if (shippingType === "flat") {
     return shippingValue;
   }
+
   if (shippingType === "percentage") {
-    return (baseAmount * shippingValue) / 100;
+    return (productTotal * shippingValue) / 100;
   }
+
   return 0;
 };
 

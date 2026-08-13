@@ -2,7 +2,6 @@ import Button from "../ui/Button";
 import logo from "../../assets/logo.png";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-
 export default function CouponCard({
   appliedCoupon,
   setAppliedCoupon,
@@ -14,36 +13,60 @@ export default function CouponCard({
   if (items.length === 0) {
     return null;
   }
-
-  const cartProductOwnerIds = [
+  const cartSubtotal = items.reduce((sum, item) => {
+    const price = item?.variant_id?.offerprice || 0;
+    return sum + price * (item.quantity || 1);
+  }, 0);
+  const cartProductStoreIds = [
     ...new Set(
       items
         .map((item) => {
-          const createdBy = item?.product_id?.createdBy;
-          return createdBy?._id
-            ? String(createdBy._id)
-            : createdBy
-              ? String(createdBy)
-              : null;
+          const storeId =
+            item?.product_id?.storeId?._id || item?.product_id?.storeId;
+
+          return storeId ? String(storeId) : null;
         })
         .filter(Boolean),
     ),
   ];
-  const filteredCoupons = coupons.filter((coupon) => {
-    const couponOwnerId = coupon?.createdBy?._id
-      ? String(coupon.createdBy._id)
-      : coupon?.createdBy
-        ? String(coupon.createdBy)
-        : null;
+  const hasAdminProduct = items.some((item) => {
+    const storeId = item?.product_id?.storeId?._id || item?.product_id?.storeId;
 
-    if (!couponOwnerId) return false;
-    return cartProductOwnerIds.includes(couponOwnerId);
+    return !storeId;
   });
+  const filteredCoupons = coupons.filter((coupon) => {
+    if (coupon?.is_global === true) {
+      return true;
+    }
+    const minPurchase = Number(coupon?.min_purchase_amount || 0);
+    if (cartSubtotal < minPurchase) {
+      return false;
+    }
+    const adminAllowed =
+      coupon?.include_admin_products === true && hasAdminProduct;
+    const couponStoreIds = [
+      ...(coupon?.storeIds || []).map((s) =>
+        typeof s === "object" ? String(s._id) : String(s),
+      ),
+    ];
+    if (coupon?.storeId) {
+      const singleStoreId =
+        typeof coupon.storeId === "object"
+          ? String(coupon.storeId._id)
+          : String(coupon.storeId);
 
+      if (!couponStoreIds.includes(singleStoreId)) {
+        couponStoreIds.push(singleStoreId);
+      }
+    }
+    const storeAllowed =
+      couponStoreIds.length > 0 &&
+      couponStoreIds.some((storeId) => cartProductStoreIds.includes(storeId));
+    return adminAllowed || storeAllowed;
+  });
   if (filteredCoupons.length === 0) {
     return null;
   }
-
   return (
     <>
       {filteredCoupons.map((coupon) => (
@@ -56,7 +79,6 @@ export default function CouponCard({
               DISCOUNT
             </span>
           </div>
-
           <div className="flex-1 p-5 custom-lg:p-4 flex flex-col justify-between bg-white">
             <div className="flex gap-[10px] justify-between items-center">
               <div>
@@ -78,6 +100,11 @@ export default function CouponCard({
             <p className="sec-text-color font-medium text-[12px] mt-[10px]">
               {coupon.description}
             </p>
+            {coupon.min_purchase_amount > 0 && (
+              <p className="text-[11px] text-gray-500 mt-[2px]">
+                Min order ₹{coupon.min_purchase_amount}
+              </p>
+            )}
             <p className="text-[12px] font-medium text-[var(--primary-color)] mt-[5px] cursor-pointer hover:underline">
               *Terms & conditions
             </p>

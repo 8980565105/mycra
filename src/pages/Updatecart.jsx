@@ -75,17 +75,23 @@ function Updatecart() {
       .then(() => dispatch(fetchCart(cart_id)));
   };
 
-  const getDiscountedPrice = (item) => {
-    const discount = item?.product_id?.discount_id?.value || 0;
-    const originalPrice = item?.variant_id?.price || 0;
-    const discountedPrice =
-      discount > 0
-        ? originalPrice - (originalPrice * discount) / 100
-        : originalPrice;
+  // const getDiscountedPrice = (item) => {
+  //   // const discount = item?.product_id?.discount_id?.value || 0;
+  //   const discount = item?.variant_id?.offerprice || 0;
+  //   const originalPrice = item?.variant_id?.price || 0;
+  //   const discountedPrice = discount;
 
+  //   return { discount, originalPrice, discountedPrice };
+  // };
+  const getDiscountedPrice = (item) => {
+    if (item.is_gift) {
+      return { discount: 0, originalPrice: 0, discountedPrice: 0 };
+    }
+    const discount = item?.variant_id?.offerprice || 0;
+    const originalPrice = item?.variant_id?.price || 0;
+    const discountedPrice = discount;
     return { discount, originalPrice, discountedPrice };
   };
-
   return (
     <>
       <div className="w-[90%] md:w-[90%] lg:max-w-[1440px] mx-auto mt-5">
