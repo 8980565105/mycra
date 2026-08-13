@@ -10,6 +10,7 @@ const {
   deleteCart,
   bulkDeleteCartItems,
   applyGiftCoupon,
+  applyBuyXGetYCoupon,
   removeGiftCoupon,
 } = require("../controllers/cartController");
 
@@ -28,6 +29,7 @@ router.post(
 router.get("/:id", getCartById);
 router.post("/", createCart);
 router.post("/apply-gift", applyGiftCoupon);
+router.post("/apply-buy-x-get-y", applyBuyXGetYCoupon);
 router.post("/remove-gift", removeGiftCoupon);
 router.post("/add-item", addCartItem);
 router.put("/update-item", updateCartItem);

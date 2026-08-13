@@ -333,11 +333,104 @@ const removeGiftCoupon = async (req, res) => {
   }
 };
 
+const applyBuyXGetYCoupon = async (req, res) => {
+  try {
+    const { cart_id, code } = req.body;
+
+    const coupon = await Coupon.findOne({ code: code.toUpperCase() }).populate(
+      "buy_x_get_y.free_products",
+      "name _id images price",
+    );
+
+    if (!coupon) {
+      return sendResponse(res, false, null, "Invalid coupon code");
+    }
+    if (coupon.coupon_type !== "buy_x_get_y") {
+      return sendResponse(res, false, null, "This is not a buy X get Y coupon");
+    }
+    if (coupon.status !== "active") {
+      return sendResponse(res, false, null, "Coupon is not active");
+    }
+
+    const { buy_quantity = 0, get_quantity = 0, free_products = [] } =
+      coupon.buy_x_get_y || {};
+
+    if (!buy_quantity || !get_quantity || !free_products.length) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        "This coupon is not configured properly",
+      );
+    }
+
+    const cart = await Cart.findById(cart_id);
+    if (!cart) return sendResponse(res, false, null, "Cart not found");
+
+    // total quantity of NON-gift items in cart
+    const totalQty = cart.items
+      .filter((item) => !item.is_gift)
+      .reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+    if (totalQty < buy_quantity) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        `Add at least ${buy_quantity} items in cart to use this coupon`,
+      );
+    }
+
+    // how many "sets" of buy_quantity does the cart qualify for
+    const eligibleSets = Math.floor(totalQty / buy_quantity);
+    const totalFreeQty = eligibleSets * get_quantity;
+
+    // remove previous auto-added items from this coupon
+    cart.items = cart.items.filter(
+      (item) => !(item.is_gift && item.coupon_code === coupon.code),
+    );
+
+    for (const product of free_products) {
+      const defaultVariant = await ProductVariant.findOne({
+        product_id: product._id,
+      }).sort({ createdAt: 1 });
+
+      if (!defaultVariant) {
+        return sendResponse(
+          res,
+          false,
+          null,
+          `No variant found for free product "${product.name}"`,
+        );
+      }
+
+      cart.items.push({
+        product_id: product._id,
+        variant_id: defaultVariant._id,
+        quantity: totalFreeQty,
+        is_gift: true,
+        gift_price: 0,
+        coupon_code: coupon.code,
+      });
+    }
+
+    await cart.save();
+
+    const updatedCart = await Cart.findById(cart_id)
+      .populate("items.product_id", "name images price")
+      .populate("items.variant_id", "offerprice price images");
+
+    sendResponse(res, true, updatedCart, "Free product added as per Buy X Get Y offer");
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
 module.exports = {
   getCarts,
   getCartById,
   applyGiftCoupon,
   removeGiftCoupon,
+  applyBuyXGetYCoupon,
   createCart,
   addCartItem,
   updateCartItem,
