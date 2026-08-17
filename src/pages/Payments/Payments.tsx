@@ -19,12 +19,7 @@ export default function PaymentsPage() {
       render: (item: any) => item.user_id?.name || "-",
     },
     { key: "payment_method", label: "Payment Method", width: "w-48" },
-    {
-      key: "discount_amount",
-      label: "Discount",
-      width: "w-30",
-      render: (item: any) => `$${item?.discount_amount?.toFixed(2) || "0.00"}`,
-    },
+   
     {
       key: "amount_paid",
       label: "Amount",
