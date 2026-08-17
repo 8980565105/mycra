@@ -299,7 +299,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                   e.preventDefault();
                   handleAddToWishlist(product);
                 }}
-                className={`h-[26px] w-[26px] sm:h-[40px] sm:w-[40px] flex items-center justify-center rounded-full hover:bg-[var(--primary-color)]
+                className={`h-[26px] w-[26px] sm:h-[40px] sm:w-[40px] flex items-center justify-center shadow-[0_0_4px_0_rgba(0,0,0,0.25)] rounded-full hover:bg-[var(--primary-color)]
                 ${isWishlisted ? "bg-[var(--primary-color)]" : "bg-white"}`}
               >
                 <HeartIcon
@@ -314,7 +314,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                   e.stopPropagation();
                   handleAddToCart(product);
                 }}
-                className={`w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center rounded-full border transition-all duration-200
+                className={`h-[26px] w-[26px] sm:h-[40px] sm:w-[40px] flex items-center justify-center rounded-full shadow-[0_0_4px_0_rgba(0,0,0,0.25)] transition-all duration-200
     ${
       isInCart(product._id, currentVariant?._id)
         ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
@@ -323,7 +323,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
               >
                 <FontAwesomeIcon
                   icon={faCartShopping}
-                  className="w-[12px] h-[12px] sm:w-[12px] sm:h-[12px] lg:w-[20px] lg:h-[20px]"
+                  className="w-[14px] h-[14px] sm:w-[22px] sm:h-[22px]"
                 />
               </button>
             </div>

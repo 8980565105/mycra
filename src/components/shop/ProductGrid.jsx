@@ -14,7 +14,7 @@ const ProductGrid = ({ products = [], loading, setShowLoginPopup }) => {
 
   return (
     <div className="mt-[50px]">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-[10px] md:gap-[30px]">
+      <div className="grid max-[480px]:grid-cols-1 grid-cols-2 md:grid-cols-3 gap-[10px] md:gap-[30px]">
         {visibleProducts.length > 0 ? (
           visibleProducts.map((product, index) => (
             <ProductCard

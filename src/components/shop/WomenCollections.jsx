@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, X, Plus, Minus } from "lucide-react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import CheckedIcon from "../icons/checked";
@@ -57,7 +57,7 @@ const FilterItemCheckbox = ({ name, count, isChecked, onChange }) => (
         className={`w-[15px] h-[15px] rounded border flex items-center justify-center
           ${isChecked ? "bg-color border-color" : "bg-white border-gray-400"}`}
       >
-        {isChecked && <CheckedIcon className="w-3 h-3 text-white" />}
+        {isChecked ? <CheckedIcon className="w-3 h-3 text-white" /> : null}
       </div>
       <input
         type="checkbox"
@@ -78,7 +78,6 @@ const FilterItemCheckbox = ({ name, count, isChecked, onChange }) => (
     )}
   </label>
 );
-
 const SizeFilterItem = ({ name, isChecked, onChange }) => (
   <label className="flex items-center cursor-pointer p-1 rounded w-1/2 relative">
     <div
@@ -301,7 +300,6 @@ const PriceRangeFilter = ({
       showButtons={true}
     >
       <div className="space-y-5 px-3 py-4">
-        {/* Dual Range Slider Track */}
         <div className="relative select-none my-4 h-[30px]">
           <div className="absolute top-1/2 left-0 right-0 h-1.5 -translate-y-1/2 bg-gray-200 rounded-full" />
           <div
@@ -453,9 +451,45 @@ export default function WomenCollections() {
 
   const [debouncedMinPrice, setDebouncedMinPrice] = useState(minPrice);
   const [debouncedMaxPrice, setDebouncedMaxPrice] = useState(maxPrice);
+  const { types = [], loading: typesLoading } = useSelector((state) => state.types || {});
+  const { attributes = [], typeAttributes = [], loading: attrLoading,} = useSelector((state) => state.attributes || {});
 
   useEffect(() => {
-    if (getInitialParams().max === null && maxCatalogPrice > 0 && (maxPrice < maxCatalogPrice || maxPrice === 5000)) {
+    if (!Array.isArray(selectedTypes))  return;
+    if (selectedTypes.length === 0) {
+      setTypeIdsToFetch([]);
+      setSelectedAttributes({});
+      dispatch(clearTypeAttributes());
+      dispatch(fetchAttributes());
+      return;
+    }
+
+    const selectedTypeIds = selectedTypes.flatMap((selectedTypeName) => {
+      const selectedName = String(selectedTypeName || "").trim().toLowerCase();
+      const foundType = types.find((type) => {
+      const typeName = String(type?.name || "").trim().toLowerCase();
+        return typeName === selectedName;
+      });
+      if (!foundType) {
+        return [];
+      }
+      const id = foundType?._id || foundType?.id;
+      return id ? [String(id)] : [];
+    });
+
+    const uniqueTypeIds = [...new Set(selectedTypeIds)];
+    if (uniqueTypeIds.length > 0) {
+      setTypeIdsToFetch(uniqueTypeIds);
+      dispatch(fetchTypeAttributes(uniqueTypeIds));
+    }
+  }, [selectedTypes, types, dispatch]);
+
+  useEffect(() => {
+    if (
+      getInitialParams().max === null &&
+      maxCatalogPrice > 0 &&
+      (maxPrice < maxCatalogPrice || maxPrice === 5000)
+    ) {
       setMaxPrice(maxCatalogPrice);
     }
   }, [maxCatalogPrice]);
@@ -492,6 +526,49 @@ export default function WomenCollections() {
     selectedCategories,
     subcategories,
   ]);
+//   useEffect(() => {
+//   const params = {
+//     page,
+//     limit,
+//   };
+
+//   if (isPriceFilterActive) {
+//     if (
+//       debouncedMinPrice !== undefined &&
+//       debouncedMinPrice !== null
+//     ) {
+//       params.minPrice = debouncedMinPrice;
+//     }
+
+//     if (
+//       debouncedMaxPrice !== undefined &&
+//       debouncedMaxPrice !== null
+//     ) {
+//       params.maxPrice = debouncedMaxPrice;
+//     }
+//   }
+
+//   if (selectedCategories.length > 0) {
+//     const matchedCatIds = subcategories
+//       .filter((cat) => selectedCategories.includes(cat.name))
+//       .map((cat) => cat._id);
+
+//     if (matchedCatIds.length > 0) {
+//       params.categories = matchedCatIds.join(",");
+//     }
+//   }
+
+//   dispatch(fetchProducts(params));
+// }, [
+//   dispatch,
+//   page,
+//   limit,
+//   debouncedMinPrice,
+//   debouncedMaxPrice,
+//   isPriceFilterActive,
+//   selectedCategories,
+//   subcategories,
+// ]);
 
   useEffect(() => {
     dispatch(fetchAttributes());
@@ -503,33 +580,22 @@ export default function WomenCollections() {
     setSelectedCategories((prev) => (prev.includes(name) ? [] : [name]));
   };
 
-  const handleTypeChange = (typeName, ids = []) => {
+  const handleTypeChange = (typeName) => {
     setSelectedTypes((prev) => {
-      const isSelected = prev.includes(typeName);
-      const newTypes = isSelected
-        ? prev.filter((t) => t !== typeName)
-        : [...prev, typeName];
-
-      if (!isSelected && ids.length > 0) {
-        dispatch(fetchTypeAttributes(ids));
-        setTypeIdsToFetch(ids);
-      } else if (newTypes.length === 0) {
-        dispatch(fetchAttributes());
-        dispatch(clearTypeAttributes());
-        setTypeIdsToFetch([]);
-        setSelectedAttributes({});
+      if (prev.includes(typeName)) {
+        return prev.filter((type) => type !== typeName);
       }
 
-      return newTypes;
+      return [...prev, typeName];
     });
   };
 
   const handleResetTypes = () => {
     setSelectedTypes([]);
-    dispatch(fetchAttributes());
-    dispatch(clearTypeAttributes());
     setTypeIdsToFetch([]);
     setSelectedAttributes({});
+    dispatch(clearTypeAttributes());
+    dispatch(fetchAttributes());
   };
 
   const handleAttributeChange = (code, valName) => {
@@ -571,38 +637,12 @@ export default function WomenCollections() {
     setMaxPrice(maxCatalogPrice);
     setDebouncedMinPrice(minCatalogPrice);
     setDebouncedMaxPrice(maxCatalogPrice);
+    setTypeIdsToFetch([]);
     dispatch(fetchAttributes());
     dispatch(clearTypeAttributes());
     navigate("/shop", { replace: true });
   };
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const urlCats = params.get("category") ? params.get("category").split(",") : [];
-    const urlTypes = params.get("type") ? params.get("type").split(",") : [];
-    const urlLabels = params.get("label") ? params.get("label").split(",") : [];
-    const urlMin = params.get("min") !== null ? Number(params.get("min")) : null;
-    const urlMax = params.get("max") !== null ? Number(params.get("max")) : null;
-
-    if (JSON.stringify(selectedCategories) !== JSON.stringify(urlCats)) {
-      setSelectedCategories(urlCats);
-    }
-    if (JSON.stringify(selectedTypes) !== JSON.stringify(urlTypes)) {
-      setSelectedTypes(urlTypes);
-    }
-    const currentLabelNames = selectedLabels.map((l) => l.name);
-    if (JSON.stringify(currentLabelNames) !== JSON.stringify(urlLabels)) {
-      setSelectedLabels(urlLabels.map((name) => ({ id: name, name })));
-    }
-    if (urlMin !== null && minPrice !== urlMin) {
-      setMinPrice(urlMin);
-      setDebouncedMinPrice(urlMin);
-    }
-    if (urlMax !== null && maxPrice !== urlMax) {
-      setMaxPrice(urlMax);
-      setDebouncedMaxPrice(urlMax);
-    }
-  }, [location.search]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -632,7 +672,67 @@ export default function WomenCollections() {
     debouncedMinPrice,
     debouncedMaxPrice,
   ]);
+// useEffect(() => {
+//   const params = new URLSearchParams();
 
+//   // Category
+//   if (selectedCategories.length > 0) {
+//     params.set("category", selectedCategories.join(","));
+//   }
+
+//   // Type
+//   if (selectedTypes.length > 0) {
+//     params.set("type", selectedTypes.join(","));
+//   }
+
+//   // Labels
+//   if (selectedLabels.length > 0) {
+//     params.set(
+//       "label",
+//       selectedLabels.map((l) => l.name).join(",")
+//     );
+//   }
+
+//   // Minimum price
+//   if (
+//     debouncedMinPrice !== null &&
+//     debouncedMinPrice !== undefined &&
+//     debouncedMinPrice > minCatalogPrice
+//   ) {
+//     params.set("min", String(debouncedMinPrice));
+//   }
+
+//   // Maximum price
+//   if (
+//     debouncedMaxPrice !== null &&
+//     debouncedMaxPrice !== undefined &&
+//     debouncedMaxPrice < maxCatalogPrice
+//   ) {
+//     params.set("max", String(debouncedMaxPrice));
+//   }
+
+//   const queryString = params.toString();
+
+//   const newUrl = `/shop${queryString ? `?${queryString}` : ""}`;
+
+//   const currentFullUrl =
+//     location.pathname + location.search;
+
+//   if (currentFullUrl !== newUrl) {
+//     navigate(newUrl, { replace: true });
+//   }
+// }, [
+//   selectedCategories,
+//   selectedTypes,
+//   selectedLabels,
+//   debouncedMinPrice,
+//   debouncedMaxPrice,
+//   minCatalogPrice,
+//   maxCatalogPrice,
+//   location.pathname,
+//   location.search,
+//   navigate,
+// ]);
   const currentFilters = useMemo(() => {
     const arr = [
       ...selectedCategories.map((v) => ({
@@ -951,12 +1051,12 @@ export default function WomenCollections() {
               <div className="hidden sm:flex flex-wrap items-center gap-2 mb-6">
                 {currentFilters.length > 0 || isBestSeller ? (
                   <>
-                    <span
+                    <button
                       onClick={handleClearAllFilters}
                       className="text-[16px] font-medium text-[#989696] mr-2 border-b border-[#989696] cursor-pointer"
                     >
                       Clear Filters:
-                    </span>
+                    </button>
                     {isBestSeller && (
                       <span
                         className="theme-border min-w-[110px] text-theme border px-[10px] py-[5px] rounded-[10px] cursor-pointer flex items-center justify-between"
@@ -990,9 +1090,12 @@ export default function WomenCollections() {
                             handleAttributeChange(type, value);
                           }
                           if (type === "price") {
-                            setMinPrice(0);
+                            // setMinPrice(0);
+                            // setMaxPrice(maxCatalogPrice);
+                            // setDebouncedMinPrice(0);
+                            setMinPrice(minCatalogPrice);
                             setMaxPrice(maxCatalogPrice);
-                            setDebouncedMinPrice(0);
+                            setDebouncedMinPrice(minCatalogPrice);
                             setDebouncedMaxPrice(maxCatalogPrice);
                           }
                         }}
