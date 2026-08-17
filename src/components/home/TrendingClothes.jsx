@@ -110,7 +110,7 @@ const TrendingCloth = ({ product, desktop }) => {
       : originalPrice;
 
   return (
-    <Link to={`/products/${product._id}`}>
+    <Link to={`/products/${product.slug}`}>
       <div className={`group ${desktop ? "" : "w-full"}`}>
         <div className="relative rounded-lg overflow-visible p-2 h-[350px] md:h-[555px]">
           <span className="absolute top-0 left-0 w-[139px] border-t-[0.5px] border-dashed border-black"></span>

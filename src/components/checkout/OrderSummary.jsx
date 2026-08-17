@@ -1,29 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Button from "../ui/Button";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCart } from "../../features/cart/cartThunk";
-import { getImageUrl } from "../utils/helper";
-import { createPayment } from "../../features/payments/paymentThunk";
-import { createOrder } from "../../features/orders/orderThunk";
 import toast, { Toaster } from "react-hot-toast";
-import { clearCart } from "../../features/cart/cartSlice";
+import { fetchCart } from "../../features/cart/cartThunk";
+import { createOrder } from "../../features/orders/orderThunk";
+import { getImageUrl } from "../utils/helper";
 import { getItemShipping, getPlatformCharge } from "../../utils/chargecalculet";
 import { fetchPublicSettings } from "../../features/setting/settingThunk";
+import Button from "../ui/Button";
 
-export default function OrderSummary({ formData, appliedCoupon }) {
+export default function OrderSummary({
+  formData,
+  appliedCoupon,
+  paymentMethod,
+}) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { items = [], loading } = useSelector((state) => state.cart);
-  const { loading: paymentLoading } = useSelector((state) => state.payments);
   const { user } = useSelector((state) => state.auth);
   const { data: settings } = useSelector((state) => state.settings);
-  const [selectedPayment, setSelectedPayment] = useState("cod");
-  const [paymentError, setPaymentError] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvv, setCvv] = useState("");
-
+  const { loading: orderLoading } = useSelector((state) => state.orders);
   useEffect(() => {
     const cart_id = localStorage.getItem("cart_id");
     if (user && cart_id) {
@@ -31,135 +27,122 @@ export default function OrderSummary({ formData, appliedCoupon }) {
     }
     dispatch(fetchPublicSettings());
   }, [dispatch, user]);
-
-  if (loading) return <p>Loading cart...</p>;
-  if (!items.length)
+  if (loading) {
+    return <p className="text-center">Loading cart...</p>;
+  }
+  if (!items.length) {
     return <p className="text-center mb-[100px]">Your cart is empty.</p>;
-
+  }
   const getDiscountedPrice = (item) => {
     if (item.is_gift) {
-      return { discount: 0, originalPrice: 0, discountedPrice: 0 };
+      return {
+        discount: 0,
+        originalPrice: 0,
+        discountedPrice: 0,
+      };
     }
-    const discount = item?.variant_id?.offerprice || 0;
-    const originalPrice = item?.variant_id?.price || 0;
-    const discountedPrice = discount;
-    return { discount, originalPrice, discountedPrice };
+    const offerPrice = Number(item?.variant_id?.offerprice) || 0;
+    const originalPrice = Number(item?.variant_id?.price) || 0;
+    return {
+      discount: offerPrice,
+      originalPrice,
+      discountedPrice: offerPrice,
+    };
   };
-
-  const subtotal = items.reduce(
-    (sum, item) =>
-      sum + getDiscountedPrice(item).discountedPrice * (item.quantity || 1),
-    0,
-  );
-
+  const subtotal = items.reduce((sum, item) => {
+    const { discountedPrice } = getDiscountedPrice(item);
+    return sum + discountedPrice * (item.quantity || 1);
+  }, 0);
   let discountAmount = 0;
   if (appliedCoupon) {
-    const couponStoreIds = (appliedCoupon?.storeIds || []).map((s) =>
-      typeof s === "object" ? String(s._id) : String(s),
+    const couponStoreIds = (appliedCoupon?.storeIds || []).map((store) =>
+      typeof store === "object" ? String(store._id) : String(store),
     );
     if (appliedCoupon?.storeId) {
-      const sId =
+      const storeId =
         typeof appliedCoupon.storeId === "object"
           ? String(appliedCoupon.storeId._id)
           : String(appliedCoupon.storeId);
-      if (!couponStoreIds.includes(sId)) couponStoreIds.push(sId);
+      if (!couponStoreIds.includes(storeId)) {
+        couponStoreIds.push(storeId);
+      }
     }
-
     const isGlobalCoupon = Boolean(
       appliedCoupon?.is_global ||
       (!appliedCoupon?.storeId && couponStoreIds.length === 0),
     );
-
-    const couponProductIds = (appliedCoupon.products || []).map((p) =>
-      typeof p === "object" ? String(p._id) : String(p),
+    const couponProductIds = (appliedCoupon.products || []).map((product) =>
+      typeof product === "object" ? String(product._id) : String(product),
     );
-
     const eligibleItems = items.filter((item) => {
       const itemStoreId = item?.product_id?.storeId?._id
         ? String(item.product_id.storeId._id)
         : item?.product_id?.storeId
           ? String(item.product_id.storeId)
           : null;
-
       if (!isGlobalCoupon && couponStoreIds.length > 0) {
         if (!itemStoreId || !couponStoreIds.includes(itemStoreId)) {
           return false;
         }
       }
-
       const productId = item?.product_id?._id
         ? String(item.product_id._id)
         : String(item.product_id);
-
       if (appliedCoupon.apply_type === "specificproducts") {
         return couponProductIds.includes(productId);
       }
       if (appliedCoupon.apply_type === "Excludeproduct") {
         return !couponProductIds.includes(productId);
       }
-
       return true;
     });
-
     const eligibleSubtotal = eligibleItems.reduce((sum, item) => {
       const { discountedPrice } = getDiscountedPrice(item);
       return sum + discountedPrice * (item.quantity || 1);
     }, 0);
-
     if (appliedCoupon.discount_type === "fixed") {
-      discountAmount = Math.min(appliedCoupon.discount_value, eligibleSubtotal);
-    } else if (appliedCoupon.discount_type === "percentage") {
-      discountAmount = (eligibleSubtotal * appliedCoupon.discount_value) / 100;
+      discountAmount = Math.min(
+        Number(appliedCoupon.discount_value) || 0,
+        eligibleSubtotal,
+      );
     }
-
+    if (appliedCoupon.discount_type === "percentage") {
+      discountAmount =
+        (eligibleSubtotal * Number(appliedCoupon.discount_value)) / 100;
+    }
     if (appliedCoupon.max_discount_amount) {
       discountAmount = Math.min(
         discountAmount,
-        appliedCoupon.max_discount_amount,
+        Number(appliedCoupon.max_discount_amount),
       );
     }
   }
   const discountedTotal = subtotal - discountAmount;
-
   const shipping = items.reduce((sum, item) => {
     return sum + getItemShipping(item, discountedTotal) * (item.quantity || 1);
   }, 0);
-
   const platformCharge = getPlatformCharge(settings, discountedTotal);
-
   const total = Number(
     (discountedTotal + shipping + platformCharge).toFixed(2),
   );
-
-  const getBackendPaymentMethod = (method) => {
-    if (method === "cod") return "COD";
-    return "Online";
-  };
-
-  const getStoreOwnerId = () => {
-    if (!items || items.length === 0) return null;
-    const storeOwnerId =
-      items[0]?.product_id?.createdBy?._id ||
-      items[0]?.product_id?.createdBy ||
-      null;
-    return storeOwnerId;
-  };
-
   const getVariantInfo = (item) => {
     const sku = item?.variant_id?.sku;
     if (!sku) return null;
     const parts = sku.split("-");
-    const color = parts[1] || "";
-    const size = parts[2] || "";
-    return { color, size };
+    return {
+      color: parts[1] || "",
+      size: parts[2] || "",
+    };
   };
-
-  const handlePlaceOrder = async () => {
+  const handleContinueToPayment = async () => {
     const userLS = JSON.parse(localStorage.getItem("user"));
-    if (!userLS || !userLS._id) {
+
+    if (!userLS?._id) {
       toast.error("Please login before placing order");
-      return navigate("/login");
+      navigate("/login");
+      return;
     }
+
     const requiredFields = {
       email: "Email Address",
       firstName: "First Name",
@@ -170,80 +153,61 @@ export default function OrderSummary({ formData, appliedCoupon }) {
       city: "City",
       pincode: "Pin Code",
     };
+
     for (const [key, label] of Object.entries(requiredFields)) {
-      if (!formData[key] || formData[key].trim() === "") {
+      const value = formData[key];
+      if (!value || String(value).trim() === "") {
         toast.error(`Please enter ${label}`);
         return;
       }
     }
-    if (!selectedPayment) {
-      return toast.error("Select a payment method");
-    }
-    if (selectedPayment === "credit_card") {
-      if (!cardNumber || !expiryDate || !cvv) {
-        setPaymentError("Please fill all credit card details");
-        return;
-      }
-    }
-    const orderData = {
-      user_id: userLS._id,
-      items,
-      total_price: total,
-      coupon_id: appliedCoupon?._id || null,
-      payment_method: getBackendPaymentMethod(selectedPayment),
-      shippingAddress: {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        address: formData.address,
-        state: formData.state,
-        city: formData.city,
-        pincode: formData.pincode,
-        phone: formData.phone,
-      },
-    };
-    const orderAction = await dispatch(createOrder(orderData));
-    if (!createOrder.fulfilled.match(orderAction)) {
-      toast.error(
-        "Order failed: " + (orderAction.payload?.message || "Unknown error"),
-      );
-      return;
-    }
-    const orderId =
-      orderAction.payload?.data?._id || orderAction.payload?._id || null;
-    if (!orderId) {
-      toast.error("Order created but ID missing!");
-      return;
-    }
-    const storeOwnerId = getStoreOwnerId();
-    const paymentPayload = {
-      user_id: userLS._id,
-      order_id: orderId,
-      store_owner_id: storeOwnerId,
-      items,
-      subtotal,
-      discount: discountAmount,
-      shipping,
-      platform_charge: platformCharge,
-      total,
-      amount_paid: selectedPayment === "cod" ? 0 : total,
-      payment_method: selectedPayment,
-      status: selectedPayment === "cod" ? "pending" : "completed",
-    };
-    await dispatch(createPayment(paymentPayload));
-    dispatch(clearCart());
-    localStorage.removeItem("appliedCoupon");
-    toast.success("Order placed successfully!");
-    navigate("/my-account/orders");
-  };
 
+    const cart_id = localStorage.getItem("cart_id");
+    if (!cart_id) {
+      toast.error("Cart not found");
+      return;
+    }
+
+    const shippingAddress = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      address: formData.address,
+      country: formData.country,
+      state: formData.state,
+      city: formData.city,
+      pincode: formData.pincode,
+      phone: formData.phone,
+    };
+
+    sessionStorage.setItem(
+      "checkoutInfo",
+      JSON.stringify({
+        cart_id,
+        email: formData.email,
+        shippingAddress,
+        coupon_id: appliedCoupon?._id || null,
+        subtotal,
+        discountAmount,
+        shipping,
+        platformCharge,
+        total,
+        items: items.map((item) => ({
+          variant_id: item.variant_id?._id || item.variant_id,
+          quantity: item.quantity,
+        })),
+      }),
+    );
+
+    navigate("/payment");
+  };
   return (
     <>
-      <Toaster position="top center" />
+      <Toaster position="top-center" />
       <div className="w-full rounded-[3px] py-[45px] px-[22px] light-color">
         <h2 className="text-[22px] text-black mb-[50px] text-center">
           Order Summary
           <div className="flex justify-center">
-            <span className="theme-border-block w-[34px] h-[2px] rounded-[10px] block"></span>
+            <span className="theme-border-block w-[34px] h-[2px] rounded-[10px] block" />
           </div>
         </h2>
         <div className="pb-[10px] text-p">
@@ -252,8 +216,8 @@ export default function OrderSummary({ formData, appliedCoupon }) {
         {items.map((item, index) => {
           const variant = getVariantInfo(item);
           return (
-            <>
-              <div key={item._id || index} className="flex py-[15px]">
+            <React.Fragment key={item._id || index}>
+              <div className="flex py-[15px]">
                 <div className="relative w-[80px] md:w-[105px] h-auto flex-shrink-0">
                   <Link to={`/products/${item.product_id?._id}`}>
                     <img
@@ -278,6 +242,7 @@ export default function OrderSummary({ formData, appliedCoupon }) {
                     {variant && (
                       <p className="text-12 text-gray-500 mt-1 flex flex-col">
                         {variant.color && <span>Color: {variant.color}</span>}
+
                         {variant.size && <span>Size: {variant.size}</span>}
                       </p>
                     )}
@@ -291,7 +256,7 @@ export default function OrderSummary({ formData, appliedCoupon }) {
                 </div>
               </div>
               <div className="border border-1 light-border" />
-            </>
+            </React.Fragment>
           );
         })}
         <div className="space-y-[14px] text-p mt-3 text-light">
@@ -299,7 +264,6 @@ export default function OrderSummary({ formData, appliedCoupon }) {
             <span>Subtotal</span>
             <span>₹ {Math.round(subtotal).toLocaleString("en-IN")}</span>
           </div>
-
           {appliedCoupon && (
             <div className="flex justify-between text-green-600">
               <span>Coupon ({appliedCoupon.code})</span>
@@ -308,7 +272,6 @@ export default function OrderSummary({ formData, appliedCoupon }) {
               </span>
             </div>
           )}
-
           <div className="flex justify-between">
             <span>Shipping</span>
             <span>
@@ -317,7 +280,6 @@ export default function OrderSummary({ formData, appliedCoupon }) {
                 : "Free"}
             </span>
           </div>
-
           <div className="flex justify-between">
             <span>Platform Charge</span>
             <span>
@@ -327,89 +289,20 @@ export default function OrderSummary({ formData, appliedCoupon }) {
             </span>
           </div>
           <div className="border border-1 light-border" />
-
-          <div className="flex justify-between text-p text-black ">
+          <div className="flex justify-between text-p text-black">
             <span>Total (₹)</span>
             <span className="text-20px font-medium">
               ₹{Math.round(total).toLocaleString("en-IN")}
             </span>
           </div>
         </div>
-
-        <div className="border border-1 light-border my-3" />
-
-        <div className="text-light text-14 space-y-[10px]">
-          {["cod", "paypal", "credit_card"].map((method) => (
-            <label
-              key={method}
-              className="flex items-center gap-2 cursor-pointer text-p"
-            >
-              <input
-                type="radio"
-                name="payment"
-                value={method}
-                checked={selectedPayment === method}
-                onChange={(e) => setSelectedPayment(e.target.value)}
-                className="peer appearance-none w-4 h-4 border-[1px] checked:border-[3px] border-black rounded-full
-                        border-[#000000] checked:border-[#F43297]
-                        transition-all duration-200"
-              />
-              <span className="capitalize">
-                {method === "cod"
-                  ? "Cash on Delivery"
-                  : method === "credit_card"
-                    ? "Credit Card"
-                    : "PayPal"}
-              </span>
-            </label>
-          ))}
-          {selectedPayment === "credit_card" && (
-            <div className="space-y-[19px] text-light text-14">
-              <p className="text-light text-[12px] mb-[5px]">
-                Pay with your credit card via authorize net.
-              </p>
-              <input
-                type="text"
-                placeholder="Card Number"
-                value={cardNumber}
-                onChange={(e) =>
-                  setCardNumber(e.target.value.replace(/\D/g, ""))
-                }
-                className="input-common w-full"
-              />
-              <div className="flex gap-[13px]">
-                <input
-                  type="text"
-                  placeholder="Expiry (MM/YY)"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                  className="input-common flex-1"
-                />
-                <input
-                  type="text"
-                  placeholder="CVV"
-                  value={cvv}
-                  onChange={(e) => {
-                    setCvv(e.target.value.replace(/\D/g, ""));
-                    if (paymentError) setPaymentError("");
-                  }}
-                  className="input-common flex-1"
-                />
-              </div>
-            </div>
-          )}
-          {paymentError && (
-            <p className="text-red-500 text-sm mt-2">{paymentError}</p>
-          )}
-        </div>
         <div className="text-center mt-[50px]">
           <Button
             variant="common"
             className="min-w-auto sm:min-w-[300px] uppercase"
-            onClick={handlePlaceOrder}
-            disabled={paymentLoading}
+            onClick={handleContinueToPayment}
           >
-            {paymentLoading ? "PROCESSING..." : "PLACE ORDER"}
+            CONTINUE TO PAYMENT
           </Button>
         </div>
       </div>

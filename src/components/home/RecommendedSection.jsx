@@ -89,7 +89,7 @@ const ProductCard = ({ item }) => {
 
   return (
     <Link
-      to={`/products/${item._id}`}
+      to={`/products/${item.slug}`}
       className="block relative shadow-lg overflow-hidden transition-transform duration-300 cursor-pointer"
     >
       <div className="relative w-full min-h-[300px]  lg:w-[342px] h-[315px] sm:h-[398px]">

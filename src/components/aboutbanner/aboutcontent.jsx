@@ -49,28 +49,18 @@ const STATIC_CONTENT = [
     isStatic: true,
   },
 ];
-
 export default function AboutContent() {
   const dispatch = useDispatch();
   const { pages } = useSelector((state) => state.pages);
-
-  useEffect(() => {
-    dispatch(fetchPageBySlug("about"));
-  }, [dispatch]);
-
   const aboutPage = pages?.find((page) => page.slug === "about");
-
   const apiContentSections = aboutPage?.sections?.filter(
     (section) => section.type === "content" && section.status === "active",
   );
-
   const contentList =
     apiContentSections?.length > 0 ? apiContentSections : STATIC_CONTENT;
-
   const sortedContent = [...contentList].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0),
   );
-
   return (
     <Section className="px-0">
       <Row className="space-y-12 py-10 !px-0">

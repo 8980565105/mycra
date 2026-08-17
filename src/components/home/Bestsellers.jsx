@@ -42,7 +42,7 @@ const Bestsellers = () => {
         {bestSellersLimited.map((product) => {
           const price = getDiscountedPrice(product);
           return (
-            <Link key={product._id} to={`/products/${product._id}`}>
+            <Link key={product._id} to={`/products/${product.slug}`}>
               <div className="relative overflow-hidden bg-white rounded-[5px] group h-[250px] sm:h-[400px]">
                 <img
                   src={getImageUrl(

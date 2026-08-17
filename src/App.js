@@ -37,6 +37,8 @@ import KycForm from "./components/wallets/kycform";
 import GiftCardToBalance from "./components/wallets/giftcardtobalance";
 import { fetchPublicSettings } from "./features/setting/settingThunk";
 import { fetchCart } from "./features/cart/cartThunk";
+import Payment from "./pages/payment";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const hexToRgba = (hex, opacity) => {
   if (!hex) return null;
@@ -53,7 +55,8 @@ const injectThemeColors = (theme) => {
 
   const primary = theme.primary_color;
   const secondary = theme.secondary_color;
-  const font = theme.font_family || theme.fontFamily || theme?.theme?.fontFamily;
+  const font =
+    theme.font_family || theme.fontFamily || theme?.theme?.fontFamily;
 
   if (primary) {
     root.style.setProperty("--primary-color", primary);
@@ -72,7 +75,10 @@ const injectThemeColors = (theme) => {
 
   if (font) {
     const fontBaseName = font.split(",")[0].replace(/['"]/g, "").trim();
-    root.style.setProperty("--font-family-main", `'${fontBaseName}', sans-serif`);
+    root.style.setProperty(
+      "--font-family-main",
+      `'${fontBaseName}', sans-serif`,
+    );
     root.style.setProperty("--font-inter", `'${fontBaseName}', sans-serif`);
   }
 };
@@ -123,7 +129,10 @@ function App() {
         return;
       }
 
-      const font = settings?.font_family || settings?.fontFamily || settings?.theme?.fontFamily;
+      const font =
+        settings?.font_family ||
+        settings?.fontFamily ||
+        settings?.theme?.fontFamily;
       if (!font) {
         document.documentElement.style.setProperty(
           "--font-family-main",
@@ -157,7 +166,9 @@ function App() {
         );
       };
       link.onerror = () => {
-        console.warn(`Font load failed: ${fontBaseName}, using Roboto fallback`);
+        console.warn(
+          `Font load failed: ${fontBaseName}, using Roboto fallback`,
+        );
         document.documentElement.style.setProperty(
           "--font-family-main",
           DEFAULT_FONT,
@@ -220,11 +231,12 @@ function App() {
           <Route path="/cart" element={<Cart />}></Route>
           <Route path="/updatecart" element={<Updatecart />}></Route>
           <Route path="/checkout" element={<Checkout />}></Route>
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/products/:id" element={<Product />}></Route>
           <Route path="/wishlist" element={<Wishlist />}></Route>
           <Route path="/faqs" element={<Faqs />} />
           <Route path="/about" element={<AboutPage />} />
-          {/* <Route path="/wallets" element={<Wallets />} /> */}
           <Route path="/transectionhistory" element={<TransactionHistory />} />
           <Route path="/walletkycintro" element={<WalletKycIntro />} />
           <Route path="/continuewithkyc" element={<ContinueWithKyc />} />

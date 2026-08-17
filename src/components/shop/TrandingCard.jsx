@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 export default function TrendingCard ({ product }){
   return(
  <Link
-     to={`/products/${product._id}`}
+     to={`/products/${product.slug}`}
     className="block relative group overflow-hidden bg-white transition-transform duration-300 "
   >
       <div className="w-full h-auto overflow-hidden">

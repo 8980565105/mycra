@@ -46,7 +46,9 @@ export default function Orders() {
   const dispatch = useDispatch();
   useEffect(() => {
     if (reviewSuccess) {
-      toast.success("Review submitted successfully!", { position: "top-center" });
+      toast.success("Review submitted successfully!", {
+        position: "top-center",
+      });
       setIsReviewOpen(false);
       setReviewData({ rating: 5, title: "", comment: "", product_id: "" });
       dispatch(resetReviewStatus());
@@ -287,8 +289,6 @@ export default function Orders() {
             </th>
             <th className="p-[12px] py-[10px] text-left font-normal">Date</th>
             <th className="p-[12px] py-[10px] text-left font-normal">Price</th>
-            <th className="p-[12px] py-[10px] text-left font-normal">Tax</th>
-
             <th className="p-[12px] py-[10px] text-left font-normal">Paid</th>
             <th className="p-[12px] py-[10px] text-left font-normal">
               Address
@@ -316,15 +316,11 @@ export default function Orders() {
                 </td>
 
                 <td className="p-3 h-[75px]">
-                  ₹{(order.total_price * 0.1).toLocaleString("en-IN")}
-                </td>
-                <td className="p-3 h-[75px]">
                   <span
-                    className={`flex justify-center items-center px-2 py-1 text-[12px] font-medium rounded-[3px] w-[60px] ${
-                      order.payment_method === "Online"
+                    className={`flex justify-center items-center px-2 py-1 text-[12px] font-medium rounded-[3px] w-[60px] ${order.payment_method === "Online"
                         ? "bg-[rgba(62,232,99,10%)] text-[#3EE878]"
                         : "bg-[rgba(235,23,36,10%)] text-[#EB1724]"
-                    }`}
+                      }`}
                   >
                     {order.payment_method}
                   </span>
@@ -335,8 +331,7 @@ export default function Orders() {
                 </td>
                 <td className="p-3 h-[75px]">
                   <span
-                    className={`flex justify-center items-center px-2 py-2 text-[12px] font-medium rounded-[3px] w-[98px] ${
-                      order.status === "completed"
+                    className={`flex justify-center items-center px-2 py-2 text-[12px] font-medium rounded-[3px] w-[98px] ${order.status === "completed"
                         ? "bg-[rgba(62,232,99,10%)] text-[#3EE878]"
                         : order.status === "pending"
                           ? "bg-[rgba(235,23,36,10%)] text-[#EB1724]"
@@ -347,7 +342,7 @@ export default function Orders() {
                               : order.status === "ready_to_ship"
                                 ? "bg-blue-100 text-blue-700"
                                 : "bg-yellow-100 text-yellow-600"
-                    }`}
+                      }`}
                   >
                     {order.status}
                   </span>
@@ -401,9 +396,8 @@ export default function Orders() {
                       <button
                         key={i}
                         onClick={() => setPage(i + 1)}
-                        className={`w-[34px] h-[34px] text-light p-1 text-14 rounded-[3px] ${
-                          page === i + 1 ? "light-color " : "box-shadow"
-                        }`}
+                        className={`w-[34px] h-[34px] text-light p-1 text-14 rounded-[3px] ${page === i + 1 ? "light-color " : "box-shadow"
+                          }`}
                       >
                         {i + 1}
                       </button>
@@ -552,11 +546,10 @@ export default function Orders() {
                       >
                         <Star
                           size={36}
-                          fill={isSelected ? "#FACC15" : "none"} // Yellow-400 for stars
+                          fill={isSelected ? "#FACC15" : "none"}
                           strokeWidth={1.5}
-                          className={`${
-                            isSelected ? "text-yellow-400" : "text-gray-300"
-                          } hover:text-yellow-400 transition-colors cursor-pointer`}
+                          className={`${isSelected ? "text-yellow-400" : "text-gray-300"
+                            } hover:text-yellow-400 transition-colors cursor-pointer`}
                         />
                       </button>
                     );

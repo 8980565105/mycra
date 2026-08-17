@@ -279,7 +279,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
     new Date(discount.end_date).getTime() - Date.now() <= 24 * 60 * 60 * 1000;
   return (
     <>
-      <Link to={`/products/${product._id}`}>
+      <Link to={`/products/${product.slug || product._id}`}>
         <div className="bg-white overflow-hidden transition-all group w-full h-[470px] sm:h-[540px] hover:p-[10px] hover:shadow-[0_0_4px_0_rgba(0,0,0,0.25)] cursor-pointer">
           <div className="relative mb-[10px]">
             <div

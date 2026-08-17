@@ -44,7 +44,7 @@ export default function CustomerAlsoViewed({
       const imageUrl = p?.variants?.[0]?.images?.[0]
         ? getImageUrl(p.variants[0].images[0])
         : prodimg1;
-      return { imageUrl, productId: p._id };
+      return { imageUrl, productId: p._id, slug: p.slug };
     });
 
     return { ...product, mainImageUrl, sideImages };
@@ -59,7 +59,7 @@ export default function CustomerAlsoViewed({
         >
           <div className="grid grid-cols-[2fr_1fr] gap-[7px] mb-[12px] aspect-[21/22]">
             <a
-              href={`/products/${product._id}`}
+              href={`/products/${product.slug}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -73,7 +73,8 @@ export default function CustomerAlsoViewed({
             <div className="grid grid-rows-2 gap-[7px] h-full">
               {product.sideImages.map((side, idx) => (
                 <a
-                  href={`/products/${side.productId}`}
+                  // href={`/products/${side.productId}`}
+                  href={`/products/${side.slug || side.productId}`}
                   key={side.id || side.productId || idx}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -87,10 +88,6 @@ export default function CustomerAlsoViewed({
               ))}
             </div>
           </div>
-          {/* <p className="text-p mb-[5px]  mt-auto">{product?.category.name}</p> */}
-          {/* <p className="text-p mb-[5px] mt-auto">
-            {product?.subcategory_id?.name || "No Subcategory"}
-          </p> */}
           <h3 className="text-14 sec-text-color line-clamp-2">
             {product?.name || product?.title}
           </h3>
