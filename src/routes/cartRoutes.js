@@ -13,12 +13,10 @@ const {
   applyBuyXGetYCoupon,
   removeGiftCoupon,
 } = require("../controllers/cartController");
-
 const {
   authMiddleware,
   authorizeMinRole,
 } = require("../middlewares/authMiddleware");
-
 router.use(authMiddleware);
 router.get("/", authorizeMinRole("store_owner"), getCarts);
 router.post(
@@ -35,5 +33,4 @@ router.post("/add-item", addCartItem);
 router.put("/update-item", updateCartItem);
 router.delete("/delete-item", deleteCartItem);
 router.delete("/:id", deleteCart);
-
 module.exports = router;

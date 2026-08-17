@@ -5,8 +5,21 @@ const paymentSchema = new mongoose.Schema(
     order_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
-      required: true,
+      required: false,
+      default: null,
     },
+
+    stripe_payment_intent_id: {
+      type: String,
+      default: "",
+      index: true,
+    },
+
+    checkout_data: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -50,6 +63,7 @@ const paymentSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    _locked: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

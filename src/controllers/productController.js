@@ -515,11 +515,46 @@ const getProducts = async (req, res) => {
   }
 };
 
+// const getPublicProductById = async (req, res) => {
+//   try {
+//     const product = await Product.findById(req.params.id)
+//       .populate("category_id", "name")
+//       .lean();
+
+//     if (!product) return sendResponse(res, false, null, "Product not found");
+
+//     const variants = await ProductVariant.find({ product_id: product._id })
+//       .populate("type_id", "name")
+//       .populate("attributes.attributeId", "name code")
+//       .populate("attributes.valueId", "value colorHex")
+//       .lean();
+
+//     sendResponse(
+//       res,
+//       true,
+//       { ...product, variants },
+//       "Product retrieved successfully",
+//     );
+//   } catch (err) {
+//     sendResponse(res, false, null, err.message);
+//   }
+// };
+
 const getPublicProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate("category_id", "name")
-      .lean();
+    const { id } = req.params;
+
+    let product;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      product = await Product.findById(id)
+        .populate("category_id", "name")
+        .lean();
+    }
+    if (!product) {
+      product = await Product.findOne({ slug: id })
+        .populate("category_id", "name")
+        .lean();
+    }
 
     if (!product) return sendResponse(res, false, null, "Product not found");
 

@@ -46,10 +46,10 @@ const orderSchema = new mongoose.Schema(
     order_number: { type: String, unique: true },
 
     payment_method: {
-      type: String,
-      enum: ["COD", "Online"],
-      default: "COD",
-    },
+  type: String,
+  enum: ["COD", "Online", "Wallet"],
+  default: "COD",
+},
     payment_status: {
       type: String,
       enum: ["pending", "paid", "failed", "refunded"],
@@ -107,7 +107,6 @@ orderSchema.pre("save", async function (next) {
       .slice(0, 8);
     this.order_number = `ORD-${datePart}-${randomPart}`;
   }
-  // next();
 });
 
 module.exports = mongoose.model("Order", orderSchema);

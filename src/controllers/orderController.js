@@ -3,6 +3,7 @@ const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const Packing = require("../models/paking");
 const ProductVariant = require("../models/ProductVariant");
+const Coupon = require("../models/Coupon");
 const Product = require("../models/Product");
 const { sendResponse } = require("../utils/response");
 const PDFDocument = require("pdfkit");
@@ -29,8 +30,6 @@ const {
   sendAdminOrderRTO,
 } = require("../utils/orderEmailService");
 
-
-
 const safeString = (val) => {
   if (typeof val === "string") return val.trim();
   if (typeof val === "number") return String(val);
@@ -49,7 +48,6 @@ const safeObjectIdArray = (val) => {
 
 const safeArray = (val) => (Array.isArray(val) ? val : []);
 
-
 const getCustomerInfo = (order) => {
   const email = order.user_id?.email || null;
   const name =
@@ -67,7 +65,7 @@ const getTrackingUrl = (partner, awb) => {
   const safeAwb = safeString(awb);
   const urls = {
     Delhivery: `https://www.delhivery.com/track/package/${encodeURIComponent(safeAwb)}`,
-    "Blue Dart": `https://www.bluedart.com/web/guest/trackdartcount?Param=WayBill&Val=${encodeURIComponent(safeAwb)}`,
+    BlueDart: `https://www.bluedart.com/web/guest/trackdartcount?Param=WayBill&Val=${encodeURIComponent(safeAwb)}`,
     DTDC: `https://www.dtdc.in/tracking.asp?txconsignno=${encodeURIComponent(safeAwb)}`,
     Shiprocket: `https://shiprocket.co/tracking/${encodeURIComponent(safeAwb)}`,
   };
@@ -316,8 +314,6 @@ const getOrders = async (req, res) => {
       { $sort: { createdAt: -1 } },
     ];
 
-   
-
     if (!download) {
       pipeline.push({ $skip: (page - 1) * limit }, { $limit: limit });
     }
@@ -501,13 +497,16 @@ const getOrderById = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 const createOrder = async (req, res) => {
   try {
+    const user_id = req.user?._id;
+    if (!user_id) return sendResponse(res, false, null, "Unauthorized");
+
     const {
-      user_id,
       coupon_id,
       shippingAddress,
       payment_method = "COD",
       transaction_id,
       shipping = 0,
+      platform_charge = 0, 
     } = req.body;
 
     const items = safeArray(req.body.items);
@@ -553,11 +552,35 @@ const createOrder = async (req, res) => {
         price_at_order: price,
       });
     }
+
     const safeSubtotal = Number(subtotal.toFixed(2));
-    const safeTaxes = Number((safeSubtotal * 0.1).toFixed(2));
+
+    let discountAmount = 0;
+    if (coupon_id) {
+      const coupon = await Coupon.findById(coupon_id);
+      if (coupon) {
+        if (coupon.discount_type === "fixed") {
+          discountAmount = Math.min(coupon.discount_value, safeSubtotal);
+        } else if (coupon.discount_type === "percentage") {
+          discountAmount = (safeSubtotal * coupon.discount_value) / 100;
+        }
+        if (coupon.max_discount_amount) {
+          discountAmount = Math.min(discountAmount, coupon.max_discount_amount);
+        }
+      }
+    }
+    discountAmount = Number(discountAmount.toFixed(2));
+
     const safeShipping = Number(shipping) || 0;
+    const safePlatformCharge = Number(platform_charge) || 0;
+
     const total_price = Number(
-      (safeSubtotal + safeTaxes + safeShipping).toFixed(2),
+      (
+        safeSubtotal -
+        discountAmount +
+        safeShipping +
+        safePlatformCharge
+      ).toFixed(2),
     );
 
     const order = new Order({
@@ -1483,17 +1506,6 @@ const updateOrder = async (req, res) => {
         );
 
       let price = variant.price;
-      // const discount_id = variant.product_id.discount_id;
-      // if (discount_id) {
-      //   const discount = await Discount.findById(discount_id);
-      //   if (isDiscountValid(discount)) {
-      //     if (discount.type === "percentage")
-      //       price = price - (price * discount.value) / 100;
-      //     else if (discount.type === "fixed") price = price - discount.value;
-      //     if (price < 0) price = 0;
-      //   }
-      // }
-
       total_price += price * item.quantity;
       variant.stock_quantity -= item.quantity;
       await variant.save();

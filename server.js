@@ -1,8 +1,12 @@
 const dotenv = require("dotenv");
+require("dotenv").config();
+
 const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+
 const connectDB = require("./src/config/db");
 const { limiter, authLimiter } = require("./src/middlewares/rateLimiter");
-const cors = require("cors");
 const { errorHandler } = require("./src/middlewares/errorMiddleware");
 const authRoutes = require("./src/routes/authRoutes");
 const settingRoutes = require("./src/routes/settingRoutes");
@@ -32,17 +36,17 @@ const walletRoutes = require("./src/routes/walletRoutes");
 const transectionRoutes = require("./src/routes/transectionRoutes");
 const kycRoutes = require("./src/routes/kycRoutes");
 const sellerRoutes = require("./src/routes/sellerRoutes");
-// const businessRoutes = require("./src/routes/businessRoutes");
 const attributeRoutes = require("./src/routes/attributeRoutes");
 const brandRoutes = require("./src/routes/brandRoutes");
 const faqs = require("./src/routes/faqsRoute");
 const pageVisitRoutes = require("./src/routes/pageRoutes");
+const {
+  handleStripeWebhook,
+} = require("./src/controllers/stripeWebhookController");
 const helmet = require("helmet");
 
-const mongoose = require("mongoose");
 const { off } = require("pdfkit");
 
-dotenv.config();
 connectDB();
 
 const app = express();
@@ -138,6 +142,12 @@ app.use(
   }),
 );
 
+app.post(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  handleStripeWebhook,
+);
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // app.use("/api/", limiter);
@@ -174,7 +184,6 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/transactions", transectionRoutes);
 app.use("/api/kyc", kycRoutes);
 app.use("/api/seller", sellerRoutes);
-// app.use("/api/business", businessRoutes);
 
 app.use(errorHandler);
 
