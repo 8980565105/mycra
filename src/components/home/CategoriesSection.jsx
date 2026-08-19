@@ -90,7 +90,7 @@ const CategoriesSection = () => {
                     navigate(`/collections?category=${category.name}`)
                   }
                 >
-                  <div className="relative w-full aspect-square rounded-full overflow-hidden border-4 circle-border duration-300">
+                  <div className="relative w-full aspect-square rounded-full overflow-hidden border-4 circle-border duration-300 flex items-center justify-center">
                     <img
                       src={
                         category.isStatic
@@ -98,7 +98,7 @@ const CategoriesSection = () => {
                           : getImageUrl(category.image_url)
                       }
                       alt={category.name}
-                      className="w-full h-full object-cover rounded-full"
+                      className="lg:w-[130px] lg:h-[130px] object-contain "
                     />
                   </div>
                   <p className="mt-4 text-dark text-center text-[20px]">

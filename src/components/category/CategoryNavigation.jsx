@@ -65,7 +65,8 @@ const CategoryNavigation = () => {
 
   return (
     <nav
-      className={`sticky top-[100px] z-[1000] w-full border-y py-2 bg-white transition-all duration-300 ease-in-out ${
+      className={`sticky top-[100px] z-10 w-full border-y py-2 bg-white transition-all duration-300 ease-in-out 
+        ${
         isScrolled
           ? "border-color shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
           : "border-color"
@@ -82,7 +83,7 @@ const CategoryNavigation = () => {
             className="group relative flex min-w-[86px] shrink-0 cursor-pointer flex-col items-center justify-center px-2 text-center outline-none transition-all duration-300 ease-in-out hover:bg-gray-50 sm:min-w-[96px] sm:px-3 lg:min-w-[104px]"
           >
             <div
-              className={`flex items-center justify-center overflow-hidden transition-all duration-300 ease-in-out ${
+              className={`flex items-center justify-centeroverflow-hidden transition-all duration-300 ease-in-out ${
                 isScrolled
                   ? "h-0 translate-y-[-8px] opacity-0 "
                   : "h-[40px] translate-y-0 opacity-100 "

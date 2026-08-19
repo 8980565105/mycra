@@ -22,6 +22,7 @@ import Product from "./pages/ProductPage";
 import Wishlist from "./pages/Wishlist";
 import Updatecart from "./pages/Updatecart";
 import Collections from "./pages/Collections";
+import CollectionAbout from "./pages/CollectionAbout";
 import Address from "./components/Address/Address";
 import AccountDetails from "./components/AccountDetails/AccountDetails";
 import Faqs from "./pages/Faqs";
@@ -218,6 +219,8 @@ function App() {
           <Route path="/Home" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/collections" element={<Collections />} />
+          {/* <Route  path="/collection/:collectionSlug"  element={<CollectionPage />}/> */}
+          <Route path="/collections/:slug" element={<CollectionAbout />} />
           <Route path="/offer" element={<Offer />} />
           <Route path="/contact-us" element={<ContactUs />} />
           <Route path="/my-account" element={<MyAccount />}>
