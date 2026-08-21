@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import api from "@/services/api";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function ChildCategoryFormPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -35,6 +36,8 @@ export default function ChildCategoryFormPage() {
   const [name, setName] = useState("");
   const [subCategoryId, setSubCategoryId] = useState("");
   const [status, setStatus] = useState(true);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
 
   useEffect(() => {
     dispatch(fetchsubCategories({ page: 1, limit: 1000, status: "active" }));
@@ -49,10 +52,12 @@ export default function ChildCategoryFormPage() {
           const subId = typeof item.subCategoryId === "object" ? item.subCategoryId?._id : item.subCategoryId;
           setSubCategoryId(subId || "");
           setStatus(item.status === "active");
+          setImageUrl(item.image_url || null);   // ✅ add
         }
       });
     }
   }, [id, isEditMode]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +69,7 @@ export default function ChildCategoryFormPage() {
       name,
       subCategoryId,
       status: status ? "active" : "inactive",
+      image_url: imageUrl,
     };
 
     try {
@@ -84,7 +90,6 @@ export default function ChildCategoryFormPage() {
       toast.error("Server Error");
     }
   };
-
   return (
     <div className="p-6 mx-auto space-y-6">
       <div className="flex items-center gap-4">
@@ -100,9 +105,7 @@ export default function ChildCategoryFormPage() {
         </div>
       </div>
 
-
       <form onSubmit={handleSubmit} className="flex gap-4">
-
         <Card className="w-[75%]">
           <CardHeader>
             <CardTitle>Child Category Details</CardTitle>
@@ -119,7 +122,6 @@ export default function ChildCategoryFormPage() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label>Select SubCategory (Level 2) *</Label>
                 <Select value={subCategoryId} onValueChange={setSubCategoryId}>
@@ -135,20 +137,19 @@ export default function ChildCategoryFormPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Child Category Image</Label>
+                <div className="mt-1">
+                  <ImageUpload
+                    value={imageUrl}
+                    onChange={(url) => setImageUrl(url as string | null)}
+                    size={150}
+                  />
+                </div>
+              </div>
             </div>
-
           </CardContent>
         </Card>
-        {/* </div> */}
-
-
-
-
-
-
-
-
-
 
         <div className="w-[25%]">
           <Card className="sticky top-6 shadow-md border border-gray-200">
@@ -177,13 +178,6 @@ export default function ChildCategoryFormPage() {
             </CardContent>
           </Card>
         </div>
-
-
-        {/* </div> */}
-
-
-
-
       </form >
 
     </div >

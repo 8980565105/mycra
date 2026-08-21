@@ -8,6 +8,8 @@ import { useBasePath } from "@/hooks/useBasePath";
 import {
   fetchChildCategories,
   deleteChildCategory,
+  updateChildCategoryStatus,
+  bulkDeletechildCategories,
 } from "@/features/childCategories/childCategoriesThunk";
 
 export default function ChildCategoriesPage() {
@@ -17,6 +19,23 @@ export default function ChildCategoriesPage() {
   const isAdmin = user?.role === "admin";
 
   const columns = [
+    {
+      key: "image_url",
+      label: "Image",
+      render: (item: any) =>
+        item.image_url ? (
+          <img
+            src={`${import.meta.env.VITE_API_URL_IMAGE}${item.image_url}`}
+            alt={item.name}
+            className="h-10 w-10 rounded-md object-cover border"
+          />
+        ) : (
+          <div className="h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 text-xs border border-dashed">
+            —
+          </div>
+        ),
+      width: "w-20",
+    },
     { key: "name", label: "Name", width: "w-48" },
     {
       key: "subCategory",
@@ -63,6 +82,25 @@ export default function ChildCategoriesPage() {
           await dispatch(deleteChildCategory(id)).unwrap();
         } catch (err: any) {
           throw new Error(err || "Failed to delete Level 3 category");
+        }
+      }}
+      bulkDeleteItems={async (ids) => {
+        try {
+          await dispatch(bulkDeletechildCategories(ids)).unwrap();
+        } catch (err: any) {
+          throw new Error(err || "Failed to delete categories");
+        }
+      }}
+      onStatusToggle={async (id, newStatus) => {
+        try {
+          await dispatch(
+            updateChildCategoryStatus({
+              id,
+              status: newStatus ? "active" : "inactive",
+            })
+          ).unwrap();
+        } catch (err: any) {
+          throw new Error(err || "Failed to update status");
         }
       }}
       headerActions={

@@ -5,6 +5,8 @@ import {
   createChildCategory,
   updateChildCategory,
   deleteChildCategory,
+  updateChildCategoryStatus,
+  bulkDeletechildCategories,
   ChildCategory,
 } from "./childCategoriesThunk";
 
@@ -40,7 +42,6 @@ const childCategoriesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Paginated
       .addCase(fetchChildCategories.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -59,7 +60,6 @@ const childCategoriesSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Fetch All
       .addCase(fetchAllChildCategories.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -72,21 +72,47 @@ const childCategoriesSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Create
       .addCase(createChildCategory.fulfilled, (state, action) => {
         state.allChildCategories.push(action.payload.data);
       })
-      // Update
       .addCase(updateChildCategory.fulfilled, (state, action) => {
-        const index = state.childCategories.findIndex((c) => c._id === action.payload.data._id);
+        const index = state.childCategories.findIndex(
+          (c) => c._id === action.payload.data._id,
+        );
         if (index !== -1) {
           state.childCategories[index] = action.payload.data;
         }
       })
-      // Delete
       .addCase(deleteChildCategory.fulfilled, (state, action) => {
-        state.childCategories = state.childCategories.filter((c) => c._id !== action.payload.id);
-        state.allChildCategories = state.allChildCategories.filter((c) => c._id !== action.payload.id);
+        state.childCategories = state.childCategories.filter(
+          (c) => c._id !== action.payload.id,
+        );
+        state.allChildCategories = state.allChildCategories.filter(
+          (c) => c._id !== action.payload.id,
+        );
+      })
+      .addCase(updateChildCategoryStatus.fulfilled, (state, action) => {
+        const index = state.childCategories.findIndex(
+          (c) => c._id === action.payload.data._id,
+        );
+        if (index !== -1) {
+          state.childCategories[index] = action.payload.data;
+        }
+        const allIndex = state.allChildCategories.findIndex(
+          (c) => c._id === action.payload.data._id,
+        );
+        if (allIndex !== -1) {
+          state.allChildCategories[allIndex] = action.payload.data;
+        }
+      })
+      .addCase(bulkDeletechildCategories.fulfilled, (state, action) => {
+        const deletedIds = action.payload as string[];
+        state.childCategories = state.childCategories.filter(
+          (c) => !deletedIds.includes(c._id),
+        );
+        state.allChildCategories = state.allChildCategories.filter(
+          (c) => !deletedIds.includes(c._id),
+        );
       });
   },
 });

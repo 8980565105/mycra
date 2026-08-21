@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function TypeFormPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -42,6 +43,8 @@ export default function TypeFormPage() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
   const [status, setStatus] = useState(true);
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export default function TypeFormPage() {
           setName(type.name || "");
           setDescription(type.description || "");
           setStatus(type.status === "active");
-
+          setImageUrl(type.image_url || null);
           const rawSub = Array.isArray(type.subCategoryId)
             ? type.subCategoryId[0]
             : type.subCategoryId;
@@ -120,6 +123,7 @@ export default function TypeFormPage() {
       name,
       description,
       status: status ? "active" : "inactive",
+      image_url: imageUrl,
       subCategoryId: subCategoryId,
       childCategoryId: childCategoryId ? [childCategoryId] : [],
       allowedAttributes: specificationAttributes,
@@ -266,6 +270,17 @@ export default function TypeFormPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   className="mt-1 min-h-[100px]"
                 />
+              </div>
+
+              <div>
+                <Label>product type Image</Label>
+                <div className="mt-1">
+                  <ImageUpload
+                    value={imageUrl}
+                    onChange={(url) => setImageUrl(url as string | null)}
+                    size={150}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

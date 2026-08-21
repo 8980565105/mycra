@@ -44,7 +44,6 @@ const typesSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch
       .addCase(fetchTypes.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -59,13 +58,11 @@ const typesSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Create
       .addCase(createType.fulfilled, (state, action) => {
         state.types.unshift(action.payload);
         state.total += 1;
       })
 
-      // Update
       .addCase(updateType.fulfilled, (state, action) => {
         const index = state.types.findIndex(
           (t) => t._id === action.payload._id
@@ -81,13 +78,11 @@ const typesSlice = createSlice({
           state.types[index] = action.payload;
         }
       })
-      // Delete
       .addCase(deleteType.fulfilled, (state, action) => {
         state.types = state.types.filter((t) => t._id !== action.payload);
         state.total -= 1;
       })
 
-      // Bulk delete
       .addCase(bulkDeleteTypes.fulfilled, (state, action) => {
         state.types = state.types.filter(
           (t) => !action.payload.includes(t._id)

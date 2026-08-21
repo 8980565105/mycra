@@ -50,6 +50,17 @@ export const ROUTES = {
     delete: (id: string) => `/subcategories/${id}`,
     bulkDelete: "/subcategories/bulk-delete",
   },
+
+  childCategories: {
+    getAll: "/child-categories",
+    getById: (id: string) => `/child-categories/${id}`,
+    create: "/child-categories",
+    update: (id: string) => `/child-categories/${id}`,
+    updateStatus: (id: string) => `/child-categories/${id}/status`,
+    delete: (id: string) => `/child-categories/${id}`,
+    bulkDelete: "/child-categories/bulk-delete",
+  },
+
   brands: {
     getAll: "/brands",
     getById: (id: string) => `/brands/${id}`,
