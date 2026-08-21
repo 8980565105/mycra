@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const Cart = require("../models/Cart");
 const Coupon = require("../models/Coupon");
 const Product = require("../models/Product");
