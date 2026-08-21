@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchPageBySlug } from "../features/pages/pagesThunk";
 import { getImageUrl } from "../components/utils/helper";
 import contactBg from "../assets/contact.jpg";
-
+import SEO from "../components/Seo/seo";
 const staticBg = {
   sections: [
     {
@@ -34,48 +34,32 @@ export default function ContactUs() {
 
   const contactPageFromApi = pages?.find((page) => page.slug === "contact");
   const contactPage = contactPageFromApi || staticBg;
-
   const faqSection = contactPage?.sections?.find(
     (section) => section.type === "faqs",
   );
-
   const heroSection = contactPage?.sections?.find(
     (section) => section.type === "hero_slider",
   );
-
   <FAQ faqSection={faqSection} />;
-
   const getBgImage = (section) => {
     const firstSlide = section.slides?.[0];
-
     if (section.isStatic) {
       return section.image_url;
     }
-
     return getImageUrl(
       firstSlide?.background_image_url ||
-        section.background_image_url ||
-        section.image_url,
+      section.background_image_url ||
+      section.image_url,
     );
   };
+
   return (
     <>
-      {/* {contactPage?.sections?.map((section) => {
-        const firstSlide = section.slides?.[0];
-
-        return (
-          <SecondarySection
-            key={section._id}
-            title={firstSlide?.title || section.title || "Contact Us"}
-            description={
-              firstSlide?.description ||
-              section.description ||
-              "We are here to help you. Reach out anytime."
-            }
-            backgroundImage={getBgImage(section)}
-          />
-        );
-      })} */}
+      <SEO
+        title={contactPageFromApi?.meta_title}
+        description={contactPageFromApi?.meta_description}
+        image={getImageUrl(contactPageFromApi?.seo_image)}
+      />
 
       {heroSection && (
         <SecondarySection

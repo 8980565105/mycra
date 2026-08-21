@@ -23,11 +23,12 @@ import walletReducer from "./features/wallet/walletSlice";
 import transectionReducer from "./features/transection/transectionSlice";
 import attributeReducer from "./features/attribut/attributSlice";
 import childcategoryReducer from "./features/childcategory/childcategorySlice";
+import policyPagesReducer from "./features/Policypages/policypagesslice";
 
 export const rootReducer = {
   auth: authReducer,
   user: userReducer,
-  navbar: navbarReducer,  
+  navbar: navbarReducer,
   footer: footerReducer,
   contact: contactReducer,
   products: productsReducer,
@@ -50,4 +51,5 @@ export const rootReducer = {
   transection: transectionReducer,
   childcategory: childcategoryReducer,
   attributes: attributeReducer,
+  policyPages: policyPagesReducer,
 };

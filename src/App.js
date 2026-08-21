@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -42,6 +42,7 @@ import { fetchCart } from "./features/cart/cartThunk";
 import Payment from "./pages/payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import LoginForm from "./pages/Login";
+import PolicyPage from "./pages/PolicyPage";
 
 const hexToRgba = (hex, opacity) => {
   if (!hex) return null;
@@ -263,7 +264,10 @@ function App() {
           <Route path="/walletkycintro" element={<WalletKycIntro />} />
           <Route path="/continuewithkyc" element={<ContinueWithKyc />} />
           <Route path="/kycform" element={<KycForm />} />
-          <Route path="/gifcard" element={<GiftCardToBalance />} />
+          <Route path="/return-policy" element={<PolicyPage slug="return-policy" />} />
+          <Route path="/terms-and-conditions" element={<PolicyPage slug="terms-and-conditions" />} />
+          <Route path="/privacy-policy" element={<PolicyPage slug="privacy-policy" />} />
+          <Route path="/shipping-and-delivery-policy" element={<PolicyPage slug="shipping-and-delivery-policy" />} />
         </Routes>
         <Footer />
       </>

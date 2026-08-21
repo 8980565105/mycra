@@ -342,7 +342,7 @@ export default function KycForm() {
                     try {
                       await dispatch(verifyOtp({ otp: otpValue })).unwrap();
                       setKycComplete(true);
-                      setTimeout(() => navigate("/wallets"), 1500);
+                      setTimeout(() => navigate("/my-account/wallets"), 1500);
                     } catch (err) {
                       setOtpError(err || "Invalid OTP. Please try again.");
                     } finally {

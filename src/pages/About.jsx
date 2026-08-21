@@ -6,6 +6,7 @@ import Row from "../components/ui/Row";
 import AboutBanner from "../components/aboutbanner/aboutbanner";
 import AboutContent from "../components/aboutbanner/aboutcontent";
 import { getImageUrl } from "../components/utils/helper";
+import SEO from "../components/Seo/seo";
 
 const STATIC_FEATURES = [
   { _id: "static-f1", icon: "🚚", title: "Free Shipping", desc: "On all orders above ₹999", order: 1 },
@@ -24,12 +25,16 @@ export default function AboutPage() {
 
   const aboutPage = pages?.find((page) => page.slug === "about");
 
-  const apiFeatures = aboutPage?.sections?.filter(
-    (section) => section.type === "feature" && section.status === "active",
+  const featureSection = aboutPage?.sections?.find(
+    (section) =>
+      section.type === "feature" &&
+      section.status === "active"
   );
-
+  const apiFeatures = featureSection?.items || [];
   const features =
-    apiFeatures?.length > 0 ? apiFeatures : STATIC_FEATURES;
+    apiFeatures.length > 0
+      ? apiFeatures
+      : STATIC_FEATURES;
 
   const sortedFeatures = [...features].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0),
@@ -37,6 +42,13 @@ export default function AboutPage() {
 
   return (
     <>
+
+      <SEO
+        title={aboutPage?.meta_title}
+        description={aboutPage?.meta_description}
+        image={getImageUrl(aboutPage?.seo_image)}
+      />
+
       <AboutBanner />
       <AboutContent />
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Hero from "../components/home/Hero";
 import CategoriesSection from "../components/home/CategoriesSection";
 import NewArrivals from "../components/home/NewArrivals";
@@ -16,11 +16,16 @@ import { fetchProducts } from "../features/products/productsThunk";
 import LoginForm from "./Login.jsx";
 import { Toaster } from "react-hot-toast";
 import FlowerIcon from "../components/icons/FlowerIcon.jsx";
-import CategoryNavigation from "../components/category/CategoryNavigation.jsx";
+import SEO from "../components/Seo/seo.js";
+import { getImageUrl } from "../components/utils/helper.js";
 
 const Home = () => {
   const dispatch = useDispatch();
+  const { pages } = useSelector((state) => state.pages);
+
   const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const homePage = pages?.find((page) => page.slug === "home");
+
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
@@ -29,7 +34,11 @@ const Home = () => {
     <>
       <div className="text-center">
         <Toaster position="top center" />
-        {/* <CategoryNavigation /> */}
+        <SEO
+          title={homePage?.meta_title}
+          description={homePage?.meta_description}
+          image={getImageUrl(homePage?.seo_image)}
+        />
         <Hero />
         <Section>
           <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
@@ -57,7 +66,6 @@ const Home = () => {
         <BannerClothes />
         <FeatureSection />
       </div>
-
       {showLoginPopup && (
         <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center px-4">
           <div className="relative bg-white w-full max-w-[1062px] rounded-md overflow-hidden">

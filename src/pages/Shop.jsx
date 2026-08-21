@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import SecondarySection from "../components/ui/SecondarySection";
 import WomenCollections from "../components/shop/WomenCollections";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,6 +6,7 @@ import { fetchPageBySlug } from "../features/pages/pagesThunk";
 import { getImageUrl } from "../components/utils/helper";
 import shopBg from "../assets/shopBannerImage.jpg";
 import { Toaster } from "react-hot-toast";
+import SEO from "../components/Seo/seo";
 
 const staticShopPage = {
   sections: [
@@ -21,13 +22,14 @@ const staticShopPage = {
 
 export default function Shop() {
   const dispatch = useDispatch();
-  const { pages, slugLoading } = useSelector((state) => state.pages);
+  const { pages } = useSelector((state) => state.pages);
 
   useEffect(() => {
     dispatch(fetchPageBySlug("shop"));
   }, [dispatch]);
 
   const shopPageFromApi = pages?.find((page) => page.slug === "shop");
+  const shopPage1 = pages?.find((page) => page.slug === "shop");
 
   const shopPage = shopPageFromApi || staticShopPage;
 
@@ -38,6 +40,12 @@ export default function Shop() {
 
   return (
     <>
+      <SEO
+        title={shopPage1?.meta_title}
+        description={shopPage1?.meta_description}
+        image={getImageUrl(shopPage1?.seo_image)}
+      />
+
       <Toaster position="top-center" reverseOrder={false} />
       <div className="hidden lg:flex relative">
         {shopPage?.sections?.map((section) => (

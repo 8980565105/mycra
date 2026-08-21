@@ -1,4 +1,4 @@
-export const ROUTES = {
+﻿export const ROUTES = {
   auth: {
     login: "/auth/login",
     register: "/auth/register",
@@ -29,14 +29,14 @@ export const ROUTES = {
   },
   pages: {
     getAll: "/pages",
-    getById: (id) => `/pages/${id}`,
     getBySlug: (slug) => `/pages/get/${slug}`,
-    create: "/pages",
-    update: (id) => `/pages/${id}`,
-    updateStatus: (id) => `/pages/${id}/status`,
-    delete: (id) => `/pages/${id}`,
-    bulkDelete: "/pages/bulk-delete",
   },
+
+  policypage: {
+    getAll: "/policypages",
+    getBySlug: (slug) => `/policypages/slug/${slug}`,
+  },
+
   types: {
     getAll: "/types",
     getPublic: "/types/public",
@@ -146,3 +146,4 @@ export const ROUTES = {
     getAll: "child-categories/public",
   },
 };
+

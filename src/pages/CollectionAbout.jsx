@@ -13,6 +13,7 @@ import { fetchtypes } from "../features/types/typeThunk";
 import { fetchProducts } from "../features/products/productsThunk";
 import ShopProductCard from "../components/productcard/ShopproductCard";
 import { fetchsubCategories } from "../features/subcategories/subcategoriesThunk";
+import SEO from "../components/Seo/seo";
 
 const childcategory = [
   {
@@ -186,6 +187,15 @@ export default function CollectionAbout({ setShowLoginPopup }) {
 
   return (
     <>
+      <SEO
+        title={matchedCategory?.name ? `${matchedCategory.name} Collection` : `${bannerTitle} Collection`}
+        description={
+          matchedCategory?.description ||
+          `Shop the best ${bannerTitle} collection - handpicked styles for everyday and celebration wear.`
+        }
+        image={getImageUrl(matchedCategory?.image_url)}
+      />
+
       <Section className="!pt-5">
         <Row>
           <div className="relative overflow-hidden bg-theme rounded-[18px] px-6 py-10 md:px-12 md:py-12 flex items-center justify-between ">

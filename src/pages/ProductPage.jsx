@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
@@ -16,6 +16,8 @@ import CustomerAlsoViewed from "../components/productcard/CustomerAlsoViewed";
 import { addRecentlyViewed } from "../components/utils/recentlyViewed";
 import LoginForm from "./Login";
 import FlowerIcon from "../components/icons/FlowerIcon";
+import { getImageUrl } from "../components/utils/helper";
+import SEO from "../components/Seo/seo";
 
 export default function Product() {
   const { id } = useParams();
@@ -44,6 +46,10 @@ export default function Product() {
   if (!product) return <p className="text-center py-10">No Product Found.</p>;
   return (
     <>
+      <SEO title={product?.name}
+        description={product?.description}
+        image={getImageUrl(product?.images?.[0])}
+      />
       <Section>
         <Row>
           <Breadcrumb />

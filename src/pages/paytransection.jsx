@@ -53,7 +53,6 @@ export default function TransactionHistory() {
   const [status, setStatus] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch transactions when filters, page, or active tab changes
   useEffect(() => {
     const params = {
       page: currentPage,
@@ -95,7 +94,6 @@ export default function TransactionHistory() {
     currentPage,
   ]);
 
-  // Reset current page when any filter or tab changes
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, search, category, type, paymentMode, timePeriod, status]);
@@ -306,7 +304,6 @@ export default function TransactionHistory() {
                   })}
                 </ul>
 
-                {/* Pagination Controls */}
                 {totalPages > 1 && (
                   <div className="flex justify-center items-center gap-4 pt-6 border-t border-gray-100">
                     <button

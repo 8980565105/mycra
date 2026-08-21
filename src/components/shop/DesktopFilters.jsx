@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CollapsibleFilter,
   FilterItemCheckbox,
@@ -55,12 +55,10 @@ const DesktopFilters = ({
     (state) => state.productLabels
   );
 
-// ----selcted category wise groupedTypes name ---
   const selectedCategoryName = selectedCategories.length > 0 ? selectedCategories[0].trim().toLowerCase() : "";
   const selectedCategoryObject = subcategories.find((cat) => cat.name?.trim().toLowerCase() === selectedCategoryName);
   const selectedCategoryId = selectedCategoryObject?._id ? String(selectedCategoryObject._id) : null;
 
-  // Helper: get ID from object/string
   const getId = (value) => {
     if (!value) return null;
 
@@ -71,45 +69,40 @@ const DesktopFilters = ({
     return String(value);
   };
 
-
-// ========== 1. GET PRODUCTS OF SELECTED CATEGORY========
   const categoryProducts = selectedCategoryName
     ? products.filter((product) => {
-        const categoryId = getId(product.category_id);
-        const subcategoryId = getId(product.subcategory_id);
-        const childCategoryId = getId(product.child_category_id);
+      const categoryId = getId(product.category_id);
+      const subcategoryId = getId(product.subcategory_id);
+      const childCategoryId = getId(product.child_category_id);
 
-        const categoryName =
-          typeof product.category_id === "object"
-            ? product.category_id?.name?.trim().toLowerCase()
-            : "";
+      const categoryName =
+        typeof product.category_id === "object"
+          ? product.category_id?.name?.trim().toLowerCase()
+          : "";
 
-        const subcategoryName =
-          typeof product.subcategory_id === "object"
-            ? product.subcategory_id?.name?.trim().toLowerCase()
-            : "";
+      const subcategoryName =
+        typeof product.subcategory_id === "object"
+          ? product.subcategory_id?.name?.trim().toLowerCase()
+          : "";
 
-        const childCategoryName =
-          typeof product.child_category_id === "object"
-            ? product.child_category_id?.name?.trim().toLowerCase()
-            : "";
+      const childCategoryName =
+        typeof product.child_category_id === "object"
+          ? product.child_category_id?.name?.trim().toLowerCase()
+          : "";
 
-        return (
-          categoryId === selectedCategoryId ||
-          subcategoryId === selectedCategoryId ||
-          childCategoryId === selectedCategoryId ||
-          categoryName === selectedCategoryName ||
-          subcategoryName === selectedCategoryName ||
-          childCategoryName === selectedCategoryName
-        );
-      })
+      return (
+        categoryId === selectedCategoryId ||
+        subcategoryId === selectedCategoryId ||
+        childCategoryId === selectedCategoryId ||
+        categoryName === selectedCategoryName ||
+        subcategoryName === selectedCategoryName ||
+        childCategoryName === selectedCategoryName
+      );
+    })
     : products;
 
-
-// ======== 2. GET TYPES USED BY THOSE PRODUCTS =============
-
-const categoryTypeIds = new Set();
-const categoryTypeNames = new Set();
+  const categoryTypeIds = new Set();
+  const categoryTypeNames = new Set();
 
   categoryProducts.forEach((product) => {
     (product.variants || []).forEach((variant) => {
@@ -133,7 +126,7 @@ const categoryTypeNames = new Set();
 
           if (id) { categoryTypeIds.add(String(id)); }
 
-          if (name) { categoryTypeNames.add( String(name).trim().toLowerCase() );}
+          if (name) { categoryTypeNames.add(String(name).trim().toLowerCase()); }
         } else {
           categoryTypeIds.add(String(type));
 
@@ -145,11 +138,8 @@ const categoryTypeNames = new Set();
     });
   });
 
-
-// ============ 3. FILTER TYPES =========
-
-const categoryFilteredTypes = selectedCategoryName
-  ? types.filter((type) => {
+  const categoryFilteredTypes = selectedCategoryName
+    ? types.filter((type) => {
       const typeId = String(
         type?._id || type?.id || ""
       );
@@ -163,101 +153,77 @@ const categoryFilteredTypes = selectedCategoryName
         categoryTypeNames.has(typeName)
       );
     })
-  : types;
-
-
-// ========== 4. GROUP TYPES ================================
+    : types;
 
   const groupedTypes = getGroupedTypes(categoryFilteredTypes);
-
-
-  // const subCategoryCountsById = Array.isArray(products)
-  //   ? products.reduce((acc, product) => {
-  //       const catId = product.category_id;
-  //       if (catId) acc[catId] = (acc[catId] || 0) + 1;
-  //       return acc;
-  //     }, {})
-  //   : {};
   const subCategoryCountsById = useMemo(() => {
-  const counts = {};
+    const counts = {};
 
-  products.forEach((product) => {
-    const categoryId = getId(product.category_id);
+    products.forEach((product) => {
+      const categoryId = getId(product.category_id);
 
-    if (!categoryId) return;
+      if (!categoryId) return;
 
-    counts[categoryId] = (counts[categoryId] || 0) + 1;
-  });
+      counts[categoryId] = (counts[categoryId] || 0) + 1;
+    });
 
-  return counts;
-}, [products]);
-
-  // const typeCountsByName = Array.isArray(products)
-  //   ? products.reduce((acc, product) => {
-  //       const tName = product.variants?.[0]?.type?.[0]?.name?.trim();
-  //       if (tName) {
-  //         const lower = tName.toLowerCase();
-  //         acc[lower] = (acc[lower] || 0) + 1;
-  //       }
-  //       return acc;
-  //     }, {})
-  //   : {};
+    return counts;
+  }, [products]);
 
   const typeCountsByName = useMemo(() => {
-  const counts = {};
+    const counts = {};
 
-  categoryProducts.forEach((product) => {
-    const productTypeNames = new Set();
+    categoryProducts.forEach((product) => {
+      const productTypeNames = new Set();
 
-    (product.variants || []).forEach((variant) => {
-      const variantTypes =
-        variant?.type ||
-        variant?.types ||
-        variant?.type_id;
+      (product.variants || []).forEach((variant) => {
+        const variantTypes =
+          variant?.type ||
+          variant?.types ||
+          variant?.type_id;
 
-      if (!variantTypes) return;
+        if (!variantTypes) return;
 
-      const typeArray = Array.isArray(variantTypes)
-        ? variantTypes
-        : [variantTypes];
+        const typeArray = Array.isArray(variantTypes)
+          ? variantTypes
+          : [variantTypes];
 
-      typeArray.forEach((type) => {
-        let typeName = "";
+        typeArray.forEach((type) => {
+          let typeName = "";
 
-        if (typeof type === "object" && type !== null) {
-          typeName = type?.name || "";
-        } else {
-          const foundType = types.find(
-            (t) =>
-              String(t?._id || t?.id) === String(type)
-          );
+          if (typeof type === "object" && type !== null) {
+            typeName = type?.name || "";
+          } else {
+            const foundType = types.find(
+              (t) =>
+                String(t?._id || t?.id) === String(type)
+            );
 
-          typeName = foundType?.name || String(type);
-        }
+            typeName = foundType?.name || String(type);
+          }
 
-        if (typeName) {
-          productTypeNames.add(
-            typeName.trim().toLowerCase()
-          );
-        }
+          if (typeName) {
+            productTypeNames.add(
+              typeName.trim().toLowerCase()
+            );
+          }
+        });
+      });
+
+      productTypeNames.forEach((typeName) => {
+        counts[typeName] = (counts[typeName] || 0) + 1;
       });
     });
 
-    // Count PRODUCT only once for each type
-    productTypeNames.forEach((typeName) => {
-      counts[typeName] = (counts[typeName] || 0) + 1;
-    });
-  });
-
-  return counts;
-}, [categoryProducts, types]);
+    return counts;
+  }, [categoryProducts, types]);
 
   const labelCounts = Array.isArray(products)
     ? products.reduce((acc, product) => {
-        const labelId = product.variants?.[0]?.labels?.[0];
-        if (labelId) acc[labelId] = (acc[labelId] || 0) + 1;
-        return acc;
-      }, {})
+      const labelId = product.variants?.[0]?.labels?.[0];
+      if (labelId) acc[labelId] = (acc[labelId] || 0) + 1;
+      return acc;
+    }, {})
     : {};
 
   return (
@@ -269,22 +235,15 @@ const categoryFilteredTypes = selectedCategoryName
       </div>
 
       <CollapsibleFilter
-        // title="Categories"
-        // defaultOpen={true}
-        // isOpen={openFilter === "Category"}
-        // onToggle={() => toggleFilter("Category")}
-        // isSelected={isCategorySelected}
-        // onReset={handleResetCategories}
-        // showButtons={true}
-         title="Categories"
-          defaultOpen={true}
-          isOpen={openFilter === "Category"}
-          onToggle={() => toggleFilter("Category")}
-          isSelected={selectedCategories.length > 0}
-          onReset={() => {
-            handleResetCategories();
-          }}
-          showButtons={true}
+        title="Categories"
+        defaultOpen={true}
+        isOpen={openFilter === "Category"}
+        onToggle={() => toggleFilter("Category")}
+        isSelected={selectedCategories.length > 0}
+        onReset={() => {
+          handleResetCategories();
+        }}
+        showButtons={true}
       >
         <div className="space-y-1.5 px-3 py-3 max-h-[260px] overflow-y-auto hide-scrollbar text-sm font-inter">
           {subcatLoading ? (
@@ -441,9 +400,8 @@ const categoryFilteredTypes = selectedCategoryName
                           onClick={() => handleAttributeChange(code, valName)}
                         >
                           <div
-                            className={`w-[22px] h-[22px] rounded-full box-shadow  ${
-                              isChecked ? "border-2 border-black scale-110" : ""
-                            } transition-transform duration-200`}
+                            className={`w-[22px] h-[22px] rounded-full box-shadow  ${isChecked ? "border-2 border-black scale-110" : ""
+                              } transition-transform duration-200`}
                             style={{ backgroundColor: hex }}
                           />
                           <p className="text-[10px] sec-text-color mt-1 text-center truncate max-w-[45px]">
@@ -492,33 +450,6 @@ const categoryFilteredTypes = selectedCategoryName
           );
         })
       )}
-
-      {/* <CollapsibleFilter
-        title="Product Label"
-        isOpen={openFilter === "Product Label"}
-        onToggle={() => toggleFilter("Product Label")}
-        isSelected={selectedLabels.length > 0}
-        onReset={handleResetLabels}
-        showButtons={true}
-      >
-        <div className="space-y-1 overflow-y-auto px-3 py-3">
-          {labelsLoading ? (
-            <p className="text-sm text-gray-500">Loading labels...</p>
-          ) : productLabels.length > 0 ? (
-            productLabels.map((label) => (
-              <FilterItemCheckbox
-                key={label._id}
-                name={label.name}
-                count={labelCounts[label._id] || 0}
-                isChecked={selectedLabels.some((l) => l.id === label._id)}
-                onChange={() => handleLabelChange(label._id, label.name)}
-              />
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No product labels found.</p>
-          )}
-        </div>
-      </CollapsibleFilter> */}
     </aside>
   );
 };

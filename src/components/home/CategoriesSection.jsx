@@ -1,11 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { useSelector } from "react-redux";
 import { getImageUrl } from "../utils/helper";
 import { useNavigate } from "react-router-dom";
-
 import shoppingImg from "../../assets/shopping.png";
 import kurtiImg from "../../assets/Kurti.png";
 import JeansImg from "../../assets/Jeans.png";
@@ -50,7 +49,6 @@ const CategoriesSection = () => {
   const displayCategories =
     !loading && categories?.length > 0 ? categories : STATIC_CATEGORIES;
 
-  //slider
   const slidesToShow =
     windowWidth <= 767
       ? 2
@@ -114,11 +112,10 @@ const CategoriesSection = () => {
               <button
                 key={i}
                 onClick={() => sliderRef.current.slickGoTo(i * slidesToShow)}
-                className={`transition-all duration-300 ${
-                  currentSlide === i
+                className={`transition-all duration-300 ${currentSlide === i
                     ? "w-[40px] h-[10px] rounded-full bg-color"
                     : "w-[10px] h-[10px] rounded-full bg-[#D2AF9F]"
-                }`}
+                  }`}
               />
             ))}
           </div>

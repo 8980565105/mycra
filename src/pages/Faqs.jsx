@@ -119,12 +119,10 @@ export default function FAQPage() {
                   <button
                     key={cat.key}
                     onClick={() => handleCategorySelect(cat.key)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors ${
-                      activeCat === cat.key
-                        ? // ? "bg-[rgba(239,58,150,0.09)] text-theme font-medium"
-                          "bg-theme text-[var(--theme-color)] font-medium"
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors ${activeCat === cat.key
+                        ? "bg-theme text-[var(--theme-color)] font-medium"
                         : "text-black hover:bg-gray-100 hover:text-[var(--theme-color)]"
-                    }`}
+                      }`}
                   >
                     {cat.label}
                   </button>
@@ -136,11 +134,10 @@ export default function FAQPage() {
                   <button
                     key={cat.key}
                     onClick={() => handleCategorySelect(cat.key)}
-                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
-                      activeCat === cat.key
+                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${activeCat === cat.key
                         ? "bg-pink-50 text-pink-700 border-pink-200 font-medium"
                         : "text-gray-500 border-gray-200 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     {cat.label}
                   </button>

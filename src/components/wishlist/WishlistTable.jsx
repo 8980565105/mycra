@@ -58,10 +58,10 @@ const Wishlist = ({ product }) => {
 
   const formattedItems = Array.isArray(items)
     ? items.map((item) => ({
-        ...item,
-        product: item.product_id,
-        variant: item.variant_id,
-      }))
+      ...item,
+      product: item.product_id,
+      variant: item.variant_id,
+    }))
     : [];
 
   const formatDate = (dateString) => {
@@ -289,7 +289,6 @@ const Wishlist = ({ product }) => {
                           onClick={() => handleAddToCart(item, index)}
                           className="!min-w-[113px] !py-[5px] !px-[8px] text-14"
                         >
-                          {/* Add To Cart */}
                           {item.variant?.stock_quantity > 0
                             ? "Add To Cart"
                             : "Out of Stock"}
