@@ -9,10 +9,10 @@ import jewelleryImg from "../assets/jewellery.png";
 import cropImg from "../assets/Crop Tops.png";
 import { fetchsubCategories } from "../features/subcategories/subcategoriesThunk";
 import { fetchCategories } from "../features/categories/categoriesThunk";
-import { ChevronLeft, ChevronRight, Heart, ChevronRight as Chev } from "lucide-react";
 import Row from "../components/ui/Row";
 import CategoryNavigation from "../components/category/CategoryNavigation";
 import { Link } from "react-router-dom";
+import { fetchtypes } from "../features/types/typeThunk";
 
 const STATIC_CATEGORIES = [
   {
@@ -66,7 +66,6 @@ function Collections({ products = [] }) {
   const location = useLocation();
   const scrollRef = useRef();
 
-  // activecategory stores the _id of the selected category (or "all")
   const [activecategory, setActivecategory] = useState("all");
 
   const { items: categories, loading: catLoading } = useSelector(
@@ -75,6 +74,15 @@ function Collections({ products = [] }) {
   const { items: subcategories, loading: subLoading } = useSelector(
     (state) => state.subcategories,
   );
+  const { items: types, loading: typeLoading } = useSelector(
+    (state) => state.types,
+  );
+
+  useEffect(() => {
+    if (!types || types.length === 0) {
+      dispatch(fetchtypes());
+    }
+  }, [dispatch, types]);
 
   useEffect(() => {
     if (!categories || categories.length === 0) {
@@ -100,6 +108,29 @@ function Collections({ products = [] }) {
 
   const loading = catLoading || subLoading;
 
+  const getProductTypeId = (product) => {
+    return (
+      product?.typeId?._id ||
+      product?.typeId ||
+      product?.type?._id ||
+      product?.type ||
+      product?.productTypeId?._id ||
+      product?.productTypeId ||
+      null
+    );
+  };
+
+  const getTypeChildCategoryIds = (type) => {
+    if (!type?.childCategoryId) return [];
+
+    return type.childCategoryId.map((id) => String(id?._id || id));
+  };
+
+  const getTypeSubCategoryIds = (type) => {
+    if (!type?.subCategoryId) return [];
+
+    return type.subCategoryId.map((id) => String(id?._id || id));
+  };
   const parentCategories =
     !catLoading && categories && categories.length > 0
       ? categories.filter((cat) => !cat.parent_id)
@@ -115,19 +146,13 @@ function Collections({ products = [] }) {
     activecategory === "all"
       ? subcategories
       : subcategories.filter(
-          (sub) => getParentId(sub) === String(activecategory),
-        );
+        (sub) => getParentId(sub) === String(activecategory),
+      );
 
   const selectedCategory =
     activecategory === "all"
       ? null
-    : categories.find((cat) => String(cat._id) === String(activecategory));
- 
-  // const selectedCategoryName =
-  //   activecategory === "all"
-  //     ? null
-  //     : categories.find((cat) => String(cat._id) === String(activecategory))
-  //         ?.name;
+      : categories.find((cat) => String(cat._id) === String(activecategory));
 
   const selectedCategoryName = selectedCategory?.name;
   const headingText = selectedCategoryName
@@ -136,7 +161,6 @@ function Collections({ products = [] }) {
 
   const [visibleSubCount, setVisibleSubCount] = useState(10);
 
-  // Reset visible count when category changes
   useEffect(() => {
     setVisibleSubCount(10);
   }, [activecategory]);
@@ -147,8 +171,6 @@ function Collections({ products = [] }) {
   const getLoadMoreCount = () => (window.innerWidth >= 768 ? 5 : 6);
 
   const handleCategoryClick = (cat) => {
-    // setActivecategory(cat._id);
-    // navigate(`/collections?categoryId=${cat._id}`, { replace: true });
     navigate(`/collections/${createSlug(cat.name)}`);
   };
 
@@ -169,14 +191,17 @@ function Collections({ products = [] }) {
 
   return (
     <Row className=" mt-5">
-      {/* Category hero banner */}
-      <div className="relative overflow-hidden rounded-[16px] bg-theme px-6 py-8 md:px-10 md:py-10 mb-6 flex items-center justify-between">
-        <div className="relative z-10">
+      <CategoryNavigation />
+
+      <div className="relative overflow-hidden rounded-[16px] mt-5 bg-theme px-6 py-8 md:px-10 md:py-10 mb-6 flex items-center justify-between">
+        <div className="relative">
           <p className="uppercase tracking-widest text-theme text-[12px] font-medium mb-2">
             Shop By Category
           </p>
           <h1 className="text-dark text-[26px] md:text-[34px] font-semibold leading-tight">
-            {selectedCategoryName ? `${selectedCategoryName} Collection` : "All Collections"}
+            {selectedCategoryName
+              ? `${selectedCategoryName} Collection`
+              : "All Collections"}
           </h1>
           <p className="text-gray-500 text-[14px] mt-2">
             {displaySubcategories.length} styles curated for you
@@ -184,7 +209,11 @@ function Collections({ products = [] }) {
         </div>
         <div className="hidden sm:flex relative z-10 w-[76px] h-[76px] md:w-[130px] md:h-[130px] p-4 rounded-full bg-white items-center justify-center overflow-hidden">
           <img
-            src={selectedCategory?.image_url ? getImageUrl(selectedCategory.image_url) : shoppingImg}
+            src={
+              selectedCategory?.image_url
+                ? getImageUrl(selectedCategory.image_url)
+                : shoppingImg
+            }
             alt={selectedCategoryName || "Collections"}
             className="w-full h-full object-cover"
             onError={(e) => {
@@ -192,7 +221,6 @@ function Collections({ products = [] }) {
             }}
           />
         </div>
-        {/* decorative outline circle, echoes homepage flower motif */}
         <span className="absolute -right-6 -top-6 w-[140px] h-[140px] rounded-full border border-theme/20" />
       </div>
 
@@ -200,7 +228,6 @@ function Collections({ products = [] }) {
 
       {!loading && (
         <>
-          <CategoryNavigation />
           <div className="px-4 my-10">
             <h2 className="text-dark text-[22px] font-semibold">
               {headingText}
@@ -219,8 +246,9 @@ function Collections({ products = [] }) {
                   <div
                     key={sub._id || index}
                     className="flex flex-col items-center group cursor-pointer"
-                    // onClick={() => navigate(`/shop?category=${sub.name}`)}
-                    onClick={() => navigate(`/collections/${createSlug(sub.name)}`) }
+                    onClick={() =>
+                      navigate(`/collections/${createSlug(sub.name)}`)
+                    }
                   >
                     <div className="relative w-full max-w-[160px] aspect-square rounded-full overflow-hidden border-4 circle-border duration-300 group-hover:scale-105 transition-transform">
                       <img

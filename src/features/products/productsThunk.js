@@ -1,4 +1,3 @@
-
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
@@ -18,14 +17,18 @@ export const fetchProducts = createAsyncThunk(
     }
 
     try {
+      const { type, ...restParams } = params; 
       const queryParams = {
         page: 1,
         limit: 30,
         status: "active",
-        ...params,
+        ...restParams,
+        ...(type ? { types: type } : {}), 
       };
 
-      const res = await api.get(ROUTES.products.getPublic, { params: queryParams });
+      const res = await api.get(ROUTES.products.getPublic, {
+        params: queryParams,
+      });
 
       if (res.data.success) {
         const data = res.data.data;

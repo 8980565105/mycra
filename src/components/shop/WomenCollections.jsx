@@ -43,7 +43,6 @@ const DesktopSortBar = ({ sortBy, setSortBy }) => (
         <option value="price_asc">Price: Low to High</option>
         <option value="price_desc">Price: High to Low</option>
         <option value="rating">Average Rating</option>
-        <option value="discounts">Discounts</option>
       </select>
       <CustomChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-black pointer-events-none" />
     </div>
@@ -182,7 +181,7 @@ const CollapsibleFilter = ({
 
 export const getProductEffectivePrice = (p) => {
   if (!p) return 0;
-  
+
   if (Array.isArray(p.variants) && p.variants.length > 0) {
     const variantPrices = p.variants
       .map((v) => {
@@ -452,10 +451,10 @@ export default function WomenCollections() {
   const [debouncedMinPrice, setDebouncedMinPrice] = useState(minPrice);
   const [debouncedMaxPrice, setDebouncedMaxPrice] = useState(maxPrice);
   const { types = [], loading: typesLoading } = useSelector((state) => state.types || {});
-  const { attributes = [], typeAttributes = [], loading: attrLoading,} = useSelector((state) => state.attributes || {});
+  const { attributes = [], typeAttributes = [], loading: attrLoading, } = useSelector((state) => state.attributes || {});
 
   useEffect(() => {
-    if (!Array.isArray(selectedTypes))  return;
+    if (!Array.isArray(selectedTypes)) return;
     if (selectedTypes.length === 0) {
       setTypeIdsToFetch([]);
       setSelectedAttributes({});
@@ -467,7 +466,7 @@ export default function WomenCollections() {
     const selectedTypeIds = selectedTypes.flatMap((selectedTypeName) => {
       const selectedName = String(selectedTypeName || "").trim().toLowerCase();
       const foundType = types.find((type) => {
-      const typeName = String(type?.name || "").trim().toLowerCase();
+        const typeName = String(type?.name || "").trim().toLowerCase();
         return typeName === selectedName;
       });
       if (!foundType) {
@@ -526,49 +525,6 @@ export default function WomenCollections() {
     selectedCategories,
     subcategories,
   ]);
-//   useEffect(() => {
-//   const params = {
-//     page,
-//     limit,
-//   };
-
-//   if (isPriceFilterActive) {
-//     if (
-//       debouncedMinPrice !== undefined &&
-//       debouncedMinPrice !== null
-//     ) {
-//       params.minPrice = debouncedMinPrice;
-//     }
-
-//     if (
-//       debouncedMaxPrice !== undefined &&
-//       debouncedMaxPrice !== null
-//     ) {
-//       params.maxPrice = debouncedMaxPrice;
-//     }
-//   }
-
-//   if (selectedCategories.length > 0) {
-//     const matchedCatIds = subcategories
-//       .filter((cat) => selectedCategories.includes(cat.name))
-//       .map((cat) => cat._id);
-
-//     if (matchedCatIds.length > 0) {
-//       params.categories = matchedCatIds.join(",");
-//     }
-//   }
-
-//   dispatch(fetchProducts(params));
-// }, [
-//   dispatch,
-//   page,
-//   limit,
-//   debouncedMinPrice,
-//   debouncedMaxPrice,
-//   isPriceFilterActive,
-//   selectedCategories,
-//   subcategories,
-// ]);
 
   useEffect(() => {
     dispatch(fetchAttributes());
@@ -672,67 +628,6 @@ export default function WomenCollections() {
     debouncedMinPrice,
     debouncedMaxPrice,
   ]);
-// useEffect(() => {
-//   const params = new URLSearchParams();
-
-//   // Category
-//   if (selectedCategories.length > 0) {
-//     params.set("category", selectedCategories.join(","));
-//   }
-
-//   // Type
-//   if (selectedTypes.length > 0) {
-//     params.set("type", selectedTypes.join(","));
-//   }
-
-//   // Labels
-//   if (selectedLabels.length > 0) {
-//     params.set(
-//       "label",
-//       selectedLabels.map((l) => l.name).join(",")
-//     );
-//   }
-
-//   // Minimum price
-//   if (
-//     debouncedMinPrice !== null &&
-//     debouncedMinPrice !== undefined &&
-//     debouncedMinPrice > minCatalogPrice
-//   ) {
-//     params.set("min", String(debouncedMinPrice));
-//   }
-
-//   // Maximum price
-//   if (
-//     debouncedMaxPrice !== null &&
-//     debouncedMaxPrice !== undefined &&
-//     debouncedMaxPrice < maxCatalogPrice
-//   ) {
-//     params.set("max", String(debouncedMaxPrice));
-//   }
-
-//   const queryString = params.toString();
-
-//   const newUrl = `/shop${queryString ? `?${queryString}` : ""}`;
-
-//   const currentFullUrl =
-//     location.pathname + location.search;
-
-//   if (currentFullUrl !== newUrl) {
-//     navigate(newUrl, { replace: true });
-//   }
-// }, [
-//   selectedCategories,
-//   selectedTypes,
-//   selectedLabels,
-//   debouncedMinPrice,
-//   debouncedMaxPrice,
-//   minCatalogPrice,
-//   maxCatalogPrice,
-//   location.pathname,
-//   location.search,
-//   navigate,
-// ]);
   const currentFilters = useMemo(() => {
     const arr = [
       ...selectedCategories.map((v) => ({
@@ -1090,9 +985,6 @@ export default function WomenCollections() {
                             handleAttributeChange(type, value);
                           }
                           if (type === "price") {
-                            // setMinPrice(0);
-                            // setMaxPrice(maxCatalogPrice);
-                            // setDebouncedMinPrice(0);
                             setMinPrice(minCatalogPrice);
                             setMaxPrice(maxCatalogPrice);
                             setDebouncedMinPrice(minCatalogPrice);

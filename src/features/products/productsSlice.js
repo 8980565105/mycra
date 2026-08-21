@@ -1,4 +1,3 @@
-
 import { createSlice } from "@reduxjs/toolkit";
 import { fetchProducts, fetchProductById } from "./productsThunk";
 
@@ -52,7 +51,6 @@ const productsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-
       .addCase(fetchProductById.pending, (state) => {
         state.loading = true;
         state.error = null;

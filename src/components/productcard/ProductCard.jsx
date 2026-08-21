@@ -370,15 +370,12 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                 </div>
               )}
             </div>
-
-            {/* <p>{product|| "store name"}</p> */}
-            {/* {product.store &&( */}
-            <p className="sec-text-color text-14 mb-2 lowercase capitalize line-clamp-1">
+                      
+            <p className="sec-text-color text-14 mb-2 lowercasex line-clamp-1">
               {product.store} store
             </p>
-            {/* )} */}
 
-            <p className="sec-text-color text-14 mb-2 lowercase capitalize line-clamp-1">
+            <p className="sec-text-color text-14 mb-2 lowercase  line-clamp-1">
               {product.name}
             </p>
             <div className="flex items-center gap-2 flex-wrap mb-2">

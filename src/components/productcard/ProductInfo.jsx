@@ -428,9 +428,7 @@ export default function ProductInfo({
       <h1 className="text-[24px] uppercase">
         {activeVariant?.brand_id?.name || "No Brand"}
       </h1>
-      <p className="text-p text-light pb-[12px] lowercase capitalize">
-        {product.name}
-      </p>
+      <p className="text-p text-light pb-[12px] capitalize">{product.name}</p>
 
       <div className="flex items-center gap-[15px] text-14 sec-text-color mb-[25px]">
         <span className="flex items-center gap-[5px] border border-[#CECDCD] text-black px-2 py-[3px] rounded-[2px] font-18 font-medium">

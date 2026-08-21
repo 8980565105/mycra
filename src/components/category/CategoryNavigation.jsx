@@ -9,24 +9,11 @@ const CategoryNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const scrollRef = useRef();
-
   const [isScrolled, setIsScrolled] = useState(false);
   const [activecategory, setActivecategory] = useState("all");
-
   const { items: categories = [], loading: catLoading } = useSelector(
     (state) => state.categories,
   );
-
-  // useEffect(() => {
-  //   const handleScroll = () => {
-  //     setIsScrolled(window.scrollY > 80);
-  //   };
-
-  //   window.addEventListener("scroll", handleScroll, { passive: true });
-  //   handleScroll();
-
-  //   return () => window.removeEventListener("scroll", handleScroll);
-  // }, []);
   useEffect(() => {
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -38,7 +25,6 @@ const CategoryNavigation = () => {
       }
       lastScrollY = currentScrollY;
     };
-
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
@@ -93,7 +79,6 @@ const CategoryNavigation = () => {
                   ? "bg-[linear-gradient(180deg,#f43297a6_0%,rgba(244,50,151,0.7)_20%,rgba(244,50,151,0.58)_40%,rgba(244,50,151,0.32)_60%,rgba(244,50,151,0.29)_80%,rgba(255,255,255,0)_100%)]"
                   : "bg-none"
               }
-                            
               `}
             >
               <img
@@ -108,11 +93,11 @@ const CategoryNavigation = () => {
                 isScrolled ? "pb-3 text-[13px]" : "pb-3 pt-1 text-[13px]"
               } ${
                 activecategory === "all"
-                  ? "font-semibold text-gray-900 "
+                  ? "font-semibold text-color"
                   : "text-gray-700"
-              } group-hover:text-blue-600`}
+              } `}
             >
-              For You
+             All
             </span>
 
             <span

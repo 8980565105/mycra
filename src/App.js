@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   useLocation,
+  Outlet,
 } from "react-router-dom";
 import "./App.css";
 import "./index.css";
@@ -40,6 +41,7 @@ import { fetchPublicSettings } from "./features/setting/settingThunk";
 import { fetchCart } from "./features/cart/cartThunk";
 import Payment from "./pages/payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import LoginForm from "./pages/Login";
 
 const hexToRgba = (hex, opacity) => {
   if (!hex) return null;
@@ -120,7 +122,7 @@ function App() {
     const isShopPage = location.pathname === "/shop";
     const dispatch = useDispatch();
     const settings = useSelector((state) => state.settings.data);
-
+    const [showLoginPopup, setShowLoginPopup] = useState(false);
     useEffect(() => {
       if (!settings) {
         document.documentElement.style.setProperty(
@@ -214,13 +216,30 @@ function App() {
         <ScrollToTop />
 
         <Header hideOnMobileShopPage={isShopPage} />
+        <Outlet context={{ showLoginPopup, setShowLoginPopup }} />
+
+        {showLoginPopup && (
+          <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center px-4">
+            <div className="relative bg-white w-full max-w-[1062px] rounded-md overflow-hidden">
+              <LoginForm
+                onClose={() => setShowLoginPopup(false)}
+                onSwitch={() => setShowLoginPopup(false)}
+              />
+            </div>
+          </div>
+        )}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/Home" element={<Home />} />
-          <Route path="/shop" element={<Shop />} />
+          <Route
+            path="/shop"
+            element={<Shop setShowLoginPopup={setShowLoginPopup} />}
+          />
           <Route path="/collections" element={<Collections />} />
-          {/* <Route  path="/collection/:collectionSlug"  element={<CollectionPage />}/> */}
-          <Route path="/collections/:slug" element={<CollectionAbout />} />
+          <Route
+            path="/collections/:slug"
+            element={<CollectionAbout setShowLoginPopup={setShowLoginPopup} />}
+          />
           <Route path="/offer" element={<Offer />} />
           <Route path="/contact-us" element={<ContactUs />} />
           <Route path="/my-account" element={<MyAccount />}>

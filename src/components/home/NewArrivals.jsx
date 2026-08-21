@@ -1,5 +1,5 @@
 import React from "react";
-import SectionHeading from "../ui/SectionHeading";
+// import SectionHeading from "../ui/SectionHeading";
 import Row from "../ui/Row";
 import ArrowRight from "../icons/ArrowRight";
 import shoesimg from "../../assets/shoes.png";

@@ -27,7 +27,7 @@ import childcategoryReducer from "./features/childcategory/childcategorySlice";
 export const rootReducer = {
   auth: authReducer,
   user: userReducer,
-  navbar: navbarReducer,
+  navbar: navbarReducer,  
   footer: footerReducer,
   contact: contactReducer,
   products: productsReducer,

@@ -3,7 +3,7 @@ import OfferBanner from "../components/offers/offerBanner";
 import SizeSection from "../components/offers/SizeSection";
 import Row from "../components/ui/Row";
 import Section from "../components/ui/Section";
-import SectionHeading from "../components/ui/SectionHeading";
+// import SectionHeading from "../components/ui/SectionHeading";
 
 export default function Offer() {
   return (
@@ -16,7 +16,7 @@ export default function Offer() {
       </Section>
       <Section>
         <Row>
-          <SectionHeading page="Offer" order="2" />
+          {/* <SectionHeading page="Offer" order="2" /> */}
         </Row>
         {/* <SizeSection /> */}
       </Section>
