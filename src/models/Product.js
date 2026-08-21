@@ -17,6 +17,13 @@ const productSchema = new mongoose.Schema(
       ref: "SubCategory",
       required: true,
     },
+    childCategory_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ChildCategory",
+      default: null,
+      index: true,
+    },
+
     type_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Type",

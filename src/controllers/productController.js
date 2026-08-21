@@ -2,7 +2,10 @@ const slugify = require("slugify");
 const Product = require("../models/Product");
 const { sendResponse } = require("../utils/response");
 const ProductVariant = require("../models/ProductVariant");
+const Type = require("../models/Type");
+
 const mongoose = require("mongoose");
+const ChildCategory = require("../models/ChildCategory");
 const isOwnerOrAdmin = (req, product) => {
   if (req.user.role === "admin") return true;
   return product.storeId?.toString() === req.user.storeId?.toString();
@@ -210,6 +213,7 @@ const getPublicProducts = async (req, res) => {
       search = "",
       isDownload = "false",
       categories,
+      childCategory,
       types,
       minPrice,
       maxPrice,
@@ -221,6 +225,12 @@ const getPublicProducts = async (req, res) => {
 
     const productMatch = { status: "active" };
     if (search) productMatch.name = { $regex: search, $options: "i" };
+
+    if (childCategory && mongoose.Types.ObjectId.isValid(childCategory)) {
+      productMatch.childCategory_id = new mongoose.Types.ObjectId(
+        childCategory,
+      );
+    }
 
     if (categories) {
       const categoryArray = Array.isArray(categories)
@@ -515,31 +525,6 @@ const getProducts = async (req, res) => {
   }
 };
 
-// const getPublicProductById = async (req, res) => {
-//   try {
-//     const product = await Product.findById(req.params.id)
-//       .populate("category_id", "name")
-//       .lean();
-
-//     if (!product) return sendResponse(res, false, null, "Product not found");
-
-//     const variants = await ProductVariant.find({ product_id: product._id })
-//       .populate("type_id", "name")
-//       .populate("attributes.attributeId", "name code")
-//       .populate("attributes.valueId", "value colorHex")
-//       .lean();
-
-//     sendResponse(
-//       res,
-//       true,
-//       { ...product, variants },
-//       "Product retrieved successfully",
-//     );
-//   } catch (err) {
-//     sendResponse(res, false, null, err.message);
-//   }
-// };
-
 const getPublicProductById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -621,6 +606,14 @@ const createProduct = async (req, res) => {
       variants,
     } = req.body;
 
+    let childCategory_id = null;
+    if (type_id) {
+      const typeDoc = await Type.findById(type_id).select("childCategoryId");
+      if (typeDoc?.childCategoryId?.length > 0) {
+        childCategory_id = typeDoc.childCategoryId[0]; 
+      }
+    }
+
     let productImages = [];
     if (req.files && req.files.length > 0) {
       productImages = req.files.map((file) => `/uploads/${file.filename}`);
@@ -639,6 +632,7 @@ const createProduct = async (req, res) => {
       description,
       mainCategory_id: mainCategory_id || null,
       category_id,
+      childCategory_id,
       type_id: type_id || null,
       status: status || "active",
       is_featured: !!req.body.is_featured,
@@ -722,6 +716,15 @@ const updateProduct = async (req, res) => {
     if (!product) return sendResponse(res, false, null, "Product not found");
     if (!isOwnerOrAdmin(req, product)) {
       return sendResponse(res, false, null, "Forbidden: Not your product");
+    }
+
+    if (productData.type_id) {
+      const typeDoc = await Type.findById(productData.type_id).select(
+        "childCategoryId",
+      );
+      if (typeDoc?.childCategoryId?.length > 0) {
+        productData.childCategory_id = typeDoc.childCategoryId[0];
+      }
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(id, productData, {

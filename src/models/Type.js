@@ -5,6 +5,7 @@ const typeSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     slug: { type: String },
+    image_url: { type: String, default: null },
     description: { type: String, default: "" },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     subCategoryId: [
@@ -60,16 +61,9 @@ const typeSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// typeSchema.pre("save", function (next) {
-//   if (this.isModified("name")) {
-//     this.slug = slugify(this.name, { lower: true, strict: true });
-//   }
-// });
-
 typeSchema.index(
   { name: 1, storeId: 1, subCategoryId: 1 },
   { unique: true, collation: { locale: "en", strength: 2 } },
 );
 
-typeSchema.index({ name: 1, storeId: 1, subCategoryId: 1 });
 module.exports = mongoose.model("Type", typeSchema);

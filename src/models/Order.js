@@ -69,7 +69,7 @@ const orderSchema = new mongoose.Schema(
     courier: {
       partner: {
         type: String,
-        enum: ["Delhivery", "Blue Dart", "DTDC", "Shiprocket", "Custom", ""],
+        enum: ["Delhivery", "Blue Dart", "DTDC", "Shiprocket", "iThink Logistics", "Custom", ""],
         default: "",
       },
       name: { type: String, default: "" },

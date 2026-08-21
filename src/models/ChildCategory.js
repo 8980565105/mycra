@@ -11,6 +11,10 @@ const childCategorySchema = new mongoose.Schema(
     slug: {
       type: String,
     },
+    image_url: {
+      type: String,
+      default: null,
+    },
     CategoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
@@ -44,4 +48,3 @@ childCategorySchema.pre("save", function (next) {
 module.exports =
   mongoose.models.ChildCategory ||
   mongoose.model("ChildCategory", childCategorySchema);
-

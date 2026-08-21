@@ -43,7 +43,6 @@ const getsubCategories = async (req, res) => {
       }
     }
 
-    // applyOwnershipFilter(req, matchStage);
     if (req.user.role === "store_owner") {
       matchStage.$or = [{ storeId: null }, { storeId: req.user.storeId }];
     }

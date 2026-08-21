@@ -3,9 +3,19 @@ const Type = require("../models/Type");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
 const { default: mongoose } = require("mongoose");
+
 const getPublicTypes = async (req, res) => {
   try {
-    const types = await Type.find({ status: "active" }).sort({ createdAt: -1 });
+    const filter = { status: "active" };
+
+    const { childCategory } = req.query;
+    if (childCategory && mongoose.Types.ObjectId.isValid(childCategory)) {
+      filter.childCategoryId = {
+        $in: [new mongoose.Types.ObjectId(childCategory)],
+      };
+    }
+
+    const types = await Type.find(filter).sort({ createdAt: -1 });
 
     res.json({ success: true, data: types });
   } catch (err) {
@@ -188,8 +198,17 @@ const getTypeById = async (req, res) => {
 
 const createType = async (req, res) => {
   try {
-    const { name, description, status, subCategoryId, allowedAttributes, variantAttributes, brandIds, brands } =
-      req.body;
+    const {
+      name,
+      description,
+      status,
+      subCategoryId,
+      allowedAttributes,
+      variantAttributes,
+      brandIds,
+      brands,
+      image_url,
+    } = req.body;
     if (!name) return sendResponse(res, false, null, "Name is required");
 
     const storeId =
@@ -219,12 +238,15 @@ const createType = async (req, res) => {
     }
 
     const rawBrandList = brandIds || brands || [];
-    const brandArray = Array.isArray(rawBrandList) ? rawBrandList : [rawBrandList];
+    const brandArray = Array.isArray(rawBrandList)
+      ? rawBrandList
+      : [rawBrandList];
 
     const type = new Type({
       name,
       description: description || "",
       status: status || "active",
+      image_url: image_url || null,
       subCategoryId: subCategoryIds,
       allowedAttributes: allowedAttributes || [],
       variantAttributes: variantAttributes || [],
@@ -250,14 +272,16 @@ const updateType = async (req, res) => {
 
     if (updateData.brandIds || updateData.brands) {
       const rawBrandList = updateData.brandIds || updateData.brands;
-      const brandArray = Array.isArray(rawBrandList) ? rawBrandList : [rawBrandList];
+      const brandArray = Array.isArray(rawBrandList)
+        ? rawBrandList
+        : [rawBrandList];
       updateData.brandIds = brandArray;
       updateData.brands = brandArray;
     }
 
     if (updateData.name && updateData.subCategoryId?.length > 0) {
       const existingType = await Type.findOne({
-        _id: { $ne: req.params.id }, 
+        _id: { $ne: req.params.id },
         subCategoryId: { $in: updateData.subCategoryId },
         storeId: updateData.storeId ?? undefined,
         name: { $regex: `^${updateData.name.trim()}$`, $options: "i" },

@@ -19,6 +19,19 @@ const {
 } = require("../utils/orderEmailService");
 const mongoose = require("mongoose");
 
+const getCustomerInfo = (order) => {
+  const email = order.user_id?.email || null;
+  const name =
+    order.user_id?.name ||
+    `${order.shippingAddress?.firstName || ""} ${order.shippingAddress?.lastName || ""}`.trim() ||
+    "Customer";
+  return { email, name };
+};
+
+const pushHistory = (order, status, changedBy = "admin", note = "") => {
+  order.status_history.push({ status, changed_by: changedBy, note });
+};
+
 const getPayments = async (req, res) => {
   try {
     let {
