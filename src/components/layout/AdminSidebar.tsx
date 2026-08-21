@@ -104,6 +104,7 @@ const adminSections = [
     label: "System",
     items: [
       { title: "Pages", url: "/admin/pages", icon: Layers },
+      { title: "PolicyPages", url: "/admin/policypages", icon: Layers },
       { title: "Navbar", url: "/admin/navbar", icon: Navigation },
       { title: "Footer", url: "/admin/footer", icon: Columns },
       { title: "Contact Messages", url: "/admin/contact-messages", icon: MessageSquare },

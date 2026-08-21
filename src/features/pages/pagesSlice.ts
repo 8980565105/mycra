@@ -84,7 +84,6 @@ const pagesSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // ✅ Fetch Pages
       .addCase(fetchPages.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -99,13 +98,11 @@ const pagesSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // ✅ Create Page
       .addCase(createPage.fulfilled, (state, action) => {
         state.pages.unshift(action.payload);
         state.total += 1;
       })
 
-      // ✅ Update Page
       .addCase(updatePage.fulfilled, (state, action) => {
         const index = state.pages.findIndex(
           (p) => p._id === action.payload._id,
@@ -113,7 +110,6 @@ const pagesSlice = createSlice({
         if (index !== -1) state.pages[index] = action.payload;
       })
 
-      // ✅ Update Status
       .addCase(updatePageStatus.fulfilled, (state, action) => {
         const index = state.pages.findIndex(
           (p) => p._id === action.payload._id,
@@ -121,13 +117,11 @@ const pagesSlice = createSlice({
         if (index !== -1) state.pages[index] = action.payload;
       })
 
-      // ✅ Delete Page
       .addCase(deletePage.fulfilled, (state, action) => {
         state.pages = state.pages.filter((p) => p._id !== action.payload);
         state.total -= 1;
       })
 
-      // ✅ Bulk Delete Pages
       .addCase(bulkDeletePages.fulfilled, (state, action) => {
         state.pages = state.pages.filter(
           (p) => !action.payload.includes(p._id),

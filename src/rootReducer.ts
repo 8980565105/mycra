@@ -23,9 +23,9 @@ import subcategoriReducer from "./features/subcategories/subcategoriesSlice";
 import faqsReducer from "./features/faqs/faqsSlice";
 import walletReducer from "./features/wallets/walletsSlice";
 // import businessReducer from "./features/Business/businessSlice";
+import policyPagesReducer from "./features/Policypages/policypagesslice";
 import attributesReducer from "./features/attributes/attributesSlice";
 import brandsReducer from "./features/brands/brandsSlice";
-
 import childCategoriesReducer from "./features/childCategories/childCategoriesSlice";
 
 export const rootReducer = {
@@ -56,5 +56,6 @@ export const rootReducer = {
   dashboard: dashboardReducer,
   faqs: faqsReducer,
   wallet: walletReducer,
+  policyPages: policyPagesReducer,
   // business: businessReducer,
 };

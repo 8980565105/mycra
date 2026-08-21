@@ -19,16 +19,8 @@ import BrandFormPage from "./pages/Brands/BrandFormPage";
 import Brands from "./pages/Brands/Brands";
 import TypeFormPage from "./pages/Types/TypeForm";
 import Types from "./pages/Types/Types";
-// import FabricFormPage from "./pages/Fabrics/FabricForm";
-// import Fabrics from "./pages/Fabrics/Fabrics";
 import ProductLabels from "./pages/ProductLabels/ProductLabels";
 import ProductLabelFormPage from "./pages/ProductLabels/ProductLabelForm";
-import Colors from "./pages/Colors/Colors";
-import ColorFormPage from "./pages/Colors/ColorForm";
-// import Sizes from "./pages/Sizes/Sizes";
-// import SizeFormPage from "./pages/Sizes/SizeForm";
-// import Discounts from "./pages/Discount/Discounts";
-// import DiscountFormPage from "./pages/Discount/DiscountForm";
 import CouponFormPage from "./pages/coupons/CouponForm";
 import CouponsPage from "./pages/coupons/Coupons";
 import Orders from "./pages/Orders/Orders";
@@ -68,9 +60,9 @@ import ContinueWithKyc from "./pages/Wallets/ContinueWithKyc";
 import KycForm from "./pages/Wallets/KycForm";
 import SellerOnboarding from "./pages/SellerOnboarding";
 import SellerApplications from "./pages/Stores/SellerApplications";
-// import Business from "./pages/Business/Business";
-// import BusinessFromPage from "./pages/Business/BusinessFromPage";
 import CustomerReviewsFrom from "./pages/CustomerReviews/CustomerReviewsFrom";
+import PolicypagesFrom from "./pages/Policypages/PolicypagesFrom";
+import Policypages from "./pages/Policypages/Policypages";
 
 const queryClient = new QueryClient();
 
@@ -121,18 +113,11 @@ const App = () => (
               <Route path="types" element={<Types />} />
               <Route path="types/add" element={<TypeFormPage />} />
               <Route path="types/:id/edit" element={<TypeFormPage />} />
-              {/* <Route path="fabrics" element={<Fabrics />} />
-              <Route path="fabrics/add" element={<FabricFormPage />} />
-              <Route path="fabrics/:id/edit" element={<FabricFormPage />} /> */}
+
               <Route path="product-labels" element={<ProductLabels />} />
               <Route path="product-labels/add" element={<ProductLabelFormPage />} />
               <Route path="product-labels/:id/edit" element={<ProductLabelFormPage />} />
-              {/* <Route path="colors" element={<Colors />} />
-              <Route path="colors/add" element={<ColorFormPage />} />
-              <Route path="colors/:id/edit" element={<ColorFormPage />} /> */}
-              {/* <Route path="sizes" element={<Sizes />} />
-              <Route path="sizes/add" element={<SizeFormPage />} />
-              <Route path="sizes/:id/edit" element={<SizeFormPage />} /> */}
+
               <Route path="coupons" element={<CouponsPage />} />
               <Route path="coupons/add" element={<CouponFormPage />} />
               <Route path="coupons/:id/edit" element={<CouponFormPage />} />
@@ -158,6 +143,14 @@ const App = () => (
               <Route path="pages" element={<Pages />} />
               <Route path="pages/add" element={<PageFormPage />} />
               <Route path="pages/:id/edit" element={<PageFormPage />} />
+
+              {/* <Route path="Policypages" element={<Policypages />} />
+              <Route path="Policypages/add" element={<PolicypagesFrom />} />
+              <Route path="Policypages/:id/edit" element={<PolicypagesFrom />} /> */}
+              <Route path="policypages" element={<Policypages />} />
+              <Route path="policypages/add" element={<PolicypagesFrom />} />
+              <Route path="policypages/:id/edit" element={<PolicypagesFrom />} />
+
               <Route path="navbar" element={<Navbar />} />
               <Route path="navbar/add" element={<NavbarFormPage />} />
               <Route path="navbar/:id/edit" element={<NavbarFormPage />} />

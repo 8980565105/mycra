@@ -178,6 +178,17 @@ export const ROUTES = {
     delete: (id: string) => `/pages/${id}`,
     bulkDelete: "/pages/bulk-delete",
   },
+
+  policyPages: {
+    getAll: "/policypages",
+    getById: (id: string) => `/policypages/${id}`,
+    create: "/policypages", 
+    update: (id: string) => `/policypages/${id}`,
+    updateStatus: (id: string) => `/policypages/${id}/status`,
+    delete: (id: string) => `/policypages/${id}`,
+    bulkDelete: "/policypages/bulk-delete",
+  },
+
   faqs: {
     create: "/faqs",
     getAll: "/faqs",
