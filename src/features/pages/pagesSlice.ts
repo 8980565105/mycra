@@ -31,8 +31,22 @@ export type FaqItem = {
   answer: string;
   order: number;
 };
+
+export interface Faq1Item {
+  category: string;
+  question: string;
+  answer: string;
+  order: number;
+}
+
+export interface FaqCategory {
+  key: string;
+  label: string;
+  order: number;
+}
+
 export type SectionType = {
-  type: "content" | "hero_slider" | "feature" | "banner" | "faqs";
+  type: "content" | "hero_slider" | "feature" | "banner" | "faqs" | "faqs1";
   title: string;
   description: string;
   image_url?: string;
@@ -46,6 +60,8 @@ export type SectionType = {
   slides?: Slide[];
   items?: FeatureItem[];
   faqs?: FaqItem[];
+  faqs1?: Faq1Item[];
+  faqCategories?: FaqCategory[];
 };
 
 interface Page {
