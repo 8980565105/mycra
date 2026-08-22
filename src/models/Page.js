@@ -24,11 +24,85 @@ const faqItemSchema = new mongoose.Schema({
   order: { type: Number, default: 1 },
 });
 
+// const faq1ItemSchema = new mongoose.Schema({
+//   category: {
+//     type: String,
+//     required: true,
+//     trim: true,
+//   },
+
+//   question: {
+//     type: String,
+//     required: true,
+//     trim: true,
+//   },
+
+//   answer: {
+//     type: String,
+//     required: true,
+//     trim: true,
+//   },
+
+//   order: {
+//     type: Number,
+//     default: 1,
+//   },
+// });
+
+const faq1ItemSchema = new mongoose.Schema(
+  {
+    category: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    question: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    answer: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    order: {
+      type: Number,
+      default: 1,
+    },
+  },
+  { _id: true },
+);
+const faqCategorySchema = new mongoose.Schema(
+  {
+    key: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
+
+    label: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    order: {
+      type: Number,
+      default: 1,
+    },
+  },
+  { _id: true },
+);
 const sectionSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ["hero_slider", "content", "feature", "banner", "faqs"],
+      enum: ["hero_slider", "content", "feature", "banner", "faqs", "faqs1"],
       default: "content",
       required: true,
     },
@@ -45,6 +119,8 @@ const sectionSchema = new mongoose.Schema(
     slides: [slideSchema],
     items: [itemSchema],
     faqs: [faqItemSchema],
+    faqs1: [faq1ItemSchema],
+    faqCategories: [faqCategorySchema],
   },
   { timestamps: true },
 );

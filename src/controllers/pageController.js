@@ -123,7 +123,8 @@ const createPage = async (req, res) => {
           sec.background_image_url?.trim() ||
           (Array.isArray(sec.slides) && sec.slides.length > 0) ||
           (Array.isArray(sec.items) && sec.items.length > 0) ||
-          (Array.isArray(sec.faqs) && sec.faqs.length > 0),
+          (Array.isArray(sec.faqs) && sec.faqs.length > 0) ||
+          (Array.isArray(sec.faqs1) && sec.faqs1.length > 0),
       );
     }
     const page = new Page(data);
@@ -183,12 +184,15 @@ const updatePage = async (req, res) => {
     if (Array.isArray(data.sections)) {
       data.sections = data.sections.filter(
         (sec) =>
+          sec.type ||
           sec.title?.trim() ||
           sec.description?.trim() ||
           sec.image_url?.trim() ||
           sec.background_image_url?.trim() ||
           (Array.isArray(sec.slides) && sec.slides.length > 0) ||
-          (Array.isArray(sec.items) && sec.items.length > 0),
+          (Array.isArray(sec.items) && sec.items.length > 0) ||
+          (Array.isArray(sec.faqs) && sec.faqs.length > 0) ||
+          (Array.isArray(sec.faqs1) && sec.faqs1.length > 0),
       );
     }
 
@@ -222,7 +226,11 @@ const updatePageStatus = async (req, res) => {
     }
 
     const filter = { _id: req.params.id, ...buildStoreFilter(req) };
-    const page = await Page.findOneAndUpdate(filter, { status }, {  returnDocument: 'after'  });
+    const page = await Page.findOneAndUpdate(
+      filter,
+      { status },
+      { returnDocument: "after" },
+    );
     if (!page) return sendResponse(res, false, null, "Page not found");
 
     sendResponse(res, true, page, "Status updated");
