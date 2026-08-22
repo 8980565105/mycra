@@ -17,7 +17,7 @@ import contactReducer from "./features/contact/contactSlice";
 import reviewsReducer from "./features/reivews/reviewsSlice";
 import addressReducer from "./features/address/addressSlice";
 import offersReducer from "./features/offers/offersSlice";
-import faqsReducer from "./features/faqs/faqsSlice";
+// import faqsReducer from "./features/faqs/faqsSlice";
 import settingReducer from "./features/setting/settingSlice";
 import walletReducer from "./features/wallet/walletSlice";
 import transectionReducer from "./features/transection/transectionSlice";
@@ -45,7 +45,7 @@ export const rootReducer = {
   reviews: reviewsReducer,
   address: addressReducer,
   offers: offersReducer,
-  faqs: faqsReducer,
+  // faqs: faqsReducer,
   settings: settingReducer,
   wallet: walletReducer,
   transection: transectionReducer,
