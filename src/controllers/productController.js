@@ -39,6 +39,29 @@ const buildPipeline = ({
       },
     },
     { $unwind: { path: "$createdByUser", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "stores",
+        localField: "storeId",
+        foreignField: "_id",
+        as: "store",
+      },
+    },
+    { $unwind: { path: "$store", preserveNullAndEmptyArrays: true } },
+    {
+      $addFields: {
+        storeId: {
+          $cond: [
+            { $ifNull: ["$store", false] },
+            { _id: "$store._id", name: "$store.name", domain: "$store.domain" },
+            "$storeId",
+          ],
+        },
+      },
+    },
+    {
+      $project: { store: 0 },
+    },
   ];
 
   if (search) {
@@ -520,7 +543,6 @@ const getProducts = async (req, res) => {
       "Products retrieved successfully",
     );
   } catch (err) {
-    console.error("❌ getProducts error:", err);
     sendResponse(res, false, null, err.message);
   }
 };
@@ -610,7 +632,7 @@ const createProduct = async (req, res) => {
     if (type_id) {
       const typeDoc = await Type.findById(type_id).select("childCategoryId");
       if (typeDoc?.childCategoryId?.length > 0) {
-        childCategory_id = typeDoc.childCategoryId[0]; 
+        childCategory_id = typeDoc.childCategoryId[0];
       }
     }
 

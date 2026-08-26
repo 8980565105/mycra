@@ -2,13 +2,7 @@ const { default: slugify } = require("slugify");
 const Store = require("../models/Store");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
-const OrderItem = require("../models/OrderItem");
 const User = require("../models/User");
-const Category = require("../models/Category");
-const Subcategory = require("../models/Subcategory");
-const Type = require("../models/Type");
-const ProductLabel = require("../models/ProductLabel");
-const ProductVariant = require("../models/ProductVariant");
 const mongoose = require("mongoose");
 const { sendResponse } = require("../utils/response");
 const Payment = require("../models/Payment");
@@ -161,9 +155,16 @@ const sendStoreOtp = async (req, res) => {
     const { email } = req.body;
     if (!email) return sendResponse(res, false, null, "Email is required");
 
-    const existingStore = await Store.findOne({ email: email.toLowerCase().trim() });
+    const existingStore = await Store.findOne({
+      email: email.toLowerCase().trim(),
+    });
     if (existingStore) {
-      return sendResponse(res, false, null, "A store with this email already exists");
+      return sendResponse(
+        res,
+        false,
+        null,
+        "A store with this email already exists",
+      );
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -176,7 +177,7 @@ const sendStoreOtp = async (req, res) => {
       res,
       true,
       { otp: process.env.NODE_ENV === "production" ? undefined : otp },
-      "OTP sent to email successfully"
+      "OTP sent to email successfully",
     );
   } catch (err) {
     return sendResponse(res, false, null, err.message);
@@ -194,20 +195,40 @@ const verifyStoreOtp = async (req, res) => {
     const record = storeOtpMap[otpKey];
 
     if (!record) {
-      return sendResponse(res, false, null, "No OTP request found. Please request a new OTP.");
+      return sendResponse(
+        res,
+        false,
+        null,
+        "No OTP request found. Please request a new OTP.",
+      );
     }
 
     if (Date.now() > record.expiresAt) {
       delete storeOtpMap[otpKey];
-      return sendResponse(res, false, null, "OTP has expired. Please request a new one.");
+      return sendResponse(
+        res,
+        false,
+        null,
+        "OTP has expired. Please request a new one.",
+      );
     }
 
     if (String(otp).trim() !== String(record.otp).trim()) {
-      return sendResponse(res, false, null, "Invalid OTP. Please check and try again.");
+      return sendResponse(
+        res,
+        false,
+        null,
+        "Invalid OTP. Please check and try again.",
+      );
     }
 
     delete storeOtpMap[otpKey];
-    return sendResponse(res, true, { verified: true }, "Store email verified successfully!");
+    return sendResponse(
+      res,
+      true,
+      { verified: true },
+      "Store email verified successfully!",
+    );
   } catch (err) {
     return sendResponse(res, false, null, err.message);
   }
@@ -264,7 +285,7 @@ const updateStore = async (req, res) => {
     const updatedStore = await Store.findByIdAndUpdate(
       req.params.id,
       updateData,
-      {  returnDocument: 'after'  },
+      { returnDocument: "after" },
     );
     if (!updatedStore) return sendResponse(res, false, null, "Store not found");
     sendResponse(res, true, updatedStore, "Store updated successfully");
@@ -323,7 +344,7 @@ const updateMyStore = async (req, res) => {
     const updatedStore = await Store.findByIdAndUpdate(
       storeId,
       { $set: req.body },
-      {  returnDocument: 'after'  },
+      { returnDocument: "after" },
     );
 
     if (!updatedStore) return sendResponse(res, false, null, "Store not found");
@@ -333,295 +354,142 @@ const updateMyStore = async (req, res) => {
   }
 };
 
-const getProductFacetCounts = async (storeId, field, lookupCollection) => {
-  return Product.aggregate([
-    { $match: { storeId } },
-    { $group: { _id: `$${field}`, count: { $sum: 1 } } },
-    {
-      $lookup: {
-        from: lookupCollection,
-        localField: "_id",
-        foreignField: "_id",
-        as: "info",
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        id: "$_id",
-        count: 1,
-        name: {
-          $ifNull: [{ $arrayElemAt: ["$info.name", 0] }, "Unspecified"],
-        },
-      },
-    },
-    { $sort: { count: -1 } },
-  ]);
-};
-
-const getVariantFacetCounts = async (
-  storeId,
-  field,
-  lookupCollection,
-  isArrayField = false,
-) => {
-  const pipeline = [
-    {
-      $lookup: {
-        from: "products",
-        localField: "product_id",
-        foreignField: "_id",
-        as: "product",
-      },
-    },
-    { $unwind: "$product" },
-    { $match: { "product.storeId": storeId } },
-  ];
-
-  if (isArrayField) {
-    pipeline.push({
-      $unwind: { path: `$${field}`, preserveNullAndEmptyArrays: true },
-    });
-  }
-
-  pipeline.push({ $group: { _id: `$${field}`, count: { $sum: 1 } } });
-
-  if (lookupCollection) {
-    pipeline.push(
-      {
-        $lookup: {
-          from: lookupCollection,
-          localField: "_id",
-          foreignField: "_id",
-          as: "info",
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          id: "$_id",
-          count: 1,
-          name: {
-            $ifNull: [{ $arrayElemAt: ["$info.name", 0] }, "Unspecified"],
-          },
-        },
-      },
-    );
-  } else {
-    pipeline.push({
-      $project: {
-        _id: 0,
-        id: "$_id",
-        count: 1,
-        name: { $ifNull: ["$_id", "Unspecified"] },
-      },
-    });
-  }
-
-  pipeline.push({ $sort: { count: -1 } });
-
-  return ProductVariant.aggregate(pipeline);
-};
-
-const getMasterListFacet = async (Model, ownerId) => {
-  const items = await Model.find({ createdBy: ownerId }).select("_id name");
-  return items.map((i) => ({ id: i._id, name: i.name }));
-};
-
-const getStoreCustomers = async (ownerId) => {
-  const customers = await Order.aggregate([
-    { $match: { store_owner_id: ownerId } },
-    {
-      $group: {
-        _id: "$user_id",
-        totalOrders: { $sum: 1 },
-        totalSpent: { $sum: "$total_price" },
-        lastOrderAt: { $max: "$createdAt" },
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "_id",
-        foreignField: "_id",
-        as: "user",
-      },
-    },
-    { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
-    {
-      $project: {
-        _id: 0,
-        id: "$_id",
-        name: { $ifNull: ["$user.name", "Deleted User"] },
-        email: { $ifNull: ["$user.email", "-"] },
-        mobile_number: { $ifNull: ["$user.mobile_number", "-"] },
-        totalOrders: 1,
-        totalSpent: 1,
-        lastOrderAt: 1,
-      },
-    },
-    { $sort: { totalOrders: -1 } },
-  ]);
-  return customers;
-};
-
 const getStoreDashboard = async (req, res) => {
   try {
     const { id } = req.params;
-    const storeObjectId = new mongoose.Types.ObjectId(id);
 
-    const store = await Store.findById(id);
-    if (!store) return sendResponse(res, false, null, "Store not found");
-
-    let owner = await User.findOne({
-      storeId: storeObjectId,
-      role: "store_owner",
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid store ID",
+      });
+    }
+    const storeId = new mongoose.Types.ObjectId(id);
+    const store = await Store.findById(storeId).lean();
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        message: "Store not found",
+      });
+    }
+    const totalProducts = await Product.countDocuments({
+      storeId: storeId,
     });
+    const productsList = await Product.find({ storeId: storeId })
+      .select("_id name price status createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    if (!owner) {
-      owner = await User.findOne({ storeId: storeObjectId });
-    }
+    const ProductsWise = productsList.map((p) => ({
+      id: p._id,
+      name: p.name || "Unnamed Product",
+    }));
 
-    if (!owner) {
-      return sendResponse(res, false, null, "No owner found for this store");
-    }
-
-    const ownerId = owner._id;
-    const [
-      totalProducts,
-      totalOrders,
-      customers,
-      cancelledOrders,
-      refundedOrders,
-      returnOrders,
-      deliveredOrders,
-      pendingOrders,
-      ProductsWise,
-      categoryWise,
-      subCategoryWise,
-      // brandWise,
-      typeWise,
-      // fabricWise,
-      // colorWise,
-      // sizeWise,
-      productLabelWise,
-      recentOrderItems,
-    ] = await Promise.all([
-      Product.countDocuments({ storeId: id }),
-
-      Order.countDocuments({ store_owner_id: ownerId }),
-      getStoreCustomers(ownerId),
-      Order.countDocuments({ store_owner_id: ownerId, status: "cancelled" }),
-      Order.countDocuments({ store_owner_id: ownerId, status: "refunded" }),
-      Order.countDocuments({ store_owner_id: ownerId, status: "completed" }),
-      Order.countDocuments({ store_owner_id: ownerId, status: "pending" }),
-      Order.countDocuments({ store_owner_id: ownerId, status: "rto" }),
-
-      getMasterListFacet(Product, ownerId),
-      getMasterListFacet(Category, ownerId),
-      getMasterListFacet(Subcategory, ownerId),
-      // getMasterListFacet(Brand, ownerId),
-      getMasterListFacet(Type, ownerId),
-      // getMasterListFacet(Fabric, ownerId),
-      // getMasterListFacet(Color, ownerId),
-      // getMasterListFacet(Size, ownerId),
-      getMasterListFacet(ProductLabel, ownerId),
-
-      Order.aggregate([
-        { $match: { store_owner_id: ownerId } },
-        { $sort: { createdAt: -1 } },
-        { $limit: 20 },
-        {
-          $lookup: {
-            from: "orderitems",
-            localField: "_id",
-            foreignField: "order_id",
-            as: "items",
-          },
+    const storeOrders = await Order.find({
+      store_owner_id: storeId,
+    })
+      .select(
+        "_id order_number total_price status user_id createdAt payment_status",
+      )
+      .sort({ createdAt: -1 })
+      .lean();
+    const totalOrders = storeOrders.length;
+    const pendingOrders = storeOrders.filter(
+      (order) => order.status === "pending",
+    ).length;
+    const processingOrders = storeOrders.filter(
+      (order) => order.status === "processing",
+    ).length;
+    const packedOrders = storeOrders.filter(
+      (order) => order.status === "packed",
+    ).length;
+    const readyToShipOrders = storeOrders.filter(
+      (order) => order.status === "ready_to_ship",
+    ).length;
+    const shippedOrders = storeOrders.filter(
+      (order) => order.status === "shipped",
+    ).length;
+    const inTransitOrders = storeOrders.filter(
+      (order) => order.status === "in_transit",
+    ).length;
+    const deliveredOrders = storeOrders.filter(
+      (order) => order.status === "completed",
+    ).length;
+    const cancelledOrders = storeOrders.filter(
+      (order) => order.status === "cancelled",
+    ).length;
+    const rtoOrders = storeOrders.filter(
+      (order) => order.status === "rto",
+    ).length;
+    const returnedOrders = storeOrders.filter(
+      (order) => order.status === "returned",
+    ).length;
+    const refundedOrders = storeOrders.filter(
+      (order) => order.status === "refunded",
+    ).length;
+    const totalRevenue = storeOrders.reduce(
+      (total, order) => total + Number(order.total_price || 0),
+      0,
+    );
+    const uniqueUserIds = [
+      ...new Set(
+        storeOrders.map((order) => order.user_id?.toString()).filter(Boolean),
+      ),
+    ];
+    const totalUsers = uniqueUserIds.length;
+    const customers = await User.find({
+      _id: {
+        $in: uniqueUserIds,
+      },
+    })
+      .select("_id name email phone")
+      .lean();
+    const customersList = customers.map((user) => ({
+      id: user._id,
+      name: user.name || "Unknown User",
+      email: user.email || "-",
+      phone: user.phone || "-",
+    }));
+    const recentOrders = storeOrders.slice(0, 10);
+    return res.status(200).json({
+      success: true,
+      data: {
+        store: {
+          id: store._id,
+          name: store.name,
+          email: store.email,
+          phone: store.phone,
         },
-        { $unwind: "$items" },
-        {
-          $lookup: {
-            from: "products",
-            localField: "items.product_id",
-            foreignField: "_id",
-            as: "items.product",
-          },
+        analytics: {
+          totalProducts,
+          totalOrders,
+          totalUsers,
+          totalRevenue,
+          pendingOrders,
+          processingOrders,
+          packedOrders,
+          readyToShipOrders,
+          shippedOrders,
+          inTransitOrders,
+          deliveredOrders,
+          cancelledOrders,
+          rtoOrders,
+          returnOrders: returnedOrders,
+          refundedOrders,
+          customersList,
+          ProductsWise,
+          recentOrders,
         },
-        {
-          $unwind: { path: "$items.product", preserveNullAndEmptyArrays: true },
-        },
-        {
-          $lookup: {
-            from: "subcategories",
-            localField: "items.product.category_id",
-            foreignField: "_id",
-            as: "subcategory",
-          },
-        },
-        {
-          $unwind: {
-            path: "$subcategory",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            orderId: "$_id",
-            orderStatus: "$status",
-            createdAt: 1,
-            productName: "$items.product.name",
-            categoryName: {
-              $ifNull: ["$subcategory.name", "No Subcategory"],
-            },
-            quantity: "$items.quantity",
-          },
-        },
-      ]),
-    ]);
-
-    const revenue = await Payment.aggregate([
-      { $match: { store_owner_id: ownerId, status: "completed" } },
-      { $group: { _id: null, totalRevenue: { $sum: "$amount_paid" } } },
-    ]);
-
-    return sendResponse(res, true, {
-      store,
-      analytics: {
-        totalProducts,
-        totalOrders,
-        totalUsers: customers.length,
-        customersList: customers,
-        cancelledOrders,
-        returnOrders,
-        refundedOrders,
-        deliveredOrders,
-        pendingOrders,
-        totalRevenue: revenue[0]?.totalRevenue || 0,
-        totalCategories: categoryWise.length,
-        totalSubCategories: subCategoryWise.length,
-        totalBrands: brandWise.length,
-        totalTypes: typeWise.length,
-        totalFabrics: fabricWise.length,
-        totalColors: colorWise.length,
-        totalSizes: sizeWise.length,
-        totalProductLabels: productLabelWise.length,
-        ProductsWise,
-        categoryWise,
-        subCategoryWise,
-        // brandWise,
-        typeWise,
-        // fabricWise,
-        // colorWise,
-        // sizeWise,
-        productLabelWise,
-        recentOrderItems,
       },
     });
-  } catch (err) {
-    console.error("getStoreDashboard error:", err);
-    sendResponse(res, false, null, err.message);
+  } catch (error) {
+    console.error("Store dashboard error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch store dashboard",
+      error: error.message,
+    });
   }
 };
 
@@ -630,7 +498,6 @@ module.exports = {
   getAllStores,
   getMyStore,
   updateMyStore,
-  // getStoreByDomain,
   getStoreById,
   createStore,
   updateStore,

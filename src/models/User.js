@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "store_owner", "store_user"],
       default: "store_user",
     },
-    domain: { type: String, default: "", index: true },
+    // domain: { type: String, default: "", index: true },
     storeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
@@ -19,14 +19,7 @@ const userSchema = new mongoose.Schema(
     },
     mobile_number: { type: String },
     profile_picture: { type: String },
-    // address: {
-    //   street: String,
-    //   city: String,
-    //   state: String,
-    //   country: String,
-    //   zip_code: String,
-    // },
-    addresses: [
+      addresses: [
       {
         full_name: {
           type: String,
@@ -77,10 +70,13 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-userSchema.index(
-  { email: 1, storeId: 1 },
-  { unique: true, name: "unique_email_per_store" },
-);
+// userSchema.index(
+//   { email: 1, storeId: 1 },
+//   { unique: true, name: "unique_email_per_store" },
+  
+// );
+
+userSchema.index({ email: 1 }, { unique: true, name: "unique_email_global" });
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;

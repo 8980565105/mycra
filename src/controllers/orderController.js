@@ -72,9 +72,6 @@ const getTrackingUrl = (partner, awb) => {
   return urls[safeString(partner)] || "";
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 1. GET ALL ORDERS  — admin & store_owner only (authenticated)
-// ═══════════════════════════════════════════════════════════════════════════════
 const getOrders = async (req, res) => {
   try {
     let {
@@ -223,6 +220,7 @@ const getOrders = async (req, res) => {
         { product_id: { $in: ownerProductIds } },
         { order_id: 1 },
       );
+      
       const ownerOrderIds = [
         ...new Set(ownerOrderItems.map((oi) => oi.order_id.toString())),
       ].map((id) => new mongoose.Types.ObjectId(id));
@@ -336,9 +334,6 @@ const getOrders = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 1B. GET PUBLIC USER ORDERS — store_user only sees their OWN orders
-// ═══════════════════════════════════════════════════════════════════════════════
 const getPublicUserOrders = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -443,9 +438,6 @@ const getPublicUserOrders = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 2. GET ORDER BY ID  — role check
-// ═══════════════════════════════════════════════════════════════════════════════
 const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -492,9 +484,6 @@ const getOrderById = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 3. CREATE ORDER
-// ═══════════════════════════════════════════════════════════════════════════════
 const createOrder = async (req, res) => {
   try {
     const user_id = req.user?._id;
@@ -506,7 +495,7 @@ const createOrder = async (req, res) => {
       payment_method = "COD",
       transaction_id,
       shipping = 0,
-      platform_charge = 0, 
+      platform_charge = 0,
     } = req.body;
 
     const items = safeArray(req.body.items);
@@ -570,10 +559,8 @@ const createOrder = async (req, res) => {
       }
     }
     discountAmount = Number(discountAmount.toFixed(2));
-
     const safeShipping = Number(shipping) || 0;
     const safePlatformCharge = Number(platform_charge) || 0;
-
     const total_price = Number(
       (
         safeSubtotal -
@@ -692,9 +679,6 @@ const confirmOrder = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 5. CANCEL ORDER
-// ═══════════════════════════════════════════════════════════════════════════════
 const cancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -749,9 +733,6 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 6. PACK ORDER
-// ═══════════════════════════════════════════════════════════════════════════════
 const packOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -799,9 +780,6 @@ const packOrder = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 7. GENERATE PACKING SLIP
-// ═══════════════════════════════════════════════════════════════════════════════
 const generatePackingSlip = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -1274,7 +1252,7 @@ const updateTracking = async (req, res) => {
         ) {
           order.courier.tracking_url = tracking_url;
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     order.status = "in_transit";

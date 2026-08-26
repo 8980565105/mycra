@@ -8,6 +8,8 @@ const bcrypt = require("bcryptjs");
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
+const Product = require("../models/Product");
+const OrderItem = require("../models/OrderItem");
 const deleteOldProfilePicture = (filename) => {
   if (!filename || filename.startsWith("http")) return;
 
@@ -20,6 +22,305 @@ const deleteOldProfilePicture = (filename) => {
     });
   }
 };
+
+// const getUsers = async (req, res) => {
+//   try {
+//     let {
+//       page = 1,
+//       limit = 10,
+//       search = "",
+//       isDownload = "false",
+//       is_active,
+//       role: roleFilter,
+//     } = req.query;
+//     const download = isDownload.toLowerCase() === "true";
+//     const loggedInUser = req.user;
+
+//     if (!loggedInUser)
+//       return sendResponse(res, false, null, "User not authenticated");
+
+//     page = parseInt(page);
+//     limit = parseInt(limit);
+//     if (isNaN(page) || page < 1) page = 1;
+//     if (isNaN(limit) || limit < 1) limit = 10;
+
+//     if (loggedInUser.role === "admin") {
+//       const baseQuery = {};
+//       if (roleFilter) baseQuery.role = roleFilter;
+
+//       if (search) {
+//         baseQuery.$or = [
+//           { name: { $regex: search, $options: "i" } },
+//           { email: { $regex: search, $options: "i" } },
+//         ];
+//       }
+
+//       if (is_active === "true") baseQuery.is_active = true;
+//       else if (is_active === "false") baseQuery.is_active = false;
+
+//       if (download) {
+//         const users = await User.find(baseQuery)
+//           .sort({ createdAt: -1 })
+//           .select("-password")
+//           .populate("storeId");
+//         return sendResponse(
+//           res,
+//           true,
+//           { users },
+//           "All users downloaded successfully",
+//         );
+//       }
+
+//       const total = await User.countDocuments(baseQuery);
+//       const users = await User.find(baseQuery)
+//         .skip((page - 1) * limit)
+//         .limit(limit)
+//         .sort({ createdAt: -1 })
+//         .select("-password")
+//         .populate("storeId");
+
+//       return sendResponse(
+//         res,
+//         true,
+//         { users, total, page, pages: Math.ceil(total / limit) },
+//         "Users retrieved successfully",
+//       );
+//     }
+
+//     if (loggedInUser.role === "store_owner") {
+//       const ownerId = new mongoose.Types.ObjectId(loggedInUser._id);
+
+//       const pipeline = [
+//         { $match: { store_owner_id: ownerId } },
+//         {
+//           $group: {
+//             _id: "$user_id",
+//             totalOrders: { $sum: 1 },
+//             totalSpent: { $sum: "$total_price" },
+//             lastOrderAt: { $max: "$createdAt" },
+//           },
+//         },
+//         {
+//           $lookup: {
+//             from: "users",
+//             localField: "_id",
+//             foreignField: "_id",
+//             as: "user",
+//           },
+//         },
+//         { $unwind: "$user" },
+//       ];
+
+//       if (search) {
+//         pipeline.push({
+//           $match: {
+//             $or: [
+//               { "user.name": { $regex: search, $options: "i" } },
+//               { "user.email": { $regex: search, $options: "i" } },
+//             ],
+//           },
+//         });
+//       }
+
+//       if (is_active === "true")
+//         pipeline.push({ $match: { "user.is_active": true } });
+//       else if (is_active === "false")
+//         pipeline.push({ $match: { "user.is_active": false } });
+
+//       pipeline.push({
+//         $project: {
+//           _id: 0,
+//           _id: "$user._id",
+//           name: "$user.name",
+//           email: "$user.email",
+//           mobile_number: "$user.mobile_number",
+//           profile_picture: "$user.profile_picture",
+//           is_active: "$user.is_active",
+//           gender: "$user.gender",
+//           address: "$user.address",
+//           createdAt: "$user.createdAt",
+//           totalOrders: 1,
+//           totalSpent: 1,
+//           lastOrderAt: 1,
+//         },
+//       });
+
+//       pipeline.push({ $sort: { lastOrderAt: -1 } });
+
+//       if (download) {
+//         const users = await Order.aggregate(pipeline);
+//         return sendResponse(
+//           res,
+//           true,
+//           { users },
+//           "All customers downloaded successfully",
+//         );
+//       }
+
+//       const countPipeline = [...pipeline, { $count: "total" }];
+//       const totalResult = await Order.aggregate(countPipeline);
+//       const total = totalResult[0]?.total || 0;
+
+//       const paginatedPipeline = [
+//         ...pipeline,
+//         { $skip: (page - 1) * limit },
+//         { $limit: limit },
+//       ];
+//       const users = await Order.aggregate(paginatedPipeline);
+
+//       return sendResponse(
+//         res,
+//         true,
+//         { users, total, page, pages: Math.ceil(total / limit) },
+//         "Customers retrieved successfully",
+//       );
+//     }
+
+//     return sendResponse(res, false, null, "Access denied: Unauthorized role");
+//   } catch (err) {
+//     return sendResponse(
+//       res,
+//       false,
+//       null,
+//       "Failed to retrieve users: " + err.message,
+//     );
+//   }
+// };
+
+// const getUsers = async (req, res) => {
+//   try {
+//     let {
+//       page = 1,
+//       limit = 10,
+//       search = "",
+//       isDownload = "false",
+//       is_active,
+//       role: roleFilter,
+//     } = req.query;
+//     const download = isDownload.toLowerCase() === "true";
+//     const loggedInUser = req.user;
+
+//     if (loggedInUser.role === "store_owner") {
+//       const ownerProducts = await Product.find(
+//         { createdBy: loggedInUser._id },
+//         { _id: 1 },
+//       );
+//       const ownerProductIds = ownerProducts.map((p) => p._id);
+
+//       if (ownerProductIds.length === 0) {
+//         return sendResponse(
+//           res,
+//           true,
+//           { users: [], total: 0, page, pages: 0 },
+//           "Customers retrieved successfully",
+//         );
+//       }
+
+//       const pipeline = [
+//         { $match: { product_id: { $in: ownerProductIds } } },
+//         {
+//           $lookup: {
+//             from: "orders",
+//             localField: "order_id",
+//             foreignField: "_id",
+//             as: "order",
+//           },
+//         },
+//         { $unwind: "$order" },
+//         {
+//           $group: {
+//             _id: "$order.user_id",
+//             orderIds: { $addToSet: "$order._id" },
+//             totalSpent: {
+//               $sum: { $multiply: ["$price_at_order", "$quantity"] },
+//             },
+//             lastOrderAt: { $max: "$order.createdAt" },
+//           },
+//         },
+//         {
+//           $lookup: {
+//             from: "users",
+//             localField: "_id",
+//             foreignField: "_id",
+//             as: "user",
+//           },
+//         },
+//         { $unwind: "$user" },
+//       ];
+
+//       if (search) {
+//         pipeline.push({
+//           $match: {
+//             $or: [
+//               { "user.name": { $regex: search, $options: "i" } },
+//               { "user.email": { $regex: search, $options: "i" } },
+//             ],
+//           },
+//         });
+//       }
+
+//       if (is_active === "true")
+//         pipeline.push({ $match: { "user.is_active": true } });
+//       else if (is_active === "false")
+//         pipeline.push({ $match: { "user.is_active": false } });
+
+//       pipeline.push({
+//         $project: {
+//           _id: "$user._id",
+//           name: "$user.name",
+//           email: "$user.email",
+//           mobile_number: "$user.mobile_number",
+//           profile_picture: "$user.profile_picture",
+//           is_active: "$user.is_active",
+//           gender: "$user.gender",
+//           address: "$user.address",
+//           createdAt: "$user.createdAt",
+//           totalOrders: { $size: "$orderIds" },
+//           totalSpent: 1,
+//           lastOrderAt: 1,
+//         },
+//       });
+
+//       pipeline.push({ $sort: { lastOrderAt: -1 } });
+
+//       if (download) {
+//         const users = await OrderItem.aggregate(pipeline);
+//         return sendResponse(
+//           res,
+//           true,
+//           { users },
+//           "All customers downloaded successfully",
+//         );
+//       }
+
+//       const countPipeline = [...pipeline, { $count: "total" }];
+//       const totalResult = await OrderItem.aggregate(countPipeline);
+//       const total = totalResult[0]?.total || 0;
+
+//       const paginatedPipeline = [
+//         ...pipeline,
+//         { $skip: (page - 1) * limit },
+//         { $limit: limit },
+//       ];
+//       const users = await OrderItem.aggregate(paginatedPipeline);
+
+//       return sendResponse(
+//         res,
+//         true,
+//         { users, total, page, pages: Math.ceil(total / limit) },
+//         "Customers retrieved successfully",
+//       );
+//     }
+//     return sendResponse(res, false, null, "Access denied: Unauthorized role");
+//   } catch (err) {
+//     return sendResponse(
+//       res,
+//       false,
+//       null,
+//       "Failed to retrieve users: " + err.message,
+//     );
+//   }
+// };
 
 const getUsers = async (req, res) => {
   try {
@@ -86,16 +387,40 @@ const getUsers = async (req, res) => {
     }
 
     if (loggedInUser.role === "store_owner") {
-      const ownerId = new mongoose.Types.ObjectId(loggedInUser._id);
+      const ownerProducts = await Product.find(
+        { createdBy: loggedInUser._id },
+        { _id: 1 },
+      );
+      const ownerProductIds = ownerProducts.map((p) => p._id);
+
+      if (ownerProductIds.length === 0) {
+        return sendResponse(
+          res,
+          true,
+          { users: [], total: 0, page, pages: 0 },
+          "Customers retrieved successfully",
+        );
+      }
 
       const pipeline = [
-        { $match: { store_owner_id: ownerId } },
+        { $match: { product_id: { $in: ownerProductIds } } },
+        {
+          $lookup: {
+            from: "orders",
+            localField: "order_id",
+            foreignField: "_id",
+            as: "order",
+          },
+        },
+        { $unwind: "$order" },
         {
           $group: {
-            _id: "$user_id",
-            totalOrders: { $sum: 1 },
-            totalSpent: { $sum: "$total_price" },
-            lastOrderAt: { $max: "$createdAt" },
+            _id: "$order.user_id",
+            orderIds: { $addToSet: "$order._id" },
+            totalSpent: {
+              $sum: { $multiply: ["$price_at_order", "$quantity"] },
+            },
+            lastOrderAt: { $max: "$order.createdAt" },
           },
         },
         {
@@ -127,7 +452,6 @@ const getUsers = async (req, res) => {
 
       pipeline.push({
         $project: {
-          _id: 0,
           _id: "$user._id",
           name: "$user.name",
           email: "$user.email",
@@ -137,7 +461,7 @@ const getUsers = async (req, res) => {
           gender: "$user.gender",
           address: "$user.address",
           createdAt: "$user.createdAt",
-          totalOrders: 1,
+          totalOrders: { $size: "$orderIds" },
           totalSpent: 1,
           lastOrderAt: 1,
         },
@@ -146,7 +470,7 @@ const getUsers = async (req, res) => {
       pipeline.push({ $sort: { lastOrderAt: -1 } });
 
       if (download) {
-        const users = await Order.aggregate(pipeline);
+        const users = await OrderItem.aggregate(pipeline);
         return sendResponse(
           res,
           true,
@@ -156,7 +480,7 @@ const getUsers = async (req, res) => {
       }
 
       const countPipeline = [...pipeline, { $count: "total" }];
-      const totalResult = await Order.aggregate(countPipeline);
+      const totalResult = await OrderItem.aggregate(countPipeline);
       const total = totalResult[0]?.total || 0;
 
       const paginatedPipeline = [
@@ -164,7 +488,7 @@ const getUsers = async (req, res) => {
         { $skip: (page - 1) * limit },
         { $limit: limit },
       ];
-      const users = await Order.aggregate(paginatedPipeline);
+      const users = await OrderItem.aggregate(paginatedPipeline);
 
       return sendResponse(
         res,
@@ -184,7 +508,7 @@ const getUsers = async (req, res) => {
     );
   }
 };
-
+  
 const getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
@@ -354,7 +678,7 @@ const updateUser = async (req, res) => {
     if (role && req.user.role === "admin") updateData.role = role;
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-       returnDocument: 'after'
+      returnDocument: "after",
     }).select("-password");
     return sendResponse(
       res,

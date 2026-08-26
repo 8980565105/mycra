@@ -119,7 +119,7 @@ const getWishlist = async (req, res) => {
     const wishlists = await Wishlist.aggregate(pipeline);
     const populated = await Wishlist.populate(wishlists, [
       { path: "items.product_id", select: "name image images" },
-      { path: "items.variant_id", select: "price color size sku image images" },
+      { path: "items.variant_id", select: "price offerprice  color size sku image images" },
     ]);
 
     return sendResponse(

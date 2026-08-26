@@ -1,5 +1,5 @@
 const Category = require("../models/Category");
-const SubCategory = require("../models/SubCategory");
+const SubCategory = require("../models/Subcategory");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
@@ -10,16 +10,30 @@ const Type = require("../models/Type");
 const ProductLabel = require("../models/ProductLabel");
 const Coupon = require("../models/Coupon");
 const { sendResponse } = require("../utils/response");
+
 const getDashboard = async (req, res) => {
   try {
     const now = new Date();
     const isAdmin = req.user.role === "admin";
     const ownerId = req.user._id;
-    const productFilter = isAdmin ? {} : { createdBy: ownerId };
-    const orderFilter = isAdmin ? {} : { store_owner_id: ownerId };
+    const storeId = req.user.storeId || null;
+    const storeOwnerIds = [ownerId];
+    if (storeId) storeOwnerIds.push(storeId);
+    const creatorFilter = isAdmin
+      ? {}
+      : {
+          $or: [
+            { createdBy: ownerId },
+            ...(storeId ? [{ storeId: storeId }] : []),
+          ],
+        };
+    const productFilter = isAdmin ? {} : creatorFilter;
+    const orderFilter = isAdmin
+      ? {}
+      : { store_owner_id: { $in: storeOwnerIds } };
     const paymentFilter = isAdmin
       ? { status: "completed" }
-      : { status: "completed", store_owner_id: ownerId };
+      : { status: "completed", store_owner_id: { $in: storeOwnerIds } };
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const currentMonthEnd = new Date(
       now.getFullYear(),
@@ -53,21 +67,24 @@ const getDashboard = async (req, res) => {
       });
     } else {
       const allCustomerIds = await Order.distinct("user_id", {
-        store_owner_id: ownerId,
+        store_owner_id: { $in: storeOwnerIds },
       });
       totalUsers = allCustomerIds.length;
       const prevCustomerIds = await Order.distinct("user_id", {
-        store_owner_id: ownerId,
+        store_owner_id: { $in: storeOwnerIds },
         createdAt: { $gte: prevMonthStart, $lte: prevMonthEnd },
       });
       prevMonthUsers = prevCustomerIds.length;
       const currCustomerIds = await Order.distinct("user_id", {
-        store_owner_id: ownerId,
+        store_owner_id: { $in: storeOwnerIds },
         createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd },
       });
       currMonthUsers = currCustomerIds.length;
     }
     const totalProducts = await Product.countDocuments(productFilter);
+
+
+    
     const prevMonthProducts = await Product.countDocuments({
       ...productFilter,
       createdAt: { $gte: prevMonthStart, $lte: prevMonthEnd },
@@ -85,22 +102,19 @@ const getDashboard = async (req, res) => {
       ...orderFilter,
       createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd },
     });
-
     const totalStores = isAdmin ? await Store.countDocuments() : 1;
     const activeStores = isAdmin
       ? await Store.countDocuments({ status: "active" })
       : 1;
     const totalCategories = await Category.countDocuments(
-      isAdmin ? {} : { createdBy: ownerId },
+      isAdmin ? {} : creatorFilter,
     );
     const totalSubCategories = await SubCategory.countDocuments(
-      isAdmin ? {} : { createdBy: ownerId },
+      isAdmin ? {} : creatorFilter,
     );
-    const totalTypes = await Type.countDocuments(
-      isAdmin ? {} : { createdBy: ownerId },
-    );
+    const totalTypes = await Type.countDocuments(isAdmin ? {} : creatorFilter);
     const totalProductLabels = await ProductLabel.countDocuments(
-      isAdmin ? {} : { createdBy: ownerId },
+      isAdmin ? {} : creatorFilter,
     );
     const pendingOrders = await Order.countDocuments({
       ...orderFilter,
@@ -147,9 +161,10 @@ const getDashboard = async (req, res) => {
       { $group: { _id: null, totalRevenue: { $sum: "$amount_paid" } } },
     ]);
     const currMonthRevenue = currRevenueAgg[0]?.totalRevenue || 0;
+    const couponBaseFilter = isAdmin ? {} : creatorFilter;
     const couponFilter = {
       status: "active",
-      ...(isAdmin ? {} : { createdBy: ownerId }),
+      ...couponBaseFilter,
       $and: [
         { $or: [{ start_date: { $lte: now } }, { start_date: null }] },
         { $or: [{ end_date: { $gte: now } }, { end_date: null }] },
@@ -158,25 +173,21 @@ const getDashboard = async (req, res) => {
     const activeCoupons = await Coupon.countDocuments(couponFilter);
     const prevCouponFilter = {
       status: "active",
-      ...(isAdmin ? {} : { createdBy: ownerId }),
+      ...couponBaseFilter,
       createdAt: { $gte: prevMonthStart, $lte: prevMonthEnd },
     };
     const prevMonthCoupons = await Coupon.countDocuments(prevCouponFilter);
     const currCouponFilter = {
       status: "active",
-      ...(isAdmin ? {} : { createdBy: ownerId }),
+      ...couponBaseFilter,
       createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd },
     };
     const currMonthCoupons = await Coupon.countDocuments(currCouponFilter);
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
     const range = req.query.range || "day";
-
     let salesRangeStart = new Date();
     let dateFormat = "%Y-%m-%d";
-    let bucketCount = 30;
-
     if (range === "day") {
       salesRangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
       dateFormat = "%Y-%m-%d";
@@ -202,14 +213,11 @@ const getDashboard = async (req, res) => {
         },
       },
     ]);
-
     const dataMap = {};
     rawSalesOverview.forEach((item) => {
       dataMap[item._id] = { revenue: item.revenue, orders: item.orders };
     });
-
     const salesOverview = [];
-
     if (range === "day") {
       const daysInMonth = new Date(
         now.getFullYear(),
@@ -244,12 +252,10 @@ const getDashboard = async (req, res) => {
         });
       }
     }
-
     const ordersByStatus = await Order.aggregate([
       { $match: orderFilter },
       { $group: { _id: "$status", count: { $sum: 1 } } },
     ]);
-
     let topSellingProducts;
     if (isAdmin) {
       topSellingProducts = await OrderItem.aggregate([
@@ -277,7 +283,7 @@ const getDashboard = async (req, res) => {
       ]);
     } else {
       const ownerOrderIds = await Order.distinct("_id", {
-        store_owner_id: ownerId,
+        store_owner_id: { $in: storeOwnerIds },
       });
       topSellingProducts = await OrderItem.aggregate([
         { $match: { order_id: { $in: ownerOrderIds } } },
@@ -304,7 +310,6 @@ const getDashboard = async (req, res) => {
         },
       ]);
     }
-
     const recentOrdersRaw = await Order.find(orderFilter)
       .sort({ createdAt: -1 })
       .limit(5)
