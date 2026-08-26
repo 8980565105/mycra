@@ -98,7 +98,6 @@
    --font-color-h4: rgba(0, 0, 0, 0.7);   /* black */
     --font-size-h5: 70px;    /* ~text-xl */  
 }
-/* Classes */
 .bg-ef3a96-9 {
   background-color: var(--ef3a96-9) !important;
 }
@@ -118,7 +117,6 @@
   background-color: var(--theme-hover-color);
   color: white !important;
 }
-/* globals.css */
 .text-theme {
   color: var(--theme-color);
 }
@@ -136,17 +134,14 @@
   background-color: var( --theme-bg-rgba);
 }
 
-/* Hover */
 .bg-color:hover {
   background-color: var(--theme-color);
 }
 
-/* Active (while clicked) */
 .bg-color:active {
   background-color: var(--theme-color);
 }
 
-/* Circle with border */
 .circle-border {
   border-style: solid; 
   border-width: 5px 0px 0px 5px; 
@@ -189,18 +184,17 @@
 
 .font-h2 {
   font-family: 'Italianno', cursive !important;
-  font-weight: 400;    /* regular weight */
+  font-weight: 400;    
   font-size: var(--font-size-h2);
   
 }
 .font-h5 {
   font-family:'Italianno', cursive !important;;
-  font-style: italic; /* Italianno is already cursive */
-  font-weight: 500;    /* regular weight */
+  font-style: italic; 
+  font-weight: 500;    
   font-size: var(--font-size-h5);
   
 }
-/* common h3 style */
 .new-arrival-title {
   font-family: var(--font-family-h3);
 
@@ -212,39 +206,36 @@
   left: 20px;
 }
 
-/* common h4 style */
 .font-h4 {
   font-family: var(--font-family-h4);
   font-weight: var(--font-weight-h4);
 
 }
 
-/* slick slider styles */
 @import "~slick-carousel/slick/slick.css";
 @import "~slick-carousel/slick/slick-theme.css";
 
-/* Custom CSS to style the active slider dot */
 .slick-dots li.slick-active div {
  
     background-color: var(--theme-color) !important;
-    border-radius: 20%; /* perfect round */
+    border-radius: 20%; 
 }
 
 .discount-badge {
   
   color: var(--theme-color);
-  font-size: 15px; /* text-sm */
-  font-weight: 500;    /* font-semibold */
-  padding: 0.25rem 0.5rem; /* py-1 px-2 */
-  border-radius: 0.25rem; /* rounded */
-  width: 200px;       /* fixed width */
+  font-size: 15px; 
+  font-weight: 500;    
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem; 
+  width: 200px;      
   text-align: center;
 }
 
 .discount-star {
-  background-color: #ff007f; /* Base color of the star */
+  background-color: #ff007f; 
   border-radius: 5px;
-  transform: rotate(22.5deg); /* Rotate the main square */
+  transform: rotate(22.5deg); 
 }
 
 .discount-star::before,
@@ -261,14 +252,13 @@
 }
 
 .discount-star::before {
-  transform: rotate(45deg); /* Rotate the first pseudo-element */
+  transform: rotate(45deg); 
 }
 
 .discount-star::after {
-  transform: rotate(90deg); /* Rotate the second pseudo-element */
+  transform: rotate(90deg); 
 }
 
-/* Optional: To position the text in the center and rotate it */
 .discount-star {
   transform: rotate(22.5deg);
 }
@@ -277,14 +267,13 @@
   transform: rotate(-22.5deg);
 }
 
-/* Font stroke + shadow */
 .text-stroke {
-  -webkit-text-stroke: 2px white; /* stroke width + color */
-  -webkit-text-fill-color: black; /* fill color */
+  -webkit-text-stroke: 2px white; 
+  -webkit-text-fill-color: black; 
 }
 
 .text-shadow-custom {
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4); /* x, y, blur, color */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .font-inter {
@@ -295,8 +284,6 @@
     font-size: 20px;
 }
 
-/* responsive header scroll bar */
-/* scroll bar */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -311,15 +298,7 @@
 .bg-theme {
   background-color: var( --sec-theme-color-30);
 }
-/* 
-.sfpro {
-  font-family: "SF Pro Display", sans-serif;
-  font-weight: 600; 
-  font-size: 17px;
-  line-height: 1.4; 
-} */
 
-/* new changes */
 .text-light{
   color: var(--text-light);
 }
@@ -341,9 +320,7 @@
 .sec-theme{
   background-color: var(--sec-theme-color-30);
 }
-/* .heading-18{
-  color:var(--font-size-h4);
-} */
+
 .text-14{
   font-size: var(--text-14);
 }
@@ -363,17 +340,11 @@
 .font-18{
   font-size: var(--font-size-h4);
 }
-/* .input-common {
-  @apply w-full border-b light-border rounded-[5px] px-[10px] py-[8px] md:px-[20px] md:py-[13px] focus:outline-none focus:ring-2 focus:ring-pink-400 form-shadow placeholder-[#BCBCBC];
-} */
 
 .input-common {
   @apply w-full border-b light-border rounded-[5px] px-[10px] py-[8px] md:px-[20px] md:py-[13px] focus:outline-none form-shadow placeholder-[#BCBCBC];
 }
-/* .input-common:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px var(--theme-bg-rgba);
-} */
+
 
 @media (max-width: 767px) {
 .font-h2{
@@ -381,31 +352,9 @@
 }
 }
 
-/* .container-1440 {
-  @apply w-full mx-auto lg:max-w-[1440px];
-} */
-
-/* app.css */
-/* app.css */
-/* .bg-gradient-custom {
-  background: linear-gradient(
-    90deg, 
-    rgba(210, 175, 159, 0.6) 0%,  
-    rgba(210, 175, 159, 0.6) 30%,  
-    rgba(210, 175, 159, 0.6) 100%  
-  );
-} */
-/* ultra thin dashed border */
-/* .thin-border {
-  border-width: 0.5px !important;
-  border-style: dashed !important;
-} */
-
-/* utility classes for easy usage */
 .bg-color { background-color: var(--primary-color); }
 .border-color { border-color: var(--primary-color); }
 .text-color { color: var(--primary-color); }
-/* .ring-color { ring-color: var(--primary-color); } */
 
 .prose p:empty::before {
   content: "";
@@ -436,7 +385,6 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-
 
 .discount-badge {
   color: var(--primary-color);

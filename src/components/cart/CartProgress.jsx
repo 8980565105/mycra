@@ -1,4 +1,3 @@
-// src/components/cart/CartProgress.jsx
 import React from "react";
 import { Check } from "lucide-react";
 import Row from "../ui/Row";
@@ -13,7 +12,7 @@ export default function CartProgress({ currentStep = 1 }) {
 
   return (
     <Section>
-      <Row className="flex justify-between items-center w-full !max-w-[677px] px-4 md:px-0 relative pt-[50px]">
+      <Row className="flex justify-between items-center w-full !max-w-[677px] px-4 md:px-0 relative">
         {steps.map((s, i) => {
           const completed = s.step < currentStep;
           const active = s.step === currentStep;

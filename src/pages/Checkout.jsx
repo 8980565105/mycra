@@ -1,12 +1,26 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CheckoutForm from "../components/checkout/CheckoutForm";
 import OrderSummary from "../components/checkout/OrderSummary";
 import Section from "../components/ui/Section";
 import Row from "../components/ui/Row";
 import CartProgress from "../components/cart/CartProgress";
 import { Link } from "react-router-dom";
+import SEO from "../components/Seo/seo";
+import { useDispatch, useSelector } from "react-redux";
+import { getImageUrl } from "../components/utils/helper";
+import { fetchPageBySlug } from "../features/pages/pagesThunk";
 
 export default function Checkout() {
+  const dispatch = useDispatch();
+  const { pages } = useSelector((state) => state.pages);
+
+
+  useEffect(() => {
+      dispatch(fetchPageBySlug("checkout"));
+    }, [dispatch]);
+
+  const chekoutPage = pages?.find((page) => page.slug === "checkout");
+
   const [appliedCoupon] = useState(() => {
     const saved = localStorage.getItem("appliedCoupon");
     return saved ? JSON.parse(saved) : null;
@@ -26,6 +40,13 @@ export default function Checkout() {
 
   return (
     <div>
+
+      <SEO
+        title={chekoutPage?.meta_title}
+        description={chekoutPage?.meta_description}
+        image={getImageUrl(chekoutPage?.seo_image)}
+      />
+
       <CartProgress currentStep={2} />
 
       <Section>

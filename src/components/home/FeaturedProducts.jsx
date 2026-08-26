@@ -291,7 +291,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                         boxShadow: "inset 0 0 5px 1px rgba(0, 0, 0, 0.25)",
                       }}
                     >
-                      <p className="text-[12px] md:text-[16px] font-medium">
+                      <p className="text-[12px] md:text-[16px] font-medium whitespace-nowrap">
                         {cat.name}
                       </p>
                     </button>

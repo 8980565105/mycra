@@ -172,8 +172,6 @@ const Header = () => {
     }
   }, [dispatch, userId]);
 
-  
-
   const handleShopMouseEnter = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setIsMegaMenuOpen(true);
@@ -242,7 +240,7 @@ const Header = () => {
     setIsMenuOpen(false);
     setIsMobileMegaMenuOpen(false);
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    
+
     const targetUrl = `/shop?category=${encodeURIComponent(categoryName)}`;
     if (location.pathname === "/shop") {
       navigate(targetUrl, { replace: true });
@@ -622,7 +620,9 @@ const Header = () => {
                   </>
                 ) : (
                   <>
-                    <span>Welcome {user?.name || "User"} !</span>
+                    <span className="min-w-0 break-all whitespace-normal">
+                      Welcome {user?.name || "User"} !
+                    </span>
                     <span
                       className="text-[var(--secondary-color)] hover:text-[var(--primary-color)] cursor-pointer font-18 font-medium whitespace-nowrap"
                       onClick={handleLogout}

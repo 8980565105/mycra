@@ -31,12 +31,10 @@
     getAll: "/pages",
     getBySlug: (slug) => `/pages/get/${slug}`,
   },
-
   policypage: {
     getAll: "/policypages",
     getBySlug: (slug) => `/policypages/slug/${slug}`,
   },
-
   types: {
     getAll: "/types",
     getPublic: "/types/public",
@@ -97,12 +95,6 @@
     getPublic: "/coupons/public",
     getById: (id) => `/coupons/${id}`,
   },
-  faqs: {
-    getPublic: "/faqs/public",
-    getAll: "/faqs",
-    getById: (id) => `/faqs/${id}`,
-    getBanner: "/faqs/banner/public",
-  },
   about: {
     get: "/about",
     getPublic: "/about/public",
@@ -145,5 +137,7 @@
   childcategory: {
     getAll: "child-categories/public",
   },
+  Emails: {
+    create: "/emails",
+  },
 };
-

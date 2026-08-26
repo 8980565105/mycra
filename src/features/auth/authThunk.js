@@ -111,15 +111,29 @@ export const resetPassword = createAsyncThunk(
   },
 );
 
+// export const googleLoginUser = createAsyncThunk(
+//   "auth/googleLoginUser",
+//   async (credential, { rejectWithValue }) => {
+//     try {
+//       const domain = getCurrentDomain();
+//       const res = await api.post(ROUTES.auth.googleLogin, {
+//         credential,
+//         domain,
+//       });
+//       return res.data;
+//     } catch (error) {
+//       return rejectWithValue(
+//         error.response?.data?.message || "Google login failed",
+//       );
+//     }
+//   },
+// );
+
 export const googleLoginUser = createAsyncThunk(
   "auth/googleLoginUser",
   async (credential, { rejectWithValue }) => {
     try {
-      const domain = getCurrentDomain();
-      const res = await api.post(ROUTES.auth.googleLogin, {
-        credential,
-        domain,
-      });
+      const res = await api.post(ROUTES.auth.googleLogin, { credential });
       return res.data;
     } catch (error) {
       return rejectWithValue(
@@ -136,7 +150,7 @@ export const changePassword = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const res = await api.put(ROUTES.auth.changePassword, {  
+      const res = await api.put(ROUTES.auth.changePassword, {
         currentPassword,
         newPassword,
         confirmNewPassword,

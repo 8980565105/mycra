@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, X, Plus, Minus } from "lucide-react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import CheckedIcon from "../icons/checked";
@@ -191,7 +191,6 @@ export const getProductEffectivePrice = (p) => {
             ? Number(v.offerprice)
             : 0;
         const sellingPrice = Number(v?.selling_price) || 0;
-
         if (offerPrice > 0 && (originalPrice === 0 || offerPrice < originalPrice)) return offerPrice;
         if (sellingPrice > 0) return sellingPrice;
         if (originalPrice > 0) return originalPrice;
@@ -211,7 +210,6 @@ export const getProductEffectivePrice = (p) => {
   if (pOffer > 0 && (pPrice === 0 || pOffer < pPrice)) return pOffer;
   if (pSelling > 0) return pSelling;
   if (pPrice > 0) return pPrice;
-
   return 0;
 };
 
@@ -229,10 +227,8 @@ const PriceRangeFilter = ({
 }) => {
   const MIN_BOUND = displayMin !== undefined ? displayMin : 0;
   const MAX_BOUND = Math.max(displayMax || 5000, maxPrice || 5000, 1000);
-
   const currentMin = minPrice !== undefined && minPrice !== null ? minPrice : MIN_BOUND;
   const currentMax = maxPrice !== undefined && maxPrice !== null ? maxPrice : MAX_BOUND;
-
   const [localMin, setLocalMin] = useState(currentMin);
   const [localMax, setLocalMax] = useState(currentMax);
 
@@ -342,7 +338,6 @@ const PriceRangeFilter = ({
             className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-20 pointer-events-auto"
           />
         </div>
-
         <div className="flex items-center gap-3">
           <div className="flex flex-col flex-1">
             <span className="text-xs sec-text-color font-medium mb-1">Min (Rs)</span>
@@ -377,24 +372,20 @@ export default function WomenCollections() {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const [searchQuery, setSearchQuery] = useState("");
   const [showLoginPopup, setShowLoginPopup] = useState(false);
-
   const { products = [], priceMetadata = {}, loading } = useSelector(
     (state) => state.products || {},
   );
   const { items: subcategories = [] } = useSelector(
     (state) => state.subcategories,
   );
-
   const { discounts: allDiscounts = [] } = useSelector(
     (state) => state.discounts || {},
   );
   const { productLabels: allLabels = [] } = useSelector(
     (state) => state.productLabels || {},
   );
-
   const getInitialParams = () => {
     const params = new URLSearchParams(location.search);
     return {
@@ -405,7 +396,6 @@ export default function WomenCollections() {
       max: params.get("max") !== null ? Number(params.get("max")) : null,
     };
   };
-
   const catalogPrices = useMemo(() => {
     if (!Array.isArray(products) || products.length === 0) {
       return { min: 0, max: priceMetadata?.displayMax || priceMetadata?.actualMax || 5000 };
@@ -416,19 +406,16 @@ export default function WomenCollections() {
     }
     const realMin = Math.min(...prices);
     const realMax = Math.max(...prices);
-
     const metaMax = priceMetadata?.displayMax || priceMetadata?.actualMax || 0;
     const metaMin = priceMetadata?.displayMin !== undefined ? priceMetadata?.displayMin : 0;
-
     return {
       min: Math.min(realMin, metaMin),
       max: Math.max(realMax, metaMax, 1000),
     };
   }, [products, priceMetadata]);
-
   const minCatalogPrice = catalogPrices.min;
   const maxCatalogPrice = catalogPrices.max;
-
+  const hasSyncedMaxPrice = useRef(false);
   const [selectedCategories, setSelectedCategories] = useState(() => getInitialParams().categories);
   const [selectedTypes, setSelectedTypes] = useState(() => getInitialParams().types);
   const [typeIdsToFetch, setTypeIdsToFetch] = useState([]);
@@ -444,10 +431,8 @@ export default function WomenCollections() {
   const [currentSortLabel, setCurrentSortLabel] = useState("popularity");
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isSortByOpen, setIsSortByOpen] = useState(false);
-
   const [page] = useState(1);
   const limit = 30;
-
   const [debouncedMinPrice, setDebouncedMinPrice] = useState(minPrice);
   const [debouncedMaxPrice, setDebouncedMaxPrice] = useState(maxPrice);
   const { types = [], loading: typesLoading } = useSelector((state) => state.types || {});
@@ -484,12 +469,10 @@ export default function WomenCollections() {
   }, [selectedTypes, types, dispatch]);
 
   useEffect(() => {
-    if (
-      getInitialParams().max === null &&
-      maxCatalogPrice > 0 &&
-      (maxPrice < maxCatalogPrice || maxPrice === 5000)
-    ) {
+    if (hasSyncedMaxPrice.current) return;
+    if (getInitialParams().max === null && maxCatalogPrice > 0) {
       setMaxPrice(maxCatalogPrice);
+      hasSyncedMaxPrice.current = true;
     }
   }, [maxCatalogPrice]);
 
@@ -501,30 +484,25 @@ export default function WomenCollections() {
     return () => clearTimeout(timer);
   }, [minPrice, maxPrice]);
 
+  const matchedCategoryIds = useMemo(() => {
+    if (selectedCategories.length === 0) return [];
+    return subcategories
+      .filter((cat) => selectedCategories.includes(cat.name))
+      .map((cat) => cat._id);
+  }, [selectedCategories, subcategories]);
+  const matchedCategoryIdsKey = matchedCategoryIds.join(",");
+  const lastParamsKeyRef = useRef(null);
+
   useEffect(() => {
     const params = { page, limit };
-    if (debouncedMinPrice !== undefined && debouncedMinPrice !== null)
-      params.minPrice = debouncedMinPrice;
-    if (debouncedMaxPrice !== undefined && debouncedMaxPrice !== null)
-      params.maxPrice = debouncedMaxPrice;
-    if (selectedCategories.length > 0) {
-      const matchedCatIds = subcategories
-        .filter((cat) => selectedCategories.includes(cat.name))
-        .map((cat) => cat._id);
-      if (matchedCatIds.length > 0) {
-        params.categories = matchedCatIds.join(",");
-      }
-    }
+    if (debouncedMinPrice != null) params.minPrice = debouncedMinPrice;
+    if (debouncedMaxPrice != null) params.maxPrice = debouncedMaxPrice;
+    if (matchedCategoryIdsKey) params.categories = matchedCategoryIdsKey;
+    const key = JSON.stringify(params);
+    if (lastParamsKeyRef.current === key) return;
+    lastParamsKeyRef.current = key;
     dispatch(fetchProducts(params));
-  }, [
-    dispatch,
-    page,
-    limit,
-    debouncedMinPrice,
-    debouncedMaxPrice,
-    selectedCategories,
-    subcategories,
-  ]);
+  }, [dispatch, page, limit, debouncedMinPrice, debouncedMaxPrice, matchedCategoryIdsKey]);
 
   useEffect(() => {
     dispatch(fetchAttributes());
@@ -541,7 +519,6 @@ export default function WomenCollections() {
       if (prev.includes(typeName)) {
         return prev.filter((type) => type !== typeName);
       }
-
       return [...prev, typeName];
     });
   };
@@ -599,7 +576,6 @@ export default function WomenCollections() {
     navigate("/shop", { replace: true });
   };
 
-
   useEffect(() => {
     const params = new URLSearchParams();
     if (selectedCategories.length)
@@ -613,11 +589,9 @@ export default function WomenCollections() {
     if (debouncedMaxPrice !== null && maxCatalogPrice > 0 && debouncedMaxPrice < maxCatalogPrice) {
       params.set("max", debouncedMaxPrice);
     }
-
     const queryString = params.toString();
     const newUrl = `/shop${queryString ? `?${queryString}` : ""}`;
     const currentFullUrl = location.pathname + location.search;
-
     if (currentFullUrl !== newUrl) {
       navigate(newUrl, { replace: true });
     }
@@ -642,7 +616,6 @@ export default function WomenCollections() {
         label: l.name,
       })),
     ];
-
     Object.keys(selectedAttributes).forEach((code) => {
       const vals = selectedAttributes[code] || [];
       vals.forEach((val) => {
@@ -653,7 +626,6 @@ export default function WomenCollections() {
         });
       });
     });
-
     if (minPrice > minCatalogPrice || (maxPrice && maxPrice < maxCatalogPrice)) {
       arr.push({
         type: "price",
@@ -672,7 +644,6 @@ export default function WomenCollections() {
     minCatalogPrice,
     maxCatalogPrice,
   ]);
-
   const productTypeNames = (p) =>
     (p?.variants || []).flatMap((v) => {
       const t = v?.type || v?.types;
@@ -681,7 +652,6 @@ export default function WomenCollections() {
       if (typeof t === "object") return [t?.name].filter(Boolean);
       return [String(t)];
     });
-
   const matchesFilters = (p) => {
     if (isBestSeller) {
       const hasBestSeller = (p?.variants || []).some(
@@ -1032,7 +1002,6 @@ export default function WomenCollections() {
     </>
   );
 }
-
 export {
   CollapsibleFilter,
   FilterItemCheckbox,

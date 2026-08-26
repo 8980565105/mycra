@@ -23,6 +23,7 @@ import { Link } from "react-router-dom";
 import mylogo from "../../assets/my_logo.png";
 import { fetchFooter } from "../../features/footer/footerThunk";
 import { useDispatch, useSelector } from "react-redux";
+import { createEmails } from "../../features/Emails/EmailsThunk";
 const getSocialIcon = (platform) => {
   const p = platform?.toLowerCase();
   if (p?.includes("facebook")) return { icon: FiFacebook, color: "#1877F2" };
@@ -38,6 +39,8 @@ const getSocialIcon = (platform) => {
 
 export default function Footer() {
   const dispatch = useDispatch();
+  const [email, setEmail] = useState("");
+
   const { footers = [], loading } = useSelector((state) => state.footer);
   // const { info: storeInfo } = useSelector((state) => state.store);
   const settings = useSelector((state) => state.settings.data);
@@ -90,6 +93,26 @@ export default function Footer() {
     return `${BASE}${logoPath}`;
   })();
 
+
+  const handleEmailSubmit = async () => {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      return;
+    }
+
+    const result = await dispatch(
+      createEmails({
+        email: trimmedEmail,
+      }),
+    );
+
+    if (createEmails.fulfilled.match(result)) {
+      setEmail("");
+    }
+  };
+
+
   return (
     <footer className="mt-[25px] md:mt-[50px]">
       <Row
@@ -101,16 +124,14 @@ export default function Footer() {
         </p>
         <ChevronDown
           size={18}
-          className={`transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`transition-transform duration-300 ${isOpen ? "rotate-180" : ""
+            }`}
         />
       </Row>
       <div
         ref={contentRef}
-        className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          isMobile ? "" : "max-h-none opacity-100"
-        }`}
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${isMobile ? "" : "max-h-none opacity-100"
+          }`}
         style={{
           maxHeight: isMobile
             ? isOpen
@@ -198,7 +219,7 @@ export default function Footer() {
               </h2>
               <p className="text-sm mb-3 text-light">{footertext}</p>
 
-              <div className="flex flex-col sm:flex-row mb-4 gap-2">
+              {/* <div className="flex flex-col sm:flex-row mb-4 gap-2">
                 <div className="relative w-full">
                   <input
                     type="email"
@@ -206,6 +227,28 @@ export default function Footer() {
                     className="input-common !py-[7px] !rounded-[3px] turncate"
                   />
                   <FaPaperPlane className="text-theme text-xl -rotate-12  absolute right-4 top-1/2 h-[18px] w-[18px] transform -translate-y-1/2 cursor-pointer" />
+                </div>
+              </div> */}
+
+              <div className="flex flex-col sm:flex-row mb-4 gap-2">
+                <div className="relative w-full">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleEmailSubmit();
+                      }
+                    }}
+                    placeholder="Enter Your E-mail Address"
+                    className="input-common !py-[7px] !rounded-[3px] truncate pr-12"
+                  />
+
+                  <FaPaperPlane
+                    onClick={handleEmailSubmit}
+                    className="text-theme text-xl -rotate-12 absolute right-4 top-1/2 h-[18px] w-[18px] transform -translate-y-1/2 cursor-pointer"
+                  />
                 </div>
               </div>
 

@@ -15,6 +15,9 @@ import {
   removeGiftCoupon,
 } from "../features/cart/cartThunk";
 import toast, { Toaster } from "react-hot-toast";
+import SEO from "../components/Seo/seo";
+import { getImageUrl } from "../components/utils/helper";
+import { fetchPageBySlug } from "../features/pages/pagesThunk";
 
 export default function Cart() {
   const [appliedCoupon, setAppliedCoupon] = useState(() => {
@@ -22,7 +25,12 @@ export default function Cart() {
     return saved ? JSON.parse(saved) : null;
   });
   const dispatch = useDispatch();
+  const { pages } = useSelector((state) => state.pages);
+
   const { coupons = [] } = useSelector((state) => state.coupons);
+  const cartPage = pages?.find((page) => page.slug === "cart");
+
+
   const [cartCouponCode, setCartCouponCode] = useState(() =>
     localStorage.getItem("appliedCoupon")
       ? JSON.parse(localStorage.getItem("appliedCoupon")).code
@@ -35,6 +43,10 @@ export default function Cart() {
 
   useEffect(() => {
     dispatch(fetchCoupons({ status: "active" }));
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(fetchPageBySlug("cart"));
   }, [dispatch]);
 
   const applyCouponByCode = (code) => {
@@ -165,16 +177,7 @@ export default function Cart() {
     localStorage.setItem("appliedCoupon", JSON.stringify(coupon));
   };
 
-  // const removeCoupon = () => {
-  //   if (appliedCoupon?.coupon_type === "free_gift" && cart_id) {
-  //     dispatch(removeGiftCoupon({ cart_id }));
-  //   }
 
-  //   setAppliedCoupon(null);
-  //   setCartCouponCode("");
-  //   localStorage.removeItem("appliedCoupon");
-  //   toast.success("Coupon removed");
-  // };
   const removeCoupon = () => {
     if (
       (appliedCoupon?.coupon_type === "free_gift" ||
@@ -205,7 +208,17 @@ export default function Cart() {
 
   return (
     <>
+      <SEO
+        title={cartPage?.meta_title}
+        description={cartPage?.meta_description}
+        image={getImageUrl(cartPage?.seo_image)}
+      />
+
+
       <Toaster position="top-center" />
+
+
+
       <CartProgress currentStep={1} />
       <Section>
         <Row>
@@ -216,10 +229,16 @@ export default function Cart() {
         </Row>
         <Row className="grid grid-cols-1 custom-lg:grid-cols-[3fr_1fr] gap-[30px] items-start">
           <div className="flex-1">
-            <CartItem />
+
+            <CouponCard
+              appliedCoupon={appliedCoupon}
+              setAppliedCoupon={setAppliedCoupon}
+              onSelectCoupon={handleSelectCoupon}
+            />
+
             {items.length > 0 && (
               <div>
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-[12px] mt-[20px] md:mt-[30px]">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-[12px] my-[20px] md:my-[30px]">
                   <div className="flex flex-col md:flex-row gap-[12px] md:gap-[16px] items-start">
                     <div>
                       <input
@@ -240,22 +259,21 @@ export default function Cart() {
                       {appliedCoupon ? "REMOVE COUPON" : "APPLY COUPON"}
                     </Button>
                   </div>
-                  <Link to="/updatecart">
+                  {/* <Link to="/updatecart">
                     <Button
                       variant="secondary"
                       className="uppercase !text-18 md:min-w-[181px] self-center md:self-auto"
                     >
                       UPDATE CART
                     </Button>
-                  </Link>
+                  </Link> */}
                 </div>
               </div>
             )}
-            <CouponCard
-              appliedCoupon={appliedCoupon}
-              setAppliedCoupon={setAppliedCoupon}
-              onSelectCoupon={handleSelectCoupon}
-            />
+
+            <CartItem />
+
+
           </div>
           <CartSummary appliedCoupon={appliedCoupon} />
         </Row>

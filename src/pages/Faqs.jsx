@@ -48,7 +48,6 @@ function Faqs() {
 
   const { pages } = useSelector((state) => state.pages);
   const faqsPage = pages?.find((page) => page.slug === "faqs");
-  // const heroBg = faqBg;
 
   useEffect(() => {
     dispatch(fetchPageBySlug("faqs"));
@@ -217,8 +216,6 @@ function Faqs() {
       ...apiCats.map((c) => ({ key: c.key, label: c.label })),
     ];
   }, [faqSection]);
-
-
 
   const heroSection = faqsPage?.sections?.find(
     (sec) => sec.type === "hero_slider"

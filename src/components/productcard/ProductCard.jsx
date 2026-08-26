@@ -156,7 +156,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
     const originalPrice = Number(targetVariant?.price) || 0;
     const offerPrice =
       targetVariant?.offerprice !== undefined &&
-      targetVariant?.offerprice !== null
+        targetVariant?.offerprice !== null
         ? Number(targetVariant.offerprice)
         : originalPrice;
     const hasOffer = offerPrice > 0 && offerPrice < originalPrice;
@@ -315,11 +315,10 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                   handleAddToCart(product);
                 }}
                 className={`h-[26px] w-[26px] sm:h-[40px] sm:w-[40px] flex items-center justify-center rounded-full shadow-[0_0_4px_0_rgba(0,0,0,0.25)] transition-all duration-200
-    ${
-      isInCart(product._id, currentVariant?._id)
-        ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
-        : "bg-white text-black hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] hover:text-white"
-    }`}
+    ${isInCart(product._id, currentVariant?._id)
+                    ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
+                    : "bg-white text-black hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] hover:text-white"
+                  }`}
               >
                 <FontAwesomeIcon
                   icon={faCartShopping}
@@ -333,9 +332,8 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                   <div
                     key={index}
                     onMouseEnter={() => setCurrentIndex(index)}
-                    className={`w-[6px] h-[6px] rounded-full cursor-pointer transition-colors duration-300 ${
-                      currentIndex === index ? "bg-color" : "bg-white"
-                    }`}
+                    className={`w-[6px] h-[6px] rounded-full cursor-pointer transition-colors duration-300 ${currentIndex === index ? "bg-color" : "bg-white"
+                      }`}
                   ></div>
                 ))}
               </div>
@@ -370,9 +368,9 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                 </div>
               )}
             </div>
-                      
+
             <p className="sec-text-color text-14 mb-2 lowercasex line-clamp-1">
-              {product.store} store
+              {product.storeId?.name || "Store"}
             </p>
 
             <p className="sec-text-color text-14 mb-2 lowercase  line-clamp-1">

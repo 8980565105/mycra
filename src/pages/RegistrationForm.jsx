@@ -1,5 +1,4 @@
 import React, { useRef, useState } from "react";
-// import Logo from "../assets/my_logo.png";
 import LoginSlider from "../components/login/loginSlider";
 import { FaPlay } from "react-icons/fa";
 import SocialButtons from "../components/login/SocialButtons";
@@ -17,25 +16,20 @@ const RegistrationForm = ({ onClose }) => {
   const [preview, setPreview] = useState(user?.profile_picture || defaultimg);
   const fileInputRef = useRef(null);
   const [isAccountDetails, setIsAccountDetails] = useState(false);
-  // const { info: storeInfo } = useSelector((state) => state.store);
-      const settings = useSelector((state) => state.settings.data);
-  
+  const settings = useSelector((state) => state.settings.data);
   const [showPassword, setShowPassword] = useState(false);
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     mobile_number: "",
-    gender: "",
+    gender: "male",
     date_of_birth: "",
     profile_picture: "",
   });
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -47,12 +41,9 @@ const RegistrationForm = ({ onClose }) => {
     e.preventDefault();
 
     if (!formData.name || !formData.email || !formData.password) {
-      toast.error("Please fill all required fields", {
-        position: "top-center",
-      });
+      toast.error("Please fill all required fields", { position: "top-center" });
       return;
     }
-
     const data = new FormData();
     data.append("name", formData.name);
     data.append("email", formData.email);
@@ -60,29 +51,21 @@ const RegistrationForm = ({ onClose }) => {
     data.append("mobile_number", formData.mobile_number);
     data.append("gender", formData.gender);
     data.append("date_of_birth", formData.date_of_birth);
-    data.append("domain", window.location.origin);
 
     if (formData.profile_picture instanceof File) {
       data.append("profile_picture", formData.profile_picture);
     }
-
     const res = await dispatch(registerUser(data));
-
     if (res.meta.requestStatus === "fulfilled") {
       toast.success("Registration successful!", { position: "top-center" });
-      setTimeout(() => {
-        onClose();
-      }, 1000);
+      setTimeout(() => onClose(), 1000);
     } else {
       const errorMessage =
-        res.payload?.message ||
-        "Email already registered or registration failed";
+        res.payload?.message || "Email already registered or registration failed";
       toast.error(errorMessage, { position: "top-center" });
     }
   };
-
   const BASE = process.env.REACT_APP_API_URL_IMAGE;
-
   const dynamicLogoUrl = (() => {
     const logoPath = settings?.theme?.logoUrl;
     if (!logoPath) return null;
@@ -105,25 +88,19 @@ const RegistrationForm = ({ onClose }) => {
             >
               <X className="text-white" size={20} />
             </button>
-
             <div className="mb-6 text-center">
-              {/* <img src={Logo} className="mx-auto mb-6" alt="Logo" /> */}
-
               <img
                 src={dynamicLogoUrl || HeaderLogo}
                 alt="Logo"
                 className="mx-auto mb-6"
               />
-
               <h3 className="mb-11 text-[var(--secondary-color)]">
                 Welcome to {settings?.name || "maycra store"}
               </h3>
-
               <h3 className="text-[var(--primary-color)] text-bold text-[26px]">
                 Sign Up
               </h3>
             </div>
-
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="flex flex-col mb-4">
                 <input
@@ -147,17 +124,6 @@ const RegistrationForm = ({ onClose }) => {
                   className="input-common w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
                 />
               </div>
-              {/* <div>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="input-common w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
-                />
-              </div> */}
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -168,7 +134,6 @@ const RegistrationForm = ({ onClose }) => {
                   required
                   className="input-common w-full border light-border rounded-md px-5 py-3 pr-12 focus:outline-none focus:ring-2"
                 />
-
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -181,7 +146,6 @@ const RegistrationForm = ({ onClose }) => {
                   )}
                 </button>
               </div>
-
               <div>
                 <button
                   type="button"
@@ -191,7 +155,6 @@ const RegistrationForm = ({ onClose }) => {
                   + Add Account Details
                 </button>
               </div>
-
               {isAccountDetails && (
                 <div className="space-y-4 mt-4">
                   <div className="relative w-[150px] h-[150px] mx-auto mb-4">
@@ -214,7 +177,6 @@ const RegistrationForm = ({ onClose }) => {
                       className="hidden"
                     />
                   </div>
-
                   <input
                     type="text"
                     name="mobile_number"
@@ -223,7 +185,6 @@ const RegistrationForm = ({ onClose }) => {
                     onChange={handleChange}
                     className="input-common w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
                   />
-
                   <select
                     name="gender"
                     value={formData.gender}
@@ -235,7 +196,6 @@ const RegistrationForm = ({ onClose }) => {
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </select>
-
                   <input
                     placeholder="Date of Birth"
                     type={formData.date_of_birth ? "date" : "text"}
@@ -250,7 +210,6 @@ const RegistrationForm = ({ onClose }) => {
                   />
                 </div>
               )}
-
               <div className="flex flex-col sm:flex-row justify-between items-center text-sm gap-4 w-full pt-[26px]">
                 <Button
                   type="submit"
@@ -263,12 +222,10 @@ const RegistrationForm = ({ onClose }) => {
                 </Button>
               </div>
             </form>
-
             <div className="mt-4 sm:mt-10 space-x-4">
               <SocialButtons onClose={onClose} />
             </div>
           </div>
-
           <div className="w-1/3 md:flex items-center justify-center light-color hidden">
             <LoginSlider />
           </div>

@@ -145,8 +145,7 @@ export default function OrderSummary({
 
     const requiredFields = {
       email: "Email Address",
-      firstName: "First Name",
-      lastName: "Last Name",
+      firstName: "Full Name",
       address: "Address",
       country: "Country",
       state: "State",
@@ -203,63 +202,14 @@ export default function OrderSummary({
   return (
     <>
       <Toaster position="top-center" />
-      <div className="w-full rounded-[3px] py-[45px] px-[22px] light-color">
+      <div className="w-full rounded-[3px] py-[45px] px-[22px] light-color sticky top-[100px]">
         <h2 className="text-[22px] text-black mb-[50px] text-center">
           Order Summary
           <div className="flex justify-center">
             <span className="theme-border-block w-[34px] h-[2px] rounded-[10px] block" />
           </div>
         </h2>
-        <div className="pb-[10px] text-p">
-          {items.reduce((sum, item) => sum + (item.quantity || 1), 0)} items
-        </div>
-        {items.map((item, index) => {
-          const variant = getVariantInfo(item);
-          return (
-            <React.Fragment key={item._id || index}>
-              <div className="flex py-[15px]">
-                <div className="relative w-[80px] md:w-[105px] h-auto flex-shrink-0">
-                  <Link to={`/products/${item.product_id?._id}`}>
-                    <img
-                      src={
-                        item.variant_id?.images?.length > 0
-                          ? getImageUrl(item.variant_id.images[0])
-                          : getImageUrl(item.product_id?.images?.[0])
-                      }
-                      alt={item.product_id?.name}
-                      className="w-full h-[122px] md:h-[150px] object-cover"
-                    />
-                  </Link>
-                  <span className="absolute top-[-10px] right-[-10px] w-[22px] h-[22px] bg-white text-black text-p rounded-full flex items-center justify-center">
-                    {item.quantity || 1}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-[10px] flex-1 ml-4">
-                  <div>
-                    <p className="text-14 text-gray-700 line-clamp-3">
-                      {item.product_id?.name}
-                    </p>
-                    {variant && (
-                      <p className="text-12 text-gray-500 mt-1 flex flex-col">
-                        {variant.color && <span>Color: {variant.color}</span>}
-
-                        {variant.size && <span>Size: {variant.size}</span>}
-                      </p>
-                    )}
-                  </div>
-                  <p className="text-p text-right">
-                    ₹
-                    {Math.round(
-                      getDiscountedPrice(item).discountedPrice * item.quantity,
-                    ).toLocaleString("en-IN")}
-                  </p>
-                </div>
-              </div>
-              <div className="border border-1 light-border" />
-            </React.Fragment>
-          );
-        })}
-        <div className="space-y-[14px] text-p mt-3 text-light">
+        <div className="space-y-[14px] text-p text-light">
           <div className="flex justify-between text-black">
             <span>Subtotal</span>
             <span>₹ {Math.round(subtotal).toLocaleString("en-IN")}</span>
@@ -302,7 +252,7 @@ export default function OrderSummary({
             className="min-w-auto sm:min-w-[300px] uppercase"
             onClick={handleContinueToPayment}
           >
-            CONTINUE TO PAYMENT
+            PLACE ORDER
           </Button>
         </div>
       </div>

@@ -147,9 +147,7 @@ const Wishlist = ({ product }) => {
           console.log("quantity updated to:", selectedQuantity);
         }
       }
-
       await dispatch(fetchCart(cart_id));
-
       navigate("/cart");
     } catch (err) {
       console.error("Add to cart error:", err);

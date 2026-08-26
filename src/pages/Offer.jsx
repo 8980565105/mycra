@@ -2,7 +2,6 @@ import { useDispatch, useSelector } from "react-redux";
 import CategoriesSection from "../components/home/CategoriesSection";
 import OfferBanner from "../components/offers/offerBanner";
 import SEO from "../components/Seo/seo";
-// import SizeSection from "../components/offers/SizeSection";
 import Row from "../components/ui/Row";
 import Section from "../components/ui/Section";
 import SectionHeading from "../components/ui/SectionHeading";

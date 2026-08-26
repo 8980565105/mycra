@@ -17,13 +17,13 @@ import contactReducer from "./features/contact/contactSlice";
 import reviewsReducer from "./features/reivews/reviewsSlice";
 import addressReducer from "./features/address/addressSlice";
 import offersReducer from "./features/offers/offersSlice";
-// import faqsReducer from "./features/faqs/faqsSlice";
 import settingReducer from "./features/setting/settingSlice";
 import walletReducer from "./features/wallet/walletSlice";
 import transectionReducer from "./features/transection/transectionSlice";
 import attributeReducer from "./features/attribut/attributSlice";
 import childcategoryReducer from "./features/childcategory/childcategorySlice";
 import policyPagesReducer from "./features/Policypages/policypagesslice";
+import emailReducer from "./features/Emails/EmailsSlice";
 
 export const rootReducer = {
   auth: authReducer,
@@ -45,11 +45,11 @@ export const rootReducer = {
   reviews: reviewsReducer,
   address: addressReducer,
   offers: offersReducer,
-  // faqs: faqsReducer,
   settings: settingReducer,
   wallet: walletReducer,
   transection: transectionReducer,
   childcategory: childcategoryReducer,
   attributes: attributeReducer,
   policyPages: policyPagesReducer,
+  emails: emailReducer,
 };
