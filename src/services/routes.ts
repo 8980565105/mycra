@@ -182,7 +182,7 @@ export const ROUTES = {
   policyPages: {
     getAll: "/policypages",
     getById: (id: string) => `/policypages/${id}`,
-    create: "/policypages", 
+    create: "/policypages",
     update: (id: string) => `/policypages/${id}`,
     updateStatus: (id: string) => `/policypages/${id}/status`,
     delete: (id: string) => `/policypages/${id}`,
@@ -299,5 +299,13 @@ export const ROUTES = {
   upload: {
     image: "/uploads/image",
     delete: "/uploads/delete",
+  },
+  emails: {
+    getAll: "/emails",
+    getById: (id: string) => `/emails/${id}`,
+    create: "/emails",
+    update: (id: string) => `/emails/${id}`,
+    delete: (id: string) => `/emails/${id}`,
+    bulkDelete: "/emails/bulk-delete",
   },
 };

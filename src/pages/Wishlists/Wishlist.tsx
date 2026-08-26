@@ -119,7 +119,7 @@ export default function Wishlist() {
     return (
       sum +
       wishlist.items.reduce((itemSum, item) => {
-        return itemSum + (item.quantity || 1) * (item.variant_id?.price || 0);
+        return itemSum + (item.quantity || 1) * (item.variant_id?.offerprice || 0);
       }, 0)
     );
   }, 0);
@@ -184,7 +184,6 @@ export default function Wishlist() {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold">
             Wishlist Items{" "}
-            {/* <span className="text-gray-400 font-normal">({total})</span> */}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -280,13 +279,13 @@ export default function Wishlist() {
                         </td>
                         <td className="p-3">{item.quantity || 1}</td>
                         <td className="p-3">
-                          ₹{item.variant_id?.price?.toFixed(2) || "0.00"}
+                          ₹{item.variant_id?.offerprice?.toFixed(2) || "0.00"}
                         </td>
                         <td className="p-3">
                           ₹
                           {(
                             (item.quantity || 1) *
-                            (item.variant_id?.price || 0)
+                            (item.variant_id?.offerprice || 0)
                           ).toFixed(2)}
                         </td>
                         <td className="p-3 text-right">

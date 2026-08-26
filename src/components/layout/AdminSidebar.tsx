@@ -51,11 +51,7 @@ const adminSections = [
     label: "Main",
     items: [{ title: "Dashboard", url: "/admin", icon: LayoutDashboard }],
   },
-  // {
-  //   label: "Business",
-  //   items: [{ title: "Business Type", url: "/admin/business", icon: LayoutDashboard }],
 
-  // },
   {
     label: "Catalog",
     items: [
@@ -99,6 +95,13 @@ const adminSections = [
     items: [
       { title: "User Wallets", url: "/admin/wallets/users", icon: Wallet },
     ],
+  },
+  {
+    label: "Emails",
+    items: [
+      { title: "Footer Emails", url: "/admin/emails",   icon: Wallet },
+    ],
+
   },
   {
     label: "System",

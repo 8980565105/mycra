@@ -65,7 +65,7 @@ const usersSlice = createSlice({
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         const index = state.users.findIndex(
-          (u) => u._id === action.payload._id
+          (u) => u._id === action.payload._id,
         );
         if (index !== -1) state.users[index] = action.payload;
         if (state.selectedUser?._id === action.payload._id)
@@ -73,7 +73,7 @@ const usersSlice = createSlice({
       })
       .addCase(updateUserStatus.fulfilled, (state, action) => {
         const index = state.users.findIndex(
-          (c) => c._id === action.payload._id
+          (c) => c._id === action.payload._id,
         );
         if (index !== -1) {
           state.users[index] = action.payload;
@@ -86,7 +86,7 @@ const usersSlice = createSlice({
       })
       .addCase(bulkDeleteUsers.fulfilled, (state, action) => {
         state.users = state.users.filter(
-          (u) => !action.payload.includes(u._id)
+          (u) => !action.payload.includes(u._id),
         );
         state.total -= action.payload.length;
       });

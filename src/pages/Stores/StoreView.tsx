@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft } from 'lucide-react'
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
@@ -34,11 +34,17 @@ export default function StoreView() {
         { title: "Total Orders", value: analytics?.totalOrders ?? 0 },
         { title: "Total Users", value: analytics?.totalUsers ?? 0 },
         { title: "Total Revenue", value: `₹${analytics?.totalRevenue ?? 0}` },
-        { title: "Total Pending Orders", value: analytics?.pendingOrders ?? 0 },
-        { title: "Total Delivered Orders", value: analytics?.deliveredOrders ?? 0 },
-        { title: "Total Cancelled Orders", value: analytics?.cancelledOrders ?? 0 },
-        { title: "Total Refunded Orders", value: analytics?.refundedOrders ?? 0 },
-        { title: "Total Return Orders", value: analytics?.returnOrders ?? 0 },
+        { title: "Pending Orders", value: analytics?.pendingOrders ?? 0 },
+        { title: "Processing Orders", value: analytics?.processingOrders ?? 0 },
+        { title: "Packed Orders", value: analytics?.packedOrders ?? 0 },
+        { title: "Ready to Ship", value: analytics?.readyToShipOrders ?? 0 },
+        { title: "Shipped Orders", value: analytics?.shippedOrders ?? 0 },
+        { title: "In Transit Orders", value: analytics?.inTransitOrders ?? 0 },
+        { title: "Delivered Orders", value: analytics?.deliveredOrders ?? 0 },
+        { title: "Cancelled Orders", value: analytics?.cancelledOrders ?? 0 },
+        { title: "RTO Orders", value: analytics?.rtoOrders ?? 0 },
+        { title: "Returned Orders", value: analytics?.returnOrders ?? 0 },
+        { title: "Refunded Orders", value: analytics?.refundedOrders ?? 0 },
     ];
     return (
         <>
@@ -75,7 +81,7 @@ export default function StoreView() {
                         <CardTitle>Store Details</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-5">
                             <StatsCard
                                 title="Customers"
                                 count={analytics?.totalUsers ?? 0}
@@ -86,46 +92,7 @@ export default function StoreView() {
                                 title="Products"
                                 count={analytics?.totalProducts ?? 0}
                                 list={analytics?.ProductsWise ?? []}
-                            />
-                            <StatsCard
-                                title="Categories"
-                                count={analytics?.totalCategories ?? 0}
-                                list={analytics?.categoryWise ?? []}
-                            />
-                            <StatsCard
-                                title="Sub Categories"
-                                count={analytics?.totalSubCategories ?? 0}
-                                list={analytics?.subCategoryWise ?? []}
-                            />
-                            <StatsCard
-                                title="Types"
-                                count={analytics?.totalTypes ?? 0}
-                                list={analytics?.typeWise ?? []}
-                            />
-                            <StatsCard
-                                title="Brands"
-                                count={analytics?.totalBrands ?? 0}
-                                list={analytics?.brandWise ?? []}
-                            />
-                            <StatsCard
-                                title="Fabrics"
-                                count={analytics?.totalFabrics ?? 0}
-                                list={analytics?.fabricWise ?? []}
-                            />
-                            <StatsCard
-                                title="Colors"
-                                count={analytics?.totalColors ?? 0}
-                                list={analytics?.colorWise ?? []}
-                            />
-                            <StatsCard
-                                title="Sizes"
-                                count={analytics?.totalSizes ?? 0}
-                                list={analytics?.sizeWise ?? []}
-                            />
-                            <StatsCard
-                                title="Product Labels"
-                                count={analytics?.totalProductLabels ?? 0}
-                                list={analytics?.productLabelWise ?? []}
+                                keyName='name'
                             />
                         </div>
                     </CardContent>

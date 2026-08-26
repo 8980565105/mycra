@@ -27,6 +27,7 @@ import policyPagesReducer from "./features/Policypages/policypagesslice";
 import attributesReducer from "./features/attributes/attributesSlice";
 import brandsReducer from "./features/brands/brandsSlice";
 import childCategoriesReducer from "./features/childCategories/childCategoriesSlice";
+import emailReducer from "./features/Email/emailSlice"
 
 export const rootReducer = {
   auth: authReducer,
@@ -57,5 +58,6 @@ export const rootReducer = {
   faqs: faqsReducer,
   wallet: walletReducer,
   policyPages: policyPagesReducer,
+   emails: emailReducer,
   // business: businessReducer,
 };

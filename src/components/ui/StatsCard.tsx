@@ -31,7 +31,6 @@ export function StatsCard({
       </CardHeader>
 
       <CardContent>
-        <p className="text-xs text-muted-foreground mb-3">Available {title}</p>
 
         <div className="border rounded-lg h-[208px] overflow-y-auto">
           {list.length > 0 ? (
@@ -41,7 +40,7 @@ export function StatsCard({
                   key={item.id || index}
                   className="px-3 py-2 hover:bg-muted transition flex justify-between"
                 >
-                  <span>{item[keyName]}</span>
+                  <span>{index + 1} {item[keyName]}</span>
                   {item.count !== undefined && (
                     <span className="text-xs text-muted-foreground">
                       {item.count}

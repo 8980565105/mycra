@@ -1,25 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { fetchDashboard } from "./dashboardThunk";
-
-// ─── Interfaces ────────────────────────────────────────────────────────────────
-
 export interface SalesOverviewItem {
   _id: string;
   revenue: number;
   orders: number;
 }
-
 export interface OrdersByStatusItem {
   _id: string;
   count: number;
 }
-
 export interface TopSellingProduct {
   name: string;
   quantity: number;
   revenue: number;
 }
-
 export interface RecentOrderItem {
   _id: string;
   order_number: string;
@@ -35,12 +29,10 @@ export interface RecentOrderItem {
     price_at_order: number;
   }>;
 }
-
 export interface MonthlyStatItem {
   current: number;
   previous: number;
 }
-
 export interface MonthlyStats {
   products: MonthlyStatItem;
   orders: MonthlyStatItem;
@@ -48,7 +40,6 @@ export interface MonthlyStats {
   revenue: MonthlyStatItem;
   coupons: MonthlyStatItem;
 }
-
 export interface DashboardData {
   totalProducts: number;
   totalStores: number;
@@ -57,12 +48,7 @@ export interface DashboardData {
   activeCoupons: number;
   totalCategories: number;
   totalSubCategories: number;
-  totalBrands: number;
   totalTypes: number;
-  totalFabrics: number;
-  totalProductLabels: number;
-  totalColors: number;
-  totalSizes: number;
   totalOrders: number;
   pendingOrders: number;
   refundOrders: number;
@@ -75,7 +61,6 @@ export interface DashboardData {
   recentOrders: RecentOrderItem[];
   monthlyStats: MonthlyStats;
 }
-
 export interface DashboardState extends DashboardData {
   loading: boolean;
   error: string | null;
@@ -93,12 +78,7 @@ const initialState: DashboardState = {
   totalProducts: 0,
   totalCategories: 0,
   totalSubCategories: 0,
-  totalBrands: 0,
   totalTypes: 0,
-  totalFabrics: 0,
-  totalProductLabels: 0,
-  totalColors: 0,
-  totalSizes: 0,
   totalOrders: 0,
   pendingOrders: 0,
   refundOrders: 0,
@@ -128,38 +108,25 @@ const dashboardSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-     
       .addCase(fetchDashboard.fulfilled, (state, action) => {
         state.loading = false;
-
         state.totalProducts = action.payload.totalProducts ?? 0;
         state.totalCategories = action.payload.totalCategories ?? 0;
         state.totalSubCategories = action.payload.totalSubCategories ?? 0;
-
-        state.totalBrands = action.payload.totalBrands ?? 0;
-        state.totalTypes = action.payload.totalTypes ?? 0;
-        state.totalFabrics = action.payload.totalFabrics ?? 0;
-        state.totalProductLabels = action.payload.totalProductLabels ?? 0;
-        state.totalColors = action.payload.totalColors ?? 0;
-        state.totalSizes = action.payload.totalSizes ?? 0;
-
         state.totalOrders = action.payload.totalOrders ?? 0;
         state.pendingOrders = action.payload.pendingOrders ?? 0;
         state.refundOrders = action.payload.refundOrders ?? 0;
         state.returnOrders = action.payload.returnOrders ?? 0;
         state.deliveredOrders = action.payload.deliveredOrders ?? 0;
         state.cancelledOrders = action.payload.cancelledOrders ?? 0;
-
         state.totalStores = action.payload.totalStores ?? 0;
         state.totalUsers = action.payload.totalUsers ?? 0;
         state.totalRevenue = action.payload.totalRevenue ?? 0;
         state.activeCoupons = action.payload.activeCoupons ?? 0;
-
         state.salesOverview = action.payload.salesOverview ?? [];
         state.ordersByStatus = action.payload.ordersByStatus ?? [];
         state.topSellingProducts = action.payload.topSellingProducts ?? [];
         state.recentOrders = action.payload.recentOrders ?? [];
-
         state.monthlyStats = action.payload.monthlyStats ?? defaultMonthlyStats;
       })
       .addCase(fetchDashboard.rejected, (state, action) => {

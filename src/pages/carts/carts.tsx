@@ -230,9 +230,9 @@ export default function CartPage() {
                           <td className="p-3 truncate">{cart.user_id?.email || "N/A"}</td>
                           <td className="p-3 truncate">{item.product_id?.name || "N/A"}</td>
                           <td className="p-3">{item.quantity}</td>
-                          <td className="p-3">${item.variant_id?.price?.toFixed(2) || "0.00"}</td>
+                          <td className="p-3">${item.variant_id?.offerprice?.toFixed(2) || "0.00"}</td>
                           <td className="p-3">
-                            ${(item.quantity * (item.variant_id?.price || 0)).toFixed(2)}
+                            ${(item.quantity * (item.variant_id?.offerprice || 0)).toFixed(2)}
                           </td>
                           <td className="p-3 text-right">
                             <ConfirmDialog

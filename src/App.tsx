@@ -63,6 +63,8 @@ import SellerApplications from "./pages/Stores/SellerApplications";
 import CustomerReviewsFrom from "./pages/CustomerReviews/CustomerReviewsFrom";
 import PolicypagesFrom from "./pages/Policypages/PolicypagesFrom";
 import Policypages from "./pages/Policypages/Policypages";
+import Emails from "./pages/Emails/Emails";
+import EmailsForm from "./pages/Emails/EmailsFrom";
 
 const queryClient = new QueryClient();
 
@@ -113,11 +115,9 @@ const App = () => (
               <Route path="types" element={<Types />} />
               <Route path="types/add" element={<TypeFormPage />} />
               <Route path="types/:id/edit" element={<TypeFormPage />} />
-
               <Route path="product-labels" element={<ProductLabels />} />
               <Route path="product-labels/add" element={<ProductLabelFormPage />} />
               <Route path="product-labels/:id/edit" element={<ProductLabelFormPage />} />
-
               <Route path="coupons" element={<CouponsPage />} />
               <Route path="coupons/add" element={<CouponFormPage />} />
               <Route path="coupons/:id/edit" element={<CouponFormPage />} />
@@ -130,11 +130,9 @@ const App = () => (
               <Route path="users/add" element={<UserFormPage />} />
               <Route path="users/:id/edit" element={<UserFormPage />} />
               <Route path="users/:id/view" element={<UserView />} />
-
               <Route path="customer-reviews" element={<CustomerReviews />} />
               <Route path="customer-reviews/add" element={<CustomerReviewsFrom />} />
               <Route path="customer-reviews/:id/edit" element={<CustomerReviewsFrom />} />
-
               <Route path="wishlists" element={<Wishlist />} />
               <Route path="carts" element={<Cart />} />
               <Route path="faqs" element={<Faqspage />} />
@@ -143,14 +141,9 @@ const App = () => (
               <Route path="pages" element={<Pages />} />
               <Route path="pages/add" element={<PageFormPage />} />
               <Route path="pages/:id/edit" element={<PageFormPage />} />
-
-              {/* <Route path="Policypages" element={<Policypages />} />
-              <Route path="Policypages/add" element={<PolicypagesFrom />} />
-              <Route path="Policypages/:id/edit" element={<PolicypagesFrom />} /> */}
               <Route path="policypages" element={<Policypages />} />
               <Route path="policypages/add" element={<PolicypagesFrom />} />
               <Route path="policypages/:id/edit" element={<PolicypagesFrom />} />
-
               <Route path="navbar" element={<Navbar />} />
               <Route path="navbar/add" element={<NavbarFormPage />} />
               <Route path="navbar/:id/edit" element={<NavbarFormPage />} />
@@ -167,13 +160,9 @@ const App = () => (
               <Route path="store-owners/add" element={<StoreOwnerFormPage />} />
               <Route path="store-owners/:id/edit" element={<StoreOwnerFormPage />} />
               <Route path="wallets/users" element={<UserWallets />} />
-              {/* <Route path="business" element={<Business />} /> */}
-
-              {/* <Route path="business" element={<Business />} />
-              <Route path="business/add" element={<BusinessFromPage />} />
-              <Route path="business/:id/edit" element={<BusinessFromPage />} /> */}
-
-
+              <Route path="emails" element={<Emails />} />
+              <Route path="emails/add" element={<EmailsForm />} />
+              <Route path="emails/:id/edit" element={<EmailsForm />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
@@ -194,26 +183,13 @@ const App = () => (
               <Route path="subcategories" element={<Subcategories />} />
               <Route path="subcategories/add" element={<SubCategoryFormPage />} />
               <Route path="subcategories/:id/edit" element={<SubCategoryFormPage />} />
-              {/* <Route path="brands" element={<Brands />} />
-              <Route path="brands/add" element={<BrandFormPage />} />
-              <Route path="brands/:id/edit" element={<BrandFormPage />} /> */}
               <Route path="types" element={<Types />} />
               <Route path="types/add" element={<TypeFormPage />} />
               <Route path="types/:id/edit" element={<TypeFormPage />} />
               <Route path="attributes" element={<Attributes />} />
-
-              {/* <Route path="fabrics" element={<Fabrics />} />
-              <Route path="fabrics/add" element={<FabricFormPage />} />
-              <Route path="fabrics/:id/edit" element={<FabricFormPage />} /> */}
               <Route path="product-labels" element={<ProductLabels />} />
               <Route path="product-labels/add" element={<ProductLabelFormPage />} />
               <Route path="product-labels/:id/edit" element={<ProductLabelFormPage />} />
-              {/* <Route path="colors" element={<Colors />} />
-              <Route path="colors/add" element={<ColorFormPage />} />
-              <Route path="colors/:id/edit" element={<ColorFormPage />} /> */}
-              {/* <Route path="sizes" element={<Sizes />} />
-              <Route path="sizes/add" element={<SizeFormPage />} />
-              <Route path="sizes/:id/edit" element={<SizeFormPage />} /> */}
               <Route path="coupons" element={<CouponsPage />} />
               <Route path="coupons/add" element={<CouponFormPage />} />
               <Route path="coupons/:id/edit" element={<CouponFormPage />} />
