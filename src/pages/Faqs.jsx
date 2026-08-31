@@ -25,13 +25,15 @@ function FAQItem({ question, answer }) {
           {question}
         </span>
 
+        <div className="bg-[var(--primary-color)]">
         <span className="flex-shrink-0">
           {open ? (
-            <Minus className="w-5 h-5 text-gray-700" />
+            <Minus className="w-5 h-5 text-white p-[1px]" />
           ) : (
-            <Plus className="w-5 h-5 text-gray-700" />
+            <Plus className="w-5 h-5 text-white p-[1px]" />
           )}
         </span>
+        </div>
       </button>
 
       {open && (
@@ -270,18 +272,18 @@ function Faqs() {
             {heroTitle}
           </h1>
 
-          <p className="text-dark text-[14px] sm:text-[20px]">
+          <p className="text-dark text-[14px] sm:text-[16px]">
             {heroDescription}
           </p>
         </div>
       </Section>
 
       <Section>
-        <Row>
-          <div className="flex flex-col md:flex-row gap-8">
-            <div className="md:w-52 flex-shrink-0">
+        <Row className="py-[25px] md:py-[50px]">
+          <div className="flex flex-col md:flex-row md:items-start gap-8">
+            <div className="md:w-1/4 md:shadow-[0_0_4px_0_rgba(0,0,0,0.25)] md:py-8 md:px-6 rounded-[10px] md:sticky  md:top-[120px] relative">
               <div className="hidden md:block">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2 px-2">
+                <p className="text-[20px] font-medium text-black uppercase tracking-wider pb-5 mb-5 px-2 border-b border-gray-200">
                   Categories
                 </p>
                 {categories.map((cat) => (
@@ -291,9 +293,9 @@ function Faqs() {
                     onClick={() =>
                       handleCategorySelect(cat.key)
                     }
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 transition-colors ${activeCat === cat.key
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 last:mb-0 transition-colors ${activeCat === cat.key
                       ? "bg-theme text-[var(--theme-color)] font-medium"
-                      : "text-black hover:bg-gray-100 hover:text-[var(--theme-color)]"
+                      : "text-[rgba(0,0,0,0.7)] hover:bg-gray-100 hover:text-[var(--theme-color)]"
                       }`}
                   >
                     {cat.label}
@@ -301,7 +303,7 @@ function Faqs() {
                 ))}
               </div>
 
-              <div className="flex md:hidden gap-2 overflow-auto">
+              <div className="flex md:hidden gap-2 overflow-x-auto">
                 {categories.map((cat) => (
                   <button
                     key={cat.key}
@@ -320,8 +322,8 @@ function Faqs() {
               </div>
             </div>
 
-            <div className="flex-1">
-              <p className="font-medium text-gray-800 mb-4 capitalize text-[20px]">
+            <div className="w-full md:w-3/4">
+              <p className="font-medium text-gray-800 mb-6 capitalize text-[24px]">
                 {activeLabel}
               </p>
 

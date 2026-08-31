@@ -7,6 +7,7 @@ import AboutBanner from "../components/aboutbanner/aboutbanner";
 import AboutContent from "../components/aboutbanner/aboutcontent";
 import { getImageUrl } from "../components/utils/helper";
 import SEO from "../components/Seo/seo";
+import FeatureSection from "../components/home/FeatureSection";
 
 const STATIC_FEATURES = [
   { _id: "static-f1", icon: "🚚", title: "Free Shipping", desc: "On all orders above ₹999", order: 1 },
@@ -52,7 +53,7 @@ export default function AboutPage() {
       <AboutBanner />
       <AboutContent />
 
-      {sortedFeatures.length > 0 && (
+      {/* {sortedFeatures.length > 0 && (
         <Section>
           <Row className="py-[25px] md:py-[50px]">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
@@ -80,7 +81,8 @@ export default function AboutPage() {
             </div>
           </Row>
         </Section>
-      )}
+      )} */}
+      <FeatureSection/>
     </>
   );
 }

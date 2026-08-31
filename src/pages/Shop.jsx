@@ -47,7 +47,7 @@ export default function Shop() {
       />
 
       <Toaster position="top-center" reverseOrder={false} />
-      <div className="hidden lg:flex relative">
+      <div className="hidden lg:flex w-full relative">
         {shopPage?.sections?.map((section) => (
           <SecondarySection
             key={section._id}

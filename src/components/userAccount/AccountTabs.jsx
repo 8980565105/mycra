@@ -72,18 +72,18 @@ export default function AccountTabs() {
   return (
     <Section className="!pt-0 -mt-[43px]">
       <Row className="!max-w-[1122px]">
-        <div className="flex justify-center gap-[5px] md:gap-[10px] flex-wrap">
+        <div className="flex gap-[5px] md:gap-[10px] overflow-x-auto no-scrollbar">
           {tabs.map((tab) => {
             if (tab.isLogout) {
               return (
                 <button
                   key={tab.name}
                   onClick={handleLogout}
-                  className="flex items-center h-[43px] gap-[10px] px-[7px] md:px[15px] sm:px-[30px] py-2 transition text-[18px] 
+                  className="flex items-center h-[43px] gap-[10px] px-[15px] sm:px-[22px] py-2 transition text-[18px] 
                     bg-[rgba(255,255,255,0.50)] text-[var(--primary-color)] hover:text-[var(--secondary-color)]"
                 >
                   <span>{tab.icon}</span>
-                  <span className="hidden custom-lg:inline">{tab.name}</span>
+                  <span className="hidden custom-lg:inline whitespace-nowrap">{tab.name}</span>
                 </button>
               );
             }
@@ -93,7 +93,7 @@ export default function AccountTabs() {
                 key={tab.name}
                 to={tab.path}
                 className={({ isActive }) =>
-                  `flex items-center h-[43px] gap-[10px] px-[15px] sm:px-[30px] py-2 transition text-[18px]
+                  `flex items-center h-[43px] gap-[10px] px-[15px] sm:px-[22px] py-2 transition text-[18px]
                   ${
                     isActive
                       ? "bg-white font-medium text-[var(--secondary-color)]"
@@ -102,7 +102,7 @@ export default function AccountTabs() {
                 }
               >
                 <span>{tab.icon}</span>
-                <span className="hidden custom-lg:inline">{tab.name}</span>
+                <span className="hidden custom-lg:inline whitespace-nowrap">{tab.name}</span>
               </NavLink>
             );
           })}

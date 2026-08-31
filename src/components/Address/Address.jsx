@@ -469,7 +469,7 @@ function Address() {
                 Make this my default address
               </label>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-center sm:justify-end flex-wrap gap-3 pt-2">
                 <Button
                   type="button"
                   variant="secondary"

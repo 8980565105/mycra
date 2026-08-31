@@ -241,7 +241,7 @@ export default function Cart() {
             {items.length > 0 && (
               <div className="custom-lg:sticky custom-lg:top-[110px] z-[10] mb-[40px]">
                 <div className="bg-white border border-gray-200  hover:border-[var(--primary-color)] transition rounded-[6px] shadow-[0_3px_15px_rgba(0,0,0,0.06)] overflow-hidden">
-                  <button type="button" onClick={() => setIsDrawerOpen(true)} className="w-full flex items-center justify-between px-[18px] py-[14px] bg-white hover:bg-[#fff8fb] transition">
+                  <button type="button" onClick={() => setIsDrawerOpen(true)} className="w-full flex items-center justify-between px-[18px] py-[14px] bg-white transition">
                     <div className="flex items-center gap-[12px]">
                       <div className="w-[40px] h-[40px] rounded-full bg-[var(--primary-color)] text-white flex items-center justify-center shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -268,7 +268,7 @@ export default function Cart() {
                   </button>
 
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-[12px]  border-t border-gray-200 px-[18px] py-[14px] bg-[#fafafa]">
-                  <div className="flex flex-col md:flex-row gap-[12px] md:gap-[16px] items-start">
+                  <div className="flex flex-wrap gap-[12px] md:gap-[16px] items-start">
                     <div>
                       <input
                         value={cartCouponCode}

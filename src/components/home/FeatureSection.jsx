@@ -37,7 +37,7 @@ export default function FeatureSection() {
 
   return (
     <Section>
-      <Row className="grid grid-cols-1 md:grid-cols-3 gap-[40px] pt-[25px] md:pt-[50px] !max-w-[935px] mx-auto">
+      <Row className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[40px] pt-[25px] md:pt-[50px] !max-w-[935px] mx-auto">
         {features.map((feature, index) => (
           <div key={index} className="flex items-start gap-[22px]">
             <div className="w-[62px] h-[50px] rounded-bl-[20px] bg-[linear-gradient(90deg,var(--primary-color)_0%,#ffffff_80%)] relative overflow-hidden flex-shrink-0">

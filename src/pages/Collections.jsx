@@ -126,7 +126,7 @@ function Collections({ products = [] }) {
               {displaySubcategories.length} styles curated for you
             </p>
           </div>
-          <div className="hidden sm:flex relative z-10 w-[76px] h-[76px] md:w-[130px] md:h-[130px] p-4 rounded-full bg-white items-center justify-center overflow-hidden">
+          <div className="hidden sm:flex relative z-10 w-[76px] h-[76px] md:w-[130px] md:h-[130px]  rounded-full bg-white items-center justify-center overflow-hidden">
             <img
               src={
                 selectedCategory?.image_url
@@ -179,7 +179,7 @@ function Collections({ products = [] }) {
                           }}
                         />
                       </div>
-                      <p className="mt-4 text-dark text-center text-[18px] font-medium">
+                      <p className="mt-4 text-dark text-center text-[18px] font-medium break">
                         {sub.name}
                         <span className="theme-border-block w-[20px] mx-auto block mt-1" />
                       </p>

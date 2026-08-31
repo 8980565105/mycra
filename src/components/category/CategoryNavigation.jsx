@@ -18,11 +18,12 @@ const CategoryNavigation = () => {
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        setIsScrolled(true);
-      } else if (currentScrollY < lastScrollY) {
-        setIsScrolled(false);
-      }
+      // if (currentScrollY > lastScrollY && currentScrollY > 50) {
+      //   setIsScrolled(true);
+      // } else if (currentScrollY < lastScrollY) {
+      //   setIsScrolled(false);
+      // }
+      setIsScrolled(currentScrollY > 50);
       lastScrollY = currentScrollY;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -51,7 +52,7 @@ const CategoryNavigation = () => {
 
   return (
     <nav
-      className={`sticky top-[100px] z-10 w-full border-y py-2 bg-white transition-all duration-300 ease-in-out 
+      className={`sticky top-[100px] z-20 w-full border-y py-2 bg-white transition-all duration-300 ease-in-out 
         ${
         isScrolled
           ? "border-color shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
@@ -61,7 +62,7 @@ const CategoryNavigation = () => {
       <div className="w-full max-w-[1400px] mx-auto">
         <div
           ref={scrollRef}
-          className="flex w-full items-stretch overflow-x-auto scroll-smooth overscroll-x-contain no-scrollbar"
+          className="flex w-full items-stretch items-center overflow-x-auto scroll-smooth overscroll-x-contain no-scrollbar"
         >
           <button
             type="button"

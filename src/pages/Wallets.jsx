@@ -263,7 +263,7 @@ function RowItem({ icon, label, bold, url }) {
   return (
     <a
       href={url}
-      className="flex items-center justify-between py-3 cursor-pointer hover:bg-gray-50 -mx-1 px-1 rounded"
+      className="flex items-center justify-between py-3 cursor-pointer hover:bg-gray-50 -mx-1 px-2 rounded"
     >
       <div className="flex items-center gap-2">
         <span className="text-gray-500">{icon}</span>

@@ -39,7 +39,7 @@ export default function OrderCardMobile({
   const end = Math.min(page * limit, total);
 
   return (
-    <div className="hidden max-[980px]:block [box-shadow:0_2px_4px_rgba(0,0,0,25%)] rounded-[10px] overflow-hidden">
+    <div className="block custom-lg:hidden [box-shadow:0_2px_4px_rgba(0,0,0,25%)] rounded-[10px] overflow-hidden">
       <div className="block">
         <div className="flex items-center gap-10 light-color text-20px text-dark font-normal p-2 px-[12px]">
           <span className="text-black text-p ">#</span>
