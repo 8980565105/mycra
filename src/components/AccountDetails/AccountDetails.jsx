@@ -85,7 +85,7 @@ function AccountDetails({ onSwitchForget }) {
               value={formData.name}
               onChange={handleChange}
               required
-              className="w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2 "
+              className="input-common"  
             />
           </div>
 
@@ -97,7 +97,7 @@ function AccountDetails({ onSwitchForget }) {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
+              className="input-common"
             />
           </div>
 
@@ -108,7 +108,7 @@ function AccountDetails({ onSwitchForget }) {
               placeholder="Enter mobile number"
               value={formData.mobile_number}
               onChange={handleChange}
-              className="w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
+              className="input-common"
             />
           </div>
 
@@ -117,7 +117,7 @@ function AccountDetails({ onSwitchForget }) {
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
+              className="input-common"
             >
               <option value="">Select gender</option>
               <option value="male">Male</option>
@@ -137,7 +137,7 @@ function AccountDetails({ onSwitchForget }) {
               name="date_of_birth"
               value={formData.date_of_birth}
               onChange={handleChange}
-              className="w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
+              className="input-common"
             />
           </div>
 

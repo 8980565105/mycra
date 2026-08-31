@@ -128,7 +128,7 @@ export default function CartItem() {
                         : getImageUrl(item.product_id?.images?.[0])
                     }
                     alt={item.product_id?.name}
-                    className="box-shadow object-cover p-[5px] w-[130px] max-h-[176px]"
+                    className="box-shadow object-contain p-[5px] w-[130px] h-[176px]"
                   />
                 </Link>
               </td>

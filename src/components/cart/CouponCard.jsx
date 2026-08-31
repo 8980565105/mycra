@@ -9,8 +9,10 @@ export default function CouponCard({
   appliedCoupon,
   setAppliedCoupon,
   onSelectCoupon,
+  isDrawerOpen,
+  setIsDrawerOpen,
 }) {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { coupons = [] } = useSelector((state) => state.coupons);
   const { items = [] } = useSelector((state) => state.cart);
 
@@ -78,14 +80,13 @@ export default function CouponCard({
 
   return (
     <>
-    <div className="w-full">
+    {/* <div className="w-full ">
         <button
           type="button"
           onClick={() => setIsDrawerOpen(true)}
           className="w-full flex items-center justify-between px-4 py-3 mt-10 border border-gray-200 rounded-md bg-white hover:border-[var(--primary-color)] transition"
         >
           <div className="flex items-center gap-3">
-            {/* Coupon Icon */}
             <div className="h-[36px] w-[36px] rounded-full bg-[var(--primary-color)] text-white flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" />
@@ -107,10 +108,9 @@ export default function CouponCard({
             </div>
           </div>
 
-          {/* Arrow */}
           <ChevronDown className="w-5 h-5 -rotate-90 " />
         </button>
-      </div>
+      </div> */}
 
       {/* =====================================================
           DRAWER

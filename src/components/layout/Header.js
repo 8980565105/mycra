@@ -280,7 +280,7 @@ const Header = () => {
           : "bg-theme backdrop-blur-md"
       }`}
     >
-      <Row className="h-[70px] custom-lg:h-[100px] flex items-center justify-between gap-[10px]">
+      <Row className="h-[70px] custom-lg:h-[100px] flex items-center justify-between gap-[10px] mb-[10px]">
         <button
           className="custom-lg:hidden text-light transition-colors duration-300 border rounded-[3px] p-[5px] border-[#D2AF9F]"
           onClick={() => setIsMenuOpen(true)}

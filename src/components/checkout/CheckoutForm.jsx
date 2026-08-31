@@ -344,11 +344,11 @@ export default function CheckoutForm({
         />
       </div>
 
-      <div className="mb-[30px]">
+      <div className="custom-lg:sticky custom-lg:top-[110px] z-[10] mb-[30px] bg-white pt-2">
         <h2 className="text-20px">Shipping Address</h2>
         <span className="theme-border-block w-[59px] h-[2px] rounded-[10px] block mb-[12px]" />
 
-        <div className="border border-gray-200 rounded-[5px] p-4 flex justify-between items-start bg-white shadow-sm">
+        <div className="border border-gray-200 hover:border-[var(--primary-color)] rounded-[5px] p-4 flex justify-between items-start bg-white shadow-sm">
           <div>
             <h3 className="text-gray-500 text-sm mb-2">Deliver to:</h3>
             {selectedAddress ? (
@@ -375,7 +375,7 @@ export default function CheckoutForm({
           <button
             type="button"
             onClick={() => setShowDrawer(true)}
-            className="text-blue-600 font-medium text-sm border border-gray-300 rounded px-4 py-1.5 hover:bg-gray-50 transition"
+            className="text-theme font-medium text-sm border border-gray-300 rounded px-4 py-1.5 hover:bg-[var(--primary-color)] hover:text-white hover:border-[var(--primary-color)] transition"
           >
             Change
           </button>
@@ -404,7 +404,7 @@ export default function CheckoutForm({
                             : getImageUrl(item.product_id?.images?.[0])
                         }
                         alt={item.product_id?.name}
-                        className="w-full h-[122px] md:h-[150px] object-cover rounded-[3px]"
+                        className="w-full h-[122px] md:h-[150px] object-contain rounded-[3px]"
                       />
                     </Link>
                     <span className="absolute top-[-10px] right-[-10px] w-[22px] h-[22px] bg-white border text-black text-xs font-bold rounded-full flex items-center justify-center shadow-sm">
@@ -417,9 +417,9 @@ export default function CheckoutForm({
                         {item.product_id?.name}
                       </p>
                       {variant && (
-                        <p className="text-13 text-gray-500 mt-2 flex gap-3">
-                          {variant.color && <span><span className="text-gray-400">Color:</span> {variant.color}</span>}
-                          {variant.size && <span><span className="text-gray-400">Size:</span> {variant.size}</span>}
+                        <p className="text-[14px] md:text-[16px] sec-text-color mt-2 flex gap-3 flex-wrap ">
+                          {variant.color && <span><span className="sec-text-color font-semibold">Color:</span> {variant.color}</span>}
+                          {variant.size && <span><span className="sec-text-color font-semibold">Size:</span> {variant.size}</span>}
                         </p>
                       )}
                     </div>
@@ -485,7 +485,7 @@ export default function CheckoutForm({
                 <button
                   type="button"
                   onClick={openAddForm}
-                  className="text-blue-600 font-medium text-sm hover:underline flex items-center gap-1"
+                  className="text-theme font-medium text-sm hover:underline flex items-center gap-1"
                 >
                   <Plus size={16} /> Add New
                 </button>
@@ -591,7 +591,7 @@ export default function CheckoutForm({
 
       {/* Add / Edit Address Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-[5px] p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="flex justify-between items-center mb-6 border-b pb-3">
               <h3 className="text-lg font-semibold text-black">

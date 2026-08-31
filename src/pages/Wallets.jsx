@@ -57,7 +57,7 @@ export default function Wallets() {
       </h1>
       <div className="flex flex-col lg:flex-row gap-4 max-w-6xl">
         <div className="flex-1 space-y-4">
-          <div className="bg-gray-100 rounded-lg shadow-sm p-2 md:p-4">
+          <div className="bg-gray-50 rounded-lg shadow-sm p-2 md:p-4">
             <div className="flex justify-between items-center py-4 border-b border-dashed border-gray-300">
               <span className="font-bold text-gray-900">Total balance</span>
               <span className="font-bold text-teal-700 text-xl">
@@ -89,7 +89,7 @@ export default function Wallets() {
             </div>
           </div>
 
-          <div className="bg-gray-100 rounded-lg shadow-sm p-2 md:p-4">
+          <div className="bg-gray-50 rounded-lg shadow-sm p-2 md:p-4">
             <h2 className="font-bold text-gray-900 mb-3">
               Add money to Wallet
             </h2>
@@ -177,7 +177,7 @@ export default function Wallets() {
                         disabled={isDisabled}
                         className={`border rounded-full px-3 py-1 text-sm font-medium transition
         ${isDisabled
-                            ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                            ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
                             : "border-gray-300 text-gray-800 hover:bg-gray-50 cursor-pointer"
                           }
       `}
@@ -207,7 +207,7 @@ export default function Wallets() {
             )}
           </div>
 
-          <div className="bg-gray-100 rounded-lg shadow-sm py-3 flex items-center gap-3 p-2 md:p-4 max-w-md">
+          <div className="bg-gray-50 rounded-lg shadow-sm py-3 flex items-center gap-3 p-2 md:p-4 max-w-md">
             <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
               <div className="w-12 h-12 bg-amber-300 rounded rotate-6 flex items-center justify-center text-[10px] text-gray-700">
                 🎁
@@ -228,7 +228,7 @@ export default function Wallets() {
         </div>
 
         <div className="w-full lg:w-72 space-y-4">
-          <div className="bg-gray-100 rounded-lg shadow-sm p-4">
+          <div className="bg-gray-50 rounded-lg shadow-sm p-4">
             <h3 className="font-bold text-gray-900 mb-2">
               Do more with Amazon Pay Balance
             </h3>

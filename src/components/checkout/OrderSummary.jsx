@@ -202,7 +202,7 @@ export default function OrderSummary({
   return (
     <>
       <Toaster position="top-center" />
-      <div className="w-full rounded-[3px] py-[45px] px-[22px] light-color sticky top-[100px]">
+      <div className="w-full rounded-[3px] py-[45px] px-[22px] light-color sticky top-[120px]">
         <h2 className="text-[22px] text-black mb-[50px] text-center">
           Order Summary
           <div className="flex justify-center">

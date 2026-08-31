@@ -50,7 +50,7 @@ function ChangePassword() {
         value={form.currentPassword}
         onChange={handleChange}
         required
-        className="w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
+        className="input-common"
       />
       <input
         type="password"
@@ -59,7 +59,7 @@ function ChangePassword() {
         value={form.newPassword}
         onChange={handleChange}
         required
-        className="w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
+        className="input-common"
       />
       <input
         type="password"
@@ -68,7 +68,7 @@ function ChangePassword() {
         value={form.confirmNewPassword}
         onChange={handleChange}
         required
-        className="w-full border light-border rounded-md px-5 py-3 focus:outline-none focus:ring-2"
+        className="input-common"
       />
       <Button type="submit" disabled={loading} variant="common">
         {loading ? "Updating..." : "Change Password"}

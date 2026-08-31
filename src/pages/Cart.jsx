@@ -18,12 +18,14 @@ import toast, { Toaster } from "react-hot-toast";
 import SEO from "../components/Seo/seo";
 import { getImageUrl } from "../components/utils/helper";
 import { fetchPageBySlug } from "../features/pages/pagesThunk";
+import { ChevronDown } from "lucide-react";
 
 export default function Cart() {
   const [appliedCoupon, setAppliedCoupon] = useState(() => {
     const saved = localStorage.getItem("appliedCoupon");
     return saved ? JSON.parse(saved) : null;
   });
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const dispatch = useDispatch();
   const { pages } = useSelector((state) => state.pages);
 
@@ -217,8 +219,6 @@ export default function Cart() {
 
       <Toaster position="top-center" />
 
-
-
       <CartProgress currentStep={1} />
       <Section>
         <Row>
@@ -234,11 +234,40 @@ export default function Cart() {
               appliedCoupon={appliedCoupon}
               setAppliedCoupon={setAppliedCoupon}
               onSelectCoupon={handleSelectCoupon}
+              isDrawerOpen={isDrawerOpen}
+              setIsDrawerOpen={setIsDrawerOpen}
             />
 
             {items.length > 0 && (
-              <div>
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-[12px] my-[20px] md:my-[30px]">
+              <div className="custom-lg:sticky custom-lg:top-[110px] z-[10] mb-[40px]">
+                <div className="bg-white border border-gray-200  hover:border-[var(--primary-color)] transition rounded-[6px] shadow-[0_3px_15px_rgba(0,0,0,0.06)] overflow-hidden">
+                  <button type="button" onClick={() => setIsDrawerOpen(true)} className="w-full flex items-center justify-between px-[18px] py-[14px] bg-white hover:bg-[#fff8fb] transition">
+                    <div className="flex items-center gap-[12px]">
+                      <div className="w-[40px] h-[40px] rounded-full bg-[var(--primary-color)] text-white flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" />
+                          <path d="M2 7h20v5H2z" />
+                          <path d="M12 22V7" />
+                          <path d="M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7Z" />
+                          <path d="M12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7Z" />
+                        </svg>
+                      </div>
+
+                      <div className="text-left">
+                        <p className="text-[14px] font-semibold text-black">
+                          {appliedCoupon ? `Coupon ${appliedCoupon.code}` : "Apply Coupon"}
+                        </p>
+
+                        <p className="text-[11px] text-gray-500 mt-[2px]">
+                          {appliedCoupon ? "Coupon applied successfully" : "View available coupons"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <ChevronDown className="w-[20px] h-[20px] -rotate-90 text-gray-600" />
+                  </button>
+
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-[12px]  border-t border-gray-200 px-[18px] py-[14px] bg-[#fafafa]">
                   <div className="flex flex-col md:flex-row gap-[12px] md:gap-[16px] items-start">
                     <div>
                       <input
@@ -268,6 +297,7 @@ export default function Cart() {
                     </Button>
                   </Link> */}
                 </div>
+                </div>
               </div>
             )}
 
@@ -275,7 +305,10 @@ export default function Cart() {
 
 
           </div>
-          <CartSummary appliedCoupon={appliedCoupon} />
+          {/* <CartSummary appliedCoupon={appliedCoupon} /> */}
+          <aside className="w-full custom-lg:sticky custom-lg:top-[110px] self-start">
+            <CartSummary appliedCoupon={appliedCoupon} />
+          </aside>
         </Row>
       </Section>
     </>

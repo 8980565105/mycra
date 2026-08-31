@@ -122,7 +122,7 @@ export default function TransactionHistory() {
     search !== "";
 
   return (
-    <Section className="min-h-screen bg-gray-100 p-8 font-sans">
+    <Section className="min-h-screen p-8 font-sans">
       <Row>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-[28px] font-bold text-gray-900">
@@ -143,8 +143,8 @@ export default function TransactionHistory() {
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <div className="w-64 bg-white rounded-lg shadow-sm p-4 h-fit">
+        <div className="flex gap-8  ">
+          <div className="w-64 bg-white rounded-lg box-shadow p-4 h-fit">
             <div className="flex justify-between">
               <h2 className="font-bold text-gray-900 mb-3">Filters</h2>
               {hasFilters && (
@@ -212,7 +212,7 @@ export default function TransactionHistory() {
             </FilterGroup>
           </div>
 
-          <div className="flex-1 bg-white rounded-lg shadow-sm p-4">
+          <div className="flex-1 bg-white rounded-lg box-shadow p-4">
             <div className="flex gap-6 border-b border-gray-200 mb-6">
               {TABS.map((tab) => (
                 <button
