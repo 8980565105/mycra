@@ -18,7 +18,8 @@ import {
   Banknote,
   QrCode,
 } from "lucide-react";
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+// const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 
 const PAYMENT_METHODS = [
   {

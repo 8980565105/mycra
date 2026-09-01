@@ -43,6 +43,19 @@ export default function Cart() {
 
   const cart_id = localStorage.getItem("cart_id");
 
+  const isCouponExpired = (coupon) => {
+    if (!coupon?.end_date) return false;
+    const endDate = new Date(coupon.end_date);
+    if (Number.isNaN(endDate.getTime())) {
+      return true;
+    }
+
+    return endDate.getTime() <= Date.now();
+  };
+
+  const activeCoupons = coupons.filter( (coupon) => !isCouponExpired(coupon) );
+  const hasAvailableCoupons = activeCoupons.length > 0;
+
   useEffect(() => {
     dispatch(fetchCoupons({ status: "active" }));
   }, [dispatch]);
@@ -51,8 +64,24 @@ export default function Cart() {
     dispatch(fetchPageBySlug("cart"));
   }, [dispatch]);
 
+  useEffect(() => {
+    if (!appliedCoupon) return;
+
+    if (isCouponExpired(appliedCoupon)) {
+      setAppliedCoupon(null);
+      setCartCouponCode("");
+      localStorage.removeItem("appliedCoupon");
+
+      toast.error("Your applied coupon has expired.");
+    }
+  }, [appliedCoupon, coupons]);
+
+
   const applyCouponByCode = (code) => {
-    const coupon = coupons.find((c) => c.code === code);
+    // const coupon = coupons.find((c) => c.code === code);
+    const coupon = activeCoupons.find(
+      (c) => c.code?.toLowerCase() === code?.trim().toLowerCase()
+    );
     if (!coupon) {
       toast.error("Invalid coupon code!");
       return;
@@ -238,7 +267,7 @@ export default function Cart() {
               setIsDrawerOpen={setIsDrawerOpen}
             />
 
-            {items.length > 0 && (
+            {items.length > 0 && hasAvailableCoupons  && (
               <div className="custom-lg:sticky custom-lg:top-[110px] z-[10] mb-[40px]">
                 <div className="bg-white border border-gray-200  hover:border-[var(--primary-color)] transition rounded-[6px] shadow-[0_3px_15px_rgba(0,0,0,0.06)] overflow-hidden">
                   <button type="button" onClick={() => setIsDrawerOpen(true)} className="w-full flex items-center justify-between px-[18px] py-[14px] bg-white transition">

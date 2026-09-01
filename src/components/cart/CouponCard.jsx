@@ -41,6 +41,18 @@ export default function CouponCard({
     return !storeId;
   });
   const filteredCoupons = coupons.filter((coupon) => {
+      if (coupon?.end_date) {
+      const endDate = new Date(coupon.end_date);
+
+      if (Number.isNaN(endDate.getTime())) {
+        return false;
+      }
+
+      if (endDate.getTime() <= Date.now()) {
+        return false;
+      }
+    }
+
     if (coupon?.is_global === true) {
       return true;
     }

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Slider from "react-slick";
@@ -128,14 +129,133 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  const getUniqueColors = (variants) => {
+
+    const getColorFromVariant = (variant) => {  
+    if (!variant) { return null; }
+
+    if ( Array.isArray(variant.attributes) && variant.attributes.length > 0 ) {
+      const colorAttribute =  variant.attributes.find((attribute) => {
+          const attributeObject = attribute?.attributeId || attribute?.attribute || {};
+
+          const attributeCode = String(
+            attributeObject?.code ||
+              attribute?.attributeCode ||
+              attribute?.code ||
+              ""
+          ).toLowerCase();
+
+          const attributeName = String(
+            attributeObject?.name ||
+              attribute?.attributeName ||
+              attribute?.name ||
+              ""
+          ).toLowerCase();
+
+
+          return (
+            attributeCode === "color" ||
+            attributeCode === "colour" ||
+            attributeName === "color" ||
+            attributeName === "colour" ||
+            attributeCode.includes("color") ||
+            attributeCode.includes("colour") ||
+            attributeName.includes("color") ||
+            attributeName.includes("colour")
+          );
+        });
+
+
+      if (colorAttribute) {
+        const valueObject =
+          colorAttribute?.valueId ||
+          colorAttribute?.valueObj ||
+          colorAttribute?.val ||
+          {};
+
+        const colorCode =
+          valueObject?.colorHex ||
+          valueObject?.hex ||
+          valueObject?.hexCode ||
+          valueObject?.code ||
+          valueObject?.colorCode ||
+          valueObject?.value ||
+          colorAttribute?.value ||
+          colorAttribute?.customValue ||
+          "";
+
+        const colorName =
+          valueObject?.name ||
+          valueObject?.value ||
+          valueObject?.colorName ||
+          valueObject?.label ||
+          colorAttribute?.value ||
+          colorCode ||
+          "";
+
+        if (colorCode) {
+          return {
+            code: String(colorCode),
+            name: String(colorName || colorCode),
+          };
+        }
+      }
+    }
+
+    const oldColor = Array.isArray(variant?.color) ? variant.color[0] : variant?.color || variant?.colors;
+
+    if (oldColor) {
+
+      if (
+        typeof oldColor === "object"
+      ) {
+        const colorCode =
+          oldColor?.code ||
+          oldColor?.colorHex ||
+          oldColor?.hex ||
+          oldColor?.hexCode ||
+          oldColor?.colorCode ||
+          oldColor?.value ||
+          oldColor?.name ||
+          "";
+
+
+        const colorName =
+          oldColor?.name ||
+          oldColor?.value ||
+          oldColor?.colorName ||
+          oldColor?.label ||
+          colorCode ||
+          "";
+
+
+        if (colorCode) {
+          return {
+            code: String(colorCode),
+            name: String(
+              colorName || colorCode
+            ),
+          };
+        }
+      }
+      if (
+        typeof oldColor === "string"
+      ) {
+        return { code: oldColor, name: oldColor, };
+      }
+    }
+    return null;
+  };
+
+
+  const getUniqueColors = (variants = []) => {
     const colorMap = new Map();
     variants?.forEach((variant) => {
-      variant.color?.forEach((clr) => {
+      // variant.color?.forEach((clr) => {
+        const clr = getColorFromVariant(variant);
         if (clr.code && !colorMap.has(clr.code)) {
           colorMap.set(clr.code, clr.name);
         }
-      });
+      // });
     });
     return Array.from(colorMap.entries()).map(([code, name]) => ({
       code,
@@ -156,7 +276,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
       windowWidth <= 480
         ? 2
         : windowWidth <= 767
-          ? 3
+          ? 4
           : windowWidth <= 980
             ? 4
             : windowWidth <= 1280
@@ -281,7 +401,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                     <button
                       onClick={() => handleCategorySelect(cat)}
                       className={` rounded-[30px] flex items-center justify-center 
-                      w-full h-[22px] md:h-[38px] text-center transition
+                      w-full h-[30px] md:h-[38px] text-center transition
                       ${
                         activeCategory === cat._id
                           ? "bg-color text-white"
@@ -291,7 +411,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                         boxShadow: "inset 0 0 5px 1px rgba(0, 0, 0, 0.25)",
                       }}
                     >
-                      <p className="text-[12px] md:text-[16px] font-medium whitespace-nowrap">
+                      <p className="text-[12px] md:text-[16px] font-medium whitespace-nowrap lowercase first-letter:uppercase">
                         {cat.name}
                       </p>
                     </button>
@@ -358,7 +478,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                         className="w-full h-[227px] md:h-[227px] lg:h-[355px] transform transition-transform duration-300"
                       />
 
-                      <div className="absolute top-3 right-3 opacity-100 transition-opacity duration-300 z-10">
+                      <div className="absolute top-3 right-3 opacity-100 group-hover:opacity-0 transition-opacity duration-300 z-10">
                         <div className="flex flex-col space-y-2">
                           <button
                             onClick={(e) => {
