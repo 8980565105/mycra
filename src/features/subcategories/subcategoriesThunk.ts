@@ -1,5 +1,3 @@
-//D:\mycara\admin-panal\src\features\categories\categoriesThunk.ts
-
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
@@ -20,7 +18,6 @@ export const fetchsubCategories = createAsyncThunk(
   ) => {
     try {
       const { isDownload = false, ...query } = params;
-
       const res = await api.get(ROUTES.subcategories.getAll, {
         params: { ...query, isDownload },
       });
@@ -33,7 +30,6 @@ export const fetchsubCategories = createAsyncThunk(
   },
 );
 
-// Get category by ID
 export const getsubCategoryById = createAsyncThunk(
   "subcategories/getsubCategoryById",
   async (id: string, { rejectWithValue }) => {
@@ -47,7 +43,6 @@ export const getsubCategoryById = createAsyncThunk(
   },
 );
 
-// Create category
 export const createsubCategory = createAsyncThunk(
   "subcategories/createsubCategory",
   async (data: any, { rejectWithValue }) => {
@@ -78,7 +73,6 @@ export const updatesubCategory = createAsyncThunk(
   },
 );
 
-// ✅ Update category status
 export const updatesubCategoryStatus = createAsyncThunk(
   "subcategories/updatesubCategoryStatus",
   async (
@@ -97,7 +91,6 @@ export const updatesubCategoryStatus = createAsyncThunk(
   },
 );
 
-// Delete category
 export const deletesubCategory = createAsyncThunk(
   "subcategories/deletesubCategory",
   async (id: string, { rejectWithValue }) => {
@@ -113,7 +106,6 @@ export const deletesubCategory = createAsyncThunk(
   },
 );
 
-// Bulk delete categories
 export const bulkDeletesubCategories = createAsyncThunk(
   "subcategories/bulkDeletesubCategories",
   async (ids: string[], { rejectWithValue }) => {

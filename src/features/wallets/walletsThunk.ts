@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-// USER SIDE
 export const fetchWallet = createAsyncThunk(
   "wallet/fetchWallet",
   async (_, { rejectWithValue }) => {
@@ -51,7 +50,6 @@ export const verifyKyc = createAsyncThunk(
   },
 );
 
-// ADMIN / STORE_OWNER SIDE
 interface FetchWalletsParams {
   page?: number;
   limit?: number;
@@ -63,7 +61,7 @@ export const fetchAllWallets = createAsyncThunk(
   async (params: FetchWalletsParams, { rejectWithValue }) => {
     try {
       const res = await api.get(ROUTES.wallet.adminAll, { params });
-      return res.data; // { wallets, total, page, totalPages }
+      return res.data; 
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Wallets load na thaya",
@@ -94,7 +92,7 @@ export const adminAdjustBalance = createAsyncThunk(
         type,
         reason,
       });
-      return res.data; // { wallet, transection }
+      return res.data; 
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Balance adjust na thayu",
@@ -223,7 +221,7 @@ export const verifyOtp = createAsyncThunk(
       const res = await api.post(ROUTES.kyc.verifyOtp, {
         otp,
       });
-      return res.data; // Should return { success: true, wallet } or similar
+      return res.data; 
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "OTP verification failed"

@@ -1,5 +1,4 @@
 import React from "react";
-import { Package, TrendingUp } from "lucide-react";
 import hero from "../../assets/hero banner.webp"
 
 export default function Hero() {
@@ -9,16 +8,12 @@ export default function Hero() {
         { value: "7", label: "days* payment" },
         { value: "19000+", label: "Pincodes served" },
     ];
-
     return (
         <section className="relative overflow-hidden bg-gradient-to-br from-sky-40 via-white to-sky-40">
-
-
             <div className="mx-auto max-w-6xl ">
                 <img src={hero} alt="hero banner"
                     className="w-full h-auto orject-contant" />
             </div>
-
             <div className="mx-auto max-w-6xl px-6 my-5">
                 <div className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
                     <ul className="flex flex-col divide-y divide-slate-200 py-6 sm:flex-row sm:divide-y-0 sm:py-8">
@@ -38,7 +33,6 @@ export default function Hero() {
                     </ul>
                 </div>
             </div>
-
         </section>
     );
 }

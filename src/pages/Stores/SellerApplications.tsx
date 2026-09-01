@@ -3,7 +3,6 @@ import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
 import { toast } from "sonner";
 import { Check, X, Eye, Building2, MapPin, Landmark, FileText, Search } from "lucide-react";
-
 export default function SellerApplications() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -12,11 +11,9 @@ export default function SellerApplications() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [filterStatus, setFilterStatus] = useState("submitted");
-
   useEffect(() => {
     fetchApplications();
   }, [filterStatus]);
-
   const fetchApplications = async () => {
     try {
       setLoading(true);
@@ -33,7 +30,6 @@ export default function SellerApplications() {
       setLoading(false);
     }
   };
-
   const handleApprove = async (appId: string) => {
     if (!window.confirm("Are you sure you want to approve this seller application? Store will be created automatically.")) {
       return;
@@ -52,7 +48,6 @@ export default function SellerApplications() {
       setProcessing(false);
     }
   };
-
   const handleRejectSubmit = async () => {
     if (!rejectionReason.trim()) {
       toast.error("Please enter a rejection reason");
@@ -84,8 +79,6 @@ export default function SellerApplications() {
           <h1 className="text-2xl font-bold text-slate-800">Seller Applications</h1>
           <p className="text-sm text-slate-500">Review seller applications and approve store creation.</p>
         </div>
-
-        {/* Filter Status Tabs */}
         <div className="flex bg-slate-100 p-1 rounded-xl">
           {["submitted", "approved", "rejected", ""].map((st) => (
             <button
@@ -183,7 +176,6 @@ export default function SellerApplications() {
           </div>
         )}
       </div>
-
       {selectedApp && !showRejectModal && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
@@ -194,7 +186,6 @@ export default function SellerApplications() {
               </button>
             </div>
 
-            {/* Applicant */}
             <div>
               <h4 className="font-semibold text-slate-700 text-sm flex items-center gap-1.5 mb-2">
                 <Building2 size={16} className="text-blue-600" /> Business Details
@@ -208,8 +199,6 @@ export default function SellerApplications() {
                 <div><strong>Email:</strong> {selectedApp.businessDetails?.email}</div>
               </div>
             </div>
-
-            {/* Pickup Address */}
             <div>
               <h4 className="font-semibold text-slate-700 text-sm flex items-center gap-1.5 mb-2">
                 <MapPin size={16} className="text-blue-600" /> Pickup Address
@@ -224,8 +213,6 @@ export default function SellerApplications() {
                 ) : "No pickup address provided"}
               </div>
             </div>
-
-            {/* Bank Details */}
             <div>
               <h4 className="font-semibold text-slate-700 text-sm flex items-center gap-1.5 mb-2">
                 <Landmark size={16} className="text-blue-600" /> Bank Details
@@ -237,8 +224,6 @@ export default function SellerApplications() {
                 <div><strong>Bank Name:</strong> {selectedApp.bankDetails?.bankName}</div>
               </div>
             </div>
-
-            {/* Tax Docs */}
             <div>
               <h4 className="font-semibold text-slate-700 text-sm flex items-center gap-1.5 mb-2">
                 <FileText size={16} className="text-blue-600" /> Tax & Govt Documents
@@ -271,7 +256,6 @@ export default function SellerApplications() {
           </div>
         </div>
       )}
-
       {showRejectModal && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">

@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-// ✅ Fetch all pages
 export const fetchPages = createAsyncThunk(
   "pages/fetchPages",
   async (
@@ -19,7 +18,6 @@ export const fetchPages = createAsyncThunk(
   }
 );
 
-// ✅ Get page by ID
 export const getPageById = createAsyncThunk(
   "pages/getPageById",
   async (id: string, { rejectWithValue }) => {
@@ -33,7 +31,6 @@ export const getPageById = createAsyncThunk(
   }
 );
 
-// ✅ Create page
 export const createPage = createAsyncThunk(
   "pages/createPage",
   async (data: any, { rejectWithValue }) => {
@@ -47,7 +44,6 @@ export const createPage = createAsyncThunk(
   }
 );
 
-// ✅ Update page
 export const updatePage = createAsyncThunk(
   "pages/updatePage",
   async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
@@ -61,7 +57,6 @@ export const updatePage = createAsyncThunk(
   }
 );
 
-// ✅ Update page status
 export const updatePageStatus = createAsyncThunk(
   "pages/updatePageStatus",
   async ({ id, status }: { id: string; status: "active" | "inactive"}, { rejectWithValue }) => {
@@ -75,7 +70,6 @@ export const updatePageStatus = createAsyncThunk(
   }
 );
 
-// ✅ Delete page
 export const deletePage = createAsyncThunk(
   "pages/deletePage",
   async (id: string, { rejectWithValue }) => {
@@ -89,7 +83,6 @@ export const deletePage = createAsyncThunk(
   }
 );
 
-// ✅ Bulk delete pages
 export const bulkDeletePages = createAsyncThunk(
   "pages/bulkDeletePages",
   async (ids: string[], { rejectWithValue }) => {

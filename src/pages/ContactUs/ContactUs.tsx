@@ -7,11 +7,8 @@ import {
   bulkDeleteContactMessages,
 } from "@/features/contactUs/contactUsThunk";
 
-
 export default function ContactUsPage() {
   const dispatch = useDispatch<AppDispatch>();
-
-
   const columns = [
     { key: "name", label: "Name", width: "w-40" },
     { key: "email", label: "Email", width: "w-48" },

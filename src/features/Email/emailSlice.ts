@@ -46,7 +46,6 @@ const emailSlice = createSlice({
   extraReducers: (builder) => {
     builder
 
-      // FETCH ALL
       .addCase(fetchEmails.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -67,7 +66,6 @@ const emailSlice = createSlice({
         state.error = (action.payload as string) || "Failed to fetch emails";
       })
 
-      // GET BY ID
       .addCase(fetchEmailById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -84,7 +82,6 @@ const emailSlice = createSlice({
         state.error = (action.payload as string) || "Failed to fetch email";
       })
 
-      // CREATE
       .addCase(createEmails.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -100,7 +97,6 @@ const emailSlice = createSlice({
         state.error = (action.payload as string) || "Failed to create email";
       })
 
-      // UPDATE
       .addCase(updateEmail.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -116,7 +112,6 @@ const emailSlice = createSlice({
         state.error = (action.payload as string) || "Failed to update email";
       })
 
-      // DELETE
       .addCase(deleteEmail.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -132,7 +127,6 @@ const emailSlice = createSlice({
         state.error = (action.payload as string) || "Failed to delete email";
       })
 
-      // BULK DELETE
       .addCase(bulkDeleteEmails.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -144,7 +138,6 @@ const emailSlice = createSlice({
 
       .addCase(bulkDeleteEmails.rejected, (state, action) => {
         state.loading = false;
-
         state.error = (action.payload as string) || "Failed to delete emails";
       });
   },

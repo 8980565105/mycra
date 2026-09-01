@@ -46,7 +46,6 @@ const packingSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // fetchpaking
     builder
       .addCase(fetchpaking.pending, (state) => {
         state.loading = true;
@@ -62,7 +61,6 @@ const packingSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // getpakingById
     builder
       .addCase(getpakingById.pending, (state) => {
         state.loading = true;
@@ -76,7 +74,6 @@ const packingSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // createpaking
     builder
       .addCase(createpaking.pending, (state) => {
         state.loading = true;
@@ -91,7 +88,6 @@ const packingSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // updatepaking
     builder
       .addCase(updatepaking.pending, (state) => {
         state.loading = true;
@@ -110,7 +106,6 @@ const packingSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // deletepaking
     builder
       .addCase(deletepaking.fulfilled, (state, action) => {
         state.packings = state.packings.filter((p) => p._id !== action.payload);
@@ -120,7 +115,6 @@ const packingSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // bulkDeletepaking
     builder
       .addCase(bulkDeletepaking.fulfilled, (state, action) => {
         state.packings = state.packings.filter(
@@ -132,7 +126,6 @@ const packingSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // updatepakingStatus
     builder
       .addCase(updatepakingStatus.fulfilled, (state, action) => {
         const idx = state.packings.findIndex(

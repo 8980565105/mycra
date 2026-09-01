@@ -13,7 +13,6 @@ import { AppDispatch } from "@/store";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { fetchSettings, updateSettings } from "@/features/settings/settingsThunk";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { fetchMyStore, updateMyStore } from "@/features/stores/storesThunk";
 export default function Settings() {
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
@@ -28,11 +27,9 @@ export default function Settings() {
   const [state, setState] = useState("");
   const [zip, setZip] = useState("");
   const [country, setCountry] = useState("");
-  // const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState("");
   const [storeEmail, setStoreEmail] = useState("");
   const [storePhone, setStorePhone] = useState("");
-  // const [gstNumber, setGstNumber] = useState("");
   const [contactStreet, setContactStreet] = useState("");
   const [contactCity, setContactCity] = useState("");
   const [contactState, setContactState] = useState("");
@@ -53,11 +50,8 @@ export default function Settings() {
   const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
   const [platformType, setPlatformType] =
     useState<"free" | "flat" | "percentage">("free");
-
   const [platformValue, setPlatformValue] =
     useState<string>("");
-
-
   useEffect(() => {
     dispatch(fetchMe()).then((res: any) => {
       if (res.payload?.user) {
@@ -80,85 +74,34 @@ export default function Settings() {
     });
   }, [dispatch]);
 
-  // useEffect(() => {
-  //   dispatch(fetchMyStore()).then((res: any) => {
-  //     if (res.payload) {
-  //       const s = res.payload;
-  //       setStoreId(s._id);
-  //       setStoreName(s.name || "");
-  //       setStoreEmail(s.email || "");
-  //       setStorePhone(s.phone || "");
-  //       setGstNumber(s.gst_number || "");
-  //       if (s.address) {
-  //         setContactStreet(s.address.street || "");
-  //         setContactCity(s.address.city || "");
-  //         setContactState(s.address.state || "");
-  //         setContactCountry(s.address.country || "");
-  //         setContactPostal(s.address.zip_code || "");
-  //       }
-  //       if (s.theme) {
-  //         setLogo(s.theme.logoUrl || null);
-  //         setMobilelogo(s.theme.mobilelogoUrl || null);
-  //         setFavicon(s.theme.faviconUrl || null);
-  //         setPrimaryColor(s.theme.primaryColor || "#000000");
-  //         setSecondaryColor(s.theme.secondaryColor || "#ffffff");
-  //         setFontFamily(s.theme.fontFamily || "");
-  //         setFooterText(s.theme.footerText || "");
-  //         setCopyrightText(s.theme.copyrightText || "");
-  //       }
-  //       if (s.seo) {
-  //         setMetaTitle(s.seo.meta_title || "");
-  //         setMetaDescription(s.seo.meta_description || "");
-  //         setMetaKeyphrase(s.seo.meta_keyphrase || "");
-  //         setSeoImage(s.seo.seo_image || null);
-  //       }
-  //       setSocialLinks(s.social_links || []);
-  //     }
-  //   });
-  // }, [dispatch]);
-  // useEffect(() => {
-  //   dispatch(fetchSettings()).then((res: any) => {
-  //   });
-  // }, [dispatch]);
-
   useEffect(() => {
     dispatch(fetchSettings()).then((res: any) => {
       if (!res.payload) return;
-
       const s = res.payload;
-
       setStoreName(s.site_name || "");
       setStoreEmail(s.contact_email || "");
       setStorePhone(s.contact_phone || "");
-
       setPlatformType(
         s.platform_charge_type || "free"
       );
-
       setPlatformValue(
         s.platform_charge_type === "free"
           ? ""
           : String(s.platform_charge_value ?? "")
       );
-
       setLogo(s.logourl || null);
       setMobilelogo(s.mobilelogoUrl || null);
       setFavicon(s.favicon_url || null);
-
       setPrimaryColor(s.primary_color || "#000000");
       setSecondaryColor(s.secondary_color || "#ffffff");
       setFontFamily(s.font_family || "");
-
       setFooterText(s.footer_text || "");
       setCopyrightText(s.copyright_text || "");
-
       setMetaTitle(s.meta_title || "");
       setMetaDescription(s.meta_description || "");
       setMetaKeyphrase(s.meta_keyphrase || "");
       setSeoImage(s.seo_image || null);
-
       setSocialLinks(s.social_links || []);
-
       if (s.contact_address) {
         setContactStreet(s.contact_address.street || "");
         setContactCity(s.contact_address.city || "");
@@ -168,14 +111,6 @@ export default function Settings() {
       }
     });
   }, [dispatch]);
-
-
-
-
-
-
-
-
 
   const handleSaveProfile = async () => {
     const res = await dispatch(updateMe({
@@ -194,16 +129,6 @@ export default function Settings() {
   };
   const handleSaveAppearance = async () => {
     const res = await dispatch(updateSettings({
-      // theme: {
-      //   logoUrl: logo,
-      //   mobilelogoUrl: mobilelogo,
-      //   faviconUrl: favicon,
-      //   primaryColor,
-      //   secondaryColor,
-      //   fontFamily,
-      //   footerText,
-      //   copyrightText,
-      // },
       logourl: logo,
       mobilelogoUrl: mobilelogo,
       favicon_url: favicon,
@@ -220,9 +145,7 @@ export default function Settings() {
       toast({ title: "Update Failed", description: res.payload as string, variant: "destructive" });
     }
   };
-  
   const handleSaveContact = async () => {
-
     if (
       platformType !== "free" &&
       platformValue === ""
@@ -239,7 +162,6 @@ export default function Settings() {
       platformType === "free"
         ? 0
         : Number(platformValue);
-
     if (numericValue < 0) {
       toast({
         title: "Invalid Platform Charge",
@@ -247,10 +169,8 @@ export default function Settings() {
           "Platform charge cannot be negative.",
         variant: "destructive",
       });
-
       return;
     }
-
     if (
       platformType === "percentage" &&
       numericValue > 100
@@ -261,25 +181,17 @@ export default function Settings() {
           "Platform percentage cannot be greater than 100%.",
         variant: "destructive",
       });
-
       return;
     }
-
     const res = await dispatch(
       updateSettings({
-
         site_name: storeName,
-
         contact_email: storeEmail,
-
         contact_phone: storePhone,
-
         platform_charge_type:
           platformType,
-
         platform_charge_value:
           numericValue,
-
         contact_address: {
           street: contactStreet,
           city: contactCity,
@@ -287,21 +199,15 @@ export default function Settings() {
           country: contactCountry,
           postal_code: contactPostal,
         },
-
       })
     );
-
     if (updateSettings.fulfilled.match(res)) {
-
-
       const saved =
         res.payload;
-
       setPlatformType(
         saved?.platform_charge_type ||
         platformType
       );
-
       setPlatformValue(
         saved?.platform_charge_type === "free"
           ? ""
@@ -315,10 +221,8 @@ export default function Settings() {
         description:
           "Store information and platform charge saved successfully.",
       });
-
     }
     else {
-
       toast({
         title: "Update Failed",
         description:

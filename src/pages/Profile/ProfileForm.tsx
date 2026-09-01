@@ -9,30 +9,21 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { fetchMe, updateMe } from "@/features/profile/profileThunk";
-
 export default function ProfileFormPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-
-  // 📝 Profile states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
-
-  // Address
   const [street, setStreet] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [country, setCountry] = useState("");
   const [zipCode, setZipCode] = useState("");
-
-  // Optional password change
   const [password, setPassword] = useState("");
-
-  // ✅ Fetch current profile
   useEffect(() => {
     dispatch(fetchMe()).then((res: any) => {
       if (res.payload) {
@@ -45,7 +36,6 @@ export default function ProfileFormPage() {
           user.date_of_birth ? new Date(user.date_of_birth).toISOString().split("T")[0] : ""
         );
         setProfilePicture(user.profile_picture || null);
-
         if (user.address) {
           setStreet(user.address.street || "");
           setCity(user.address.city || "");
@@ -56,8 +46,6 @@ export default function ProfileFormPage() {
       }
     });
   }, [dispatch]);
-
-  // ✅ Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return toast.error("Name is required");
@@ -97,7 +85,6 @@ export default function ProfileFormPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6">
-        {/* Left */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="shadow-md border">
             <CardHeader>
@@ -128,14 +115,9 @@ export default function ProfileFormPage() {
                 <Label htmlFor="password">Change Password</Label>
                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank to keep current" />
               </div>
-              {/* <div>
-                <Label>Profile Picture</Label>
-                <ImageUpload value={profilePicture} onChange={setProfilePicture} />
-              </div> */}
             </CardContent>
           </Card>
 
-          {/* Address */}
           <Card className="shadow-md border">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">Address</CardTitle>
@@ -150,7 +132,6 @@ export default function ProfileFormPage() {
           </Card>
         </div>
 
-        {/* Right */}
         <div className="space-y-6">
           <Card className="sticky top-6 shadow-md border">
             <CardHeader>

@@ -25,18 +25,15 @@ import {
 } from "@/features/customerReviews/customerReviewsThunk";
 import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
-
 interface ProductOption {
     _id: string;
     name: string;
 }
-
 interface UserOption {
     _id: string;
     name: string;
     email?: string;
 }
-
 export default function CustomerReviewsFrom() {
     const dispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
@@ -344,7 +341,6 @@ export default function CustomerReviewsFrom() {
                                         onChange={(e) => setReviewDate(e.target.value)}
                                         className="mt-1"
                                     />
-
                                 </div>
                             </div>
 

@@ -17,10 +17,6 @@ export default function ProductLabelsPage() {
   const basePath = useBasePath();
   const { user } = useSelector((state: RootState) => state.auth);
   const isAdmin = user?.role === "admin";
-
-
-
-
   const columns = [
     { key: "name", label: "Name", width: "w-48" },
     { key: "color", label: "Color", width: "w-32" },
@@ -43,7 +39,6 @@ export default function ProductLabelsPage() {
         { label: "Active", value: "active" },
         { label: "Inactive", value: "inactive" },
       ]}
-
       filters1={isAdmin
         ? [
           { label: "Admin", value: "admin" },
@@ -51,7 +46,6 @@ export default function ProductLabelsPage() {
         ]
         : undefined
       }
-
       fetchStores={async () => {
         const res = await dispatch(
           fetchUsers({

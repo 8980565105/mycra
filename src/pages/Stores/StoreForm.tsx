@@ -12,7 +12,6 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/ui/ImageUpload";
-
 import {
   createStore,
   getStoreById,

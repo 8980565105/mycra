@@ -1,24 +1,18 @@
 import { GenericTable } from "@/components/ui/adminTable";
 import { Button } from "@/components/ui/button";
-
 import {
     fetchEmails,
     deleteEmail,
     bulkDeleteEmails,
 } from "@/features/Email/emailsThunk";
-
 import { useBasePath } from "@/hooks/useBasePath";
-
 import { Plus } from "lucide-react";
-
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 
 function Emails() {
     const dispatch = useDispatch<any>();
-
     const basePath = useBasePath();
-
     const columns = [
         {
             key: "email",
@@ -30,7 +24,6 @@ function Emails() {
                 </span>
             ),
         },
-
         {
             key: "createdAt",
             label: "Subscribed At",

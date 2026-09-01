@@ -23,8 +23,6 @@ export const fetchWarehouse = createAsyncThunk(
   },
 );
 
-// ✅ Get warehouse by ID
-
 export const getWarehouseById = createAsyncThunk(
   "warehouse/getWarehouseById",
   async (id: string, { rejectWithValue }) => {
@@ -38,7 +36,6 @@ export const getWarehouseById = createAsyncThunk(
   },
 );
 
-// ✅ Create warehouse
 export const createWarehouse = createAsyncThunk(
   "warehouse/createWarehouse",
   async (data: any, { rejectWithValue }) => {
@@ -52,7 +49,6 @@ export const createWarehouse = createAsyncThunk(
   },
 );
 
-// ✅ Update warehouse
 export const updateWarehouse = createAsyncThunk(
   "warehouse/updateWarehouse",
   async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
@@ -65,8 +61,6 @@ export const updateWarehouse = createAsyncThunk(
     }
   },
 );
-
-// update warehouse status
 
 export const updatewarehouseStatus = createAsyncThunk(
   "warehouse/updatewarehouseStatus",
@@ -84,7 +78,6 @@ export const updatewarehouseStatus = createAsyncThunk(
   },
 );
 
-// ✅ Delete warehouse
 export const deleteWarehouse = createAsyncThunk(
   "warehouse/deleteWarehouse",
   async ({ id }: { id: string }, { rejectWithValue }) => {
@@ -97,8 +90,6 @@ export const deleteWarehouse = createAsyncThunk(
     }
   },
 );
-
-// ✅ Bulk delete warehouse
 
 export const bulkDeleteWarehouse = createAsyncThunk(
   "warehouse/bulkDeleteWarehouse",

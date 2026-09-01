@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
@@ -547,8 +546,6 @@ export default function Orders() {
               </Select>
             )
           }
-
-
         </CardContent>
       </Card>
 

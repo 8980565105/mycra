@@ -20,7 +20,7 @@ import pagesReducer from "./features/pages/pagesSlice";
 import dashboardReducer from "./features/dashboard/dashboardSlice";
 import warehouseReducer from "./features/warehouse/warehouseSlice";
 import subcategoriReducer from "./features/subcategories/subcategoriesSlice";
-import faqsReducer from "./features/faqs/faqsSlice";
+// import faqsReducer from "./features/faqs/faqsSlice";
 import walletReducer from "./features/wallets/walletsSlice";
 // import businessReducer from "./features/Business/businessSlice";
 import policyPagesReducer from "./features/Policypages/policypagesslice";
@@ -55,7 +55,7 @@ export const rootReducer = {
   setting: settingReducer,
   stores: storesReducer,
   dashboard: dashboardReducer,
-  faqs: faqsReducer,
+  // faqs: faqsReducer,
   wallet: walletReducer,
   policyPages: policyPagesReducer,
    emails: emailReducer,

@@ -1,14 +1,10 @@
-
-
 import { createSlice } from "@reduxjs/toolkit";
 import { fetchSettings, updateSettings } from "./settingsThunk";
-
 const initialState = {
   data: null,  
   loading: false,
   error: null,
 };
-
 const settingSlice = createSlice({
   name: "settings",
   initialState,

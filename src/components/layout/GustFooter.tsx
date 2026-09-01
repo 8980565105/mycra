@@ -40,12 +40,10 @@ export default function GustFooter() {
     return (
         <footer className="relative bg-[#3a3a3a] text-slate-300">
             <div className="mx-auto max-w-7xl px-6 py-14">
-                {/* Heading */}
                 <h2 className="text-center text-3xl font-extrabold text-white md:text-4xl">
                     Popular categories to sell across India
                 </h2>
 
-                {/* Categories grid */}
                 <div className="mt-10 grid grid-cols-1 gap-x-10 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
                     {categories.map((col, i) => (
                         <div key={i} className="flex flex-col gap-3">
@@ -125,7 +123,6 @@ export default function GustFooter() {
                 </div>
             </div>
 
-            {/* Bottom bar */}
             <div className="border-t border-slate-600">
                 <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-6 text-sm text-slate-400 sm:flex-row">
                     <div className="flex items-center gap-2">
@@ -141,7 +138,6 @@ export default function GustFooter() {
                 </div>
             </div>
 
-            {/* Go to top */}
             <button
                 onClick={scrollToTop}
                 className="fixed bottom-6 right-6 flex items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-lg hover:bg-slate-100"

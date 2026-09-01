@@ -38,28 +38,12 @@ const warehouseSlice = createSlice({
         state.warehouses.unshift(action.payload);
         state.total += 1;
       })
-      // .addCase(updateWarehouse.fulfilled, (state, action) => {
-      //   const index = state.warehouses.findIndex(
-      //     (c) => c._id === action.payload._id,
-      //   );
-      //   if (index !== -1) state.warehouses[index] = action.payload;
-      // })
-
       .addCase(updateWarehouse.fulfilled, (state, action) => {
         const index = state.warehouses.findIndex(
-          (c: any) => c._id === action.payload._id, // ખાતરી કરો કે અહિયાં _id છે
+          (c: any) => c._id === action.payload._id, 
         );
         if (index !== -1) state.warehouses[index] = action.payload;
       })
-
-      // .addCase(updatewarehouseStatus.fulfilled, (state, action) => {
-      //   const index = state.warehouses.findIndex(
-      //     (c) => c._id === action.payload._id,
-      //   );
-      //   if (index !== -1) {
-      //     state.warehouses[index] = action.payload;
-      //   }
-      // })
 
       .addCase(updatewarehouseStatus.fulfilled, (state, action) => {
         const index = state.warehouses.findIndex(

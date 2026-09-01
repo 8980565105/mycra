@@ -7,40 +7,32 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Edit2, Trash2, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-
 import { AppDispatch, RootState } from "@/store";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirmDialog";
 import { toast } from "sonner";
-
 import {
   fetchUsers,
   deleteUser,
   bulkDeleteUsers,
 } from "@/features/users/usersThunk";
-
 export default function Users() {
   const dispatch = useDispatch<AppDispatch>();
   const { users, total, loading } = useSelector(
     (state: RootState) => state.users
   );
-
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const limit = 5;
-
-  // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedQuery(searchQuery), 500);
     return () => clearTimeout(handler);
   }, [searchQuery]);
-
   const { user } = useSelector((state: RootState) => state.auth);
-  const userRole = user?.role; // now you have userRole
+  const userRole = user?.role; 
   console.log("userRole", userRole)
-
 
   useEffect(() => {
     dispatch(fetchUsers({
@@ -50,7 +42,6 @@ export default function Users() {
       role: userRole,
     }));
   }, [debouncedQuery, page, userRole, dispatch]);
-
   const handleDelete = async (id: string) => {
     try {
       await dispatch(deleteUser(id)).unwrap();
@@ -59,7 +50,6 @@ export default function Users() {
       toast.error(err?.message || "Failed to delete user.");
     }
   };
-
   const handleBulkDelete = async () => {
     if (!selectedIds.length) return;
     try {
@@ -70,12 +60,10 @@ export default function Users() {
       toast.error(err?.message || "Failed to delete users.");
     }
   };
-
   const handleSelect = (id: string) =>
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
-
   const handleDownload = async () => {
     try {
       const result = await dispatch(fetchUsers({ isDownload: true })).unwrap();
@@ -104,7 +92,6 @@ export default function Users() {
     }
   };
 
-  // Updated getStatusBadge using is_active
   const getStatusBadge = (is_active: boolean) => (
     <span
       className={`px-2 py-1 rounded-full text-xs font-semibold ${is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -119,7 +106,6 @@ export default function Users() {
 
   return (
     <div className="space-y-8 p-6 mx-auto">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
@@ -143,7 +129,6 @@ export default function Users() {
         </div>
       </div>
 
-      {/* Search & Bulk Actions */}
       <Card className="shadow-sm border border-gray-200">
         <CardContent className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4">
           <div className="relative w-full md:max-w-sm">
@@ -172,7 +157,6 @@ export default function Users() {
         </CardContent>
       </Card>
 
-      {/* Users Table */}
       <Card className="shadow-sm border border-gray-200">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold">
@@ -212,7 +196,6 @@ export default function Users() {
                       </td>
 
                       <td className="p-3 font-medium text-gray-900 truncate flex items-center gap-2">
-                        {/* Profile Picture or Avatar */}
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                           {user.profile_picture ? (
                             <img
@@ -232,7 +215,6 @@ export default function Users() {
                       <td className="p-3 truncate">{user.email}</td>
                       <td className="p-3">{user.role}</td>
                       <td className="p-3">{getStatusBadge(user.is_active)}</td>
-
                       <td className="p-3 flex justify-end gap-2">
                         <Link
                           to={`/users/${user._id}/edit`}
@@ -240,7 +222,6 @@ export default function Users() {
                         >
                           <Edit2 className="h-4 w-4" />
                         </Link>
-
                         <ConfirmDialog
                           title="Delete User"
                           description={`This will permanently delete user "${user.name}".`}
@@ -267,9 +248,7 @@ export default function Users() {
                 )}
               </tbody>
             </table>
-
           </div>
-
           {totalPages > 1 && (
             <div className="flex items-center justify-end gap-2 mt-4">
               <Button

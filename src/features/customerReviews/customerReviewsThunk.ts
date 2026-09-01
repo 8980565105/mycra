@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
 
-// ─── Fetch all reviews (Admin Panel / Store Owner Panel) ──────────────────────
 export const fetchCustomerReviews = createAsyncThunk(
   "customerReviews/fetchAll",
   async (
@@ -25,7 +24,6 @@ export const fetchCustomerReviews = createAsyncThunk(
   },
 );
 
-// ─── Get review by ID ─────────────────────────────────────────────────────────
 export const getCustomerReviewById = createAsyncThunk(
   "customerReviews/getById",
   async (id: string, { rejectWithValue }) => {
@@ -39,7 +37,6 @@ export const getCustomerReviewById = createAsyncThunk(
   },
 );
 
-// ─── Update review status (approve / reject toggle) ──────────────────────────
 export const updateReviewsStatus = createAsyncThunk(
   "customerReviews/updateReviewsStatus",
   async (
@@ -58,7 +55,6 @@ export const updateReviewsStatus = createAsyncThunk(
   },
 );
 
-// ─── Delete single review ─────────────────────────────────────────────────────
 export const deleteCustomerReview = createAsyncThunk(
   "customerReviews/delete",
   async (id: string, { rejectWithValue }) => {
@@ -72,7 +68,6 @@ export const deleteCustomerReview = createAsyncThunk(
   },
 );
 
-// ─── Bulk delete reviews ──────────────────────────────────────────────────────
 export const bulkDeleteCustomerReviews = createAsyncThunk(
   "customerReviews/bulkDelete",
   async (ids: string[], { rejectWithValue }) => {
@@ -86,7 +81,6 @@ export const bulkDeleteCustomerReviews = createAsyncThunk(
   },
 );
 
-// ─── Create review ────────────────────────────────────────────────────────────
 export const createCustomerReview = createAsyncThunk(
   "customerReviews/create",
   async (
@@ -110,7 +104,6 @@ export const createCustomerReview = createAsyncThunk(
   },
 );
 
-// ─── Update review ────────────────────────────────────────────────────────────
 export const updateCustomerReview = createAsyncThunk(
   "customerReviews/update",
   async (
@@ -140,8 +133,6 @@ export const updateCustomerReview = createAsyncThunk(
   },
 );
 
-// ─── Fetch public reviews for a product (Frontend product page — no auth) ─────
-// Uses public route: GET /customer-reviews/product/:product_id
 export const fetchPublicProductReviews = createAsyncThunk(
   "customerReviews/fetchPublic",
   async (

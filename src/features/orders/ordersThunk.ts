@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-// ─── Fetch orders ─────────────────────────────────────────────────────────────
 export const fetchOrders = createAsyncThunk(
   "orders/fetchOrders",
   async (
@@ -44,7 +43,6 @@ export const fetchOrders = createAsyncThunk(
   },
 );
 
-// ─── Get order by ID ──────────────────────────────────────────────────────────
 export const getOrderById = createAsyncThunk(
   "orders/getOrderById",
   async (id: string, { rejectWithValue }) => {
@@ -58,7 +56,6 @@ export const getOrderById = createAsyncThunk(
   },
 );
 
-// ─── Update order ─────────────────────────────────────────────────────────────
 export const updateOrder = createAsyncThunk(
   "orders/updateOrder",
   async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
@@ -72,7 +69,6 @@ export const updateOrder = createAsyncThunk(
   },
 );
 
-// ─── Update order status ──────────────────────────────────────────────────────
 export const updateOrderStatus = createAsyncThunk(
   "orders/updateOrderStatus",
   async (
@@ -89,7 +85,6 @@ export const updateOrderStatus = createAsyncThunk(
   },
 );
 
-// ─── Delete order ─────────────────────────────────────────────────────────────
 export const deleteOrder = createAsyncThunk(
   "orders/deleteOrder",
   async (id: string, { rejectWithValue }) => {
@@ -103,7 +98,6 @@ export const deleteOrder = createAsyncThunk(
   },
 );
 
-// ─── Bulk delete orders ───────────────────────────────────────────────────────
 export const bulkDeleteOrders = createAsyncThunk(
   "orders/bulkDeleteOrders",
   async (ids: string[], { rejectWithValue }) => {
@@ -117,11 +111,6 @@ export const bulkDeleteOrders = createAsyncThunk(
   },
 );
 
-// ════════════════════════════════════════════════════════════════════════════════
-// ORDER FLOW ACTIONS
-// ════════════════════════════════════════════════════════════════════════════════
-
-// ─── Confirm Order → auto-creates Packing ────────────────────────────────────
 export const confirmOrder = createAsyncThunk(
   "orders/confirmOrder",
   async (
@@ -138,7 +127,6 @@ export const confirmOrder = createAsyncThunk(
   },
 );
 
-// ─── Cancel Order ─────────────────────────────────────────────────────────────
 export const cancelOrder = createAsyncThunk(
   "orders/cancelOrder",
   async (
@@ -155,7 +143,6 @@ export const cancelOrder = createAsyncThunk(
   },
 );
 
-// ─── Pack Order ───────────────────────────────────────────────────────────────
 export const packOrder = createAsyncThunk(
   "orders/packOrder",
   async (
@@ -164,7 +151,7 @@ export const packOrder = createAsyncThunk(
   ) => {
     try {
       const res = await api.put(ROUTES.orders.pack(id), { warehouse_name });
-      if (res.data.success) return res.data.data; // { order, packing }
+      if (res.data.success) return res.data.data;
       return rejectWithValue(res.data.message || "Failed to pack order");
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
@@ -172,7 +159,6 @@ export const packOrder = createAsyncThunk(
   },
 );
 
-// ─── Assign Courier ───────────────────────────────────────────────────────────
 export const assignCourier = createAsyncThunk(
   "orders/assignCourier",
   async (
@@ -206,7 +192,6 @@ export const assignCourier = createAsyncThunk(
   },
 );
 
-// ─── Ship Order ───────────────────────────────────────────────────────────────
 export const shipOrder = createAsyncThunk(
   "orders/shipOrder",
   async (id: string, { rejectWithValue }) => {
@@ -220,7 +205,6 @@ export const shipOrder = createAsyncThunk(
   },
 );
 
-// ─── Update Tracking ──────────────────────────────────────────────────────────
 export const updateTracking = createAsyncThunk(
   "orders/updateTracking",
   async (
@@ -244,7 +228,6 @@ export const updateTracking = createAsyncThunk(
   },
 );
 
-// ─── Mark Delivered ───────────────────────────────────────────────────────────
 export const markDelivered = createAsyncThunk(
   "orders/markDelivered",
   async (id: string, { rejectWithValue }) => {
@@ -258,7 +241,6 @@ export const markDelivered = createAsyncThunk(
   },
 );
 
-// ─── Mark RTO / Returned / Refunded ──────────────────────────────────────────
 export const markRTO = createAsyncThunk(
   "orders/markRTO",
   async (

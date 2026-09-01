@@ -12,7 +12,6 @@ import { useBasePath } from "@/hooks/useBasePath";
 import { toast } from "sonner";
 import { createProductLabel, getProductLabelById, updateProductLabel } from "@/features/productLabels/productLabelsThunk";
 
-
 export default function ProductLabelFormPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -23,7 +22,6 @@ export default function ProductLabelFormPage() {
   const [color, setColor] = useState("#000000");
   const [status, setStatus] = useState(true);
 
-  // If edit mode → fetch label details
   useEffect(() => {
     if (isEditMode && id) {
       dispatch(getProductLabelById(id)).then((res: any) => {
@@ -39,13 +37,11 @@ export default function ProductLabelFormPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const payload = {
       name,
       color,
       status: status ? "active" : "inactive",
     };
-
     try {
       let result;
       if (isEditMode && id) {
@@ -53,7 +49,6 @@ export default function ProductLabelFormPage() {
       } else {
         result = await dispatch(createProductLabel(payload));
       }
-
       if (
         createProductLabel.fulfilled.match(result) ||
         updateProductLabel.fulfilled.match(result)
@@ -75,7 +70,6 @@ export default function ProductLabelFormPage() {
 
   return (
     <div className="p-6 mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Link to={`${basePath}/product-labels`}>
           <Button variant="ghost" size="icon">
@@ -95,7 +89,6 @@ export default function ProductLabelFormPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="shadow-md border border-gray-200">
             <CardHeader>
@@ -117,7 +110,6 @@ export default function ProductLabelFormPage() {
                   className="mt-1"
                 />
               </div>
-
               <div>
                 <Label htmlFor="color">
                   Color <span className="text-red-500">*</span>
@@ -134,7 +126,6 @@ export default function ProductLabelFormPage() {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <Card className="sticky top-6 shadow-md border border-gray-200">
             <CardHeader>
@@ -152,7 +143,6 @@ export default function ProductLabelFormPage() {
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
           <div className="flex gap-3">
             <Button
               type="submit"

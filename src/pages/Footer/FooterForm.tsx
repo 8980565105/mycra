@@ -10,7 +10,6 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useBasePath } from "@/hooks/useBasePath";
-
 import {
   createFooterItem,
   getFooterItemById,
@@ -23,15 +22,12 @@ export default function FooterFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
   const basePath = useBasePath();
-
   const user = useSelector((state: RootState) => (state as any).auth?.user);
   const isAdmin = user?.role === "admin";
-
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState(true);
   const [storeId, setStoreId] = useState<string>("");
-
   useEffect(() => {
     if (isEditMode && id) {
       dispatch(getFooterItemById(id)).then((res: any) => {

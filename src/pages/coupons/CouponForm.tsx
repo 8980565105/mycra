@@ -37,10 +37,8 @@ export default function CouponFormPage() {
   const isEditMode = Boolean(id);
   const basePath = useBasePath();
   const { user } = useSelector((state: RootState) => state.auth);
-
   const isStoreOwner = user?.role === "store_owner";
   const isAdmin = user?.role === "admin";
-
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [header_title, setheader_title] = useState("");
@@ -49,7 +47,6 @@ export default function CouponFormPage() {
     { value: string; label: string }[]
   >([]);
   const [isGlobal, setIsGlobal] = useState<boolean>(true);
-
   const [discountType, setDiscountType] = useState<
     "percentage" | "fixed" | "freeshiping" | "product" | "buy x get y"
   >("percentage");
@@ -78,7 +75,6 @@ export default function CouponFormPage() {
   const [freeProducts, setFreeProducts] = useState<any[]>([]);
   const [selectedSubCategories, setSelectedSubCategories] = useState<any[]>([]);
   const [usedCount, setUsedCount] = useState(0);
-
   useEffect(() => {
     if (isAdmin) {
       loadStores();
@@ -132,14 +128,11 @@ export default function CouponFormPage() {
             setheader_title(coupon.header_title || "");
             setDiscountType(coupon.discount_type || "percentage");
             setCouponType(coupon.coupon_type || "normal");
-
-
             if (coupon.is_global) {
               setIsGlobal(true);
               setSelectedStores([]);
             } else {
               setIsGlobal(false);
-
               const storeOptions =
                 coupon.storeIds && coupon.storeIds.length > 0
                   ? coupon.storeIds.map((s: any) => ({
@@ -157,21 +150,17 @@ export default function CouponFormPage() {
                       },
                     ]
                     : [];
-
               if (coupon.include_admin_products === true) {
                 storeOptions.unshift({ value: "admin", label: "Admin" });
               }
-
               setSelectedStores(storeOptions);
             }
-
             setBuyQuantity(Number(coupon.buy_x_get_y?.buy_quantity || 0));
             setGetQuantity(Number(coupon.buy_x_get_y?.get_quantity || 0));
             setUsageLimit(String(coupon.usage_limit ?? "1"));
             setuserUsageLimit(String(coupon.userusage_limit ?? "1"));
             setUsedCount(Number(coupon.used_count || 0));
             setStatus(coupon.status === "active");
-
             if (coupon.gift_product_ids && coupon.gift_product_ids.length > 0) {
               setGiftProducts(
                 coupon.gift_product_ids.map((p: any) => ({
@@ -183,7 +172,6 @@ export default function CouponFormPage() {
             if (coupon.coupon_type === "buy_x_get_y") {
               setBuyQuantity(coupon.buy_x_get_y?.buy_quantity || 0);
               setGetQuantity(coupon.buy_x_get_y?.get_quantity || 0);
-
               setFreeProducts(
                 (coupon.buy_x_get_y?.free_products || []).map((product: any) => ({
                   value: product._id || product,
@@ -191,7 +179,6 @@ export default function CouponFormPage() {
                 }))
               );
             }
-
             setDiscountValue(
               coupon.discount_value !== undefined && coupon.discount_value !== null
                 ? String(coupon.discount_value)
@@ -207,7 +194,6 @@ export default function CouponFormPage() {
                 ? String(coupon.max_discount_amount)
                 : ""
             );
-
             if (coupon.start_date) {
               const d = new Date(coupon.start_date);
               if (!isNaN(d.getTime())) {
@@ -218,7 +204,6 @@ export default function CouponFormPage() {
                 setStartDate(localISOTime);
               }
             }
-
             if (coupon.end_date) {
               const d = new Date(coupon.end_date);
               if (!isNaN(d.getTime())) {
@@ -229,16 +214,13 @@ export default function CouponFormPage() {
                 setEndDate(localISOTime);
               }
             }
-
             setApplyCoupon(coupon.apply_type || "allproducts");
-
             setSelectedProducts(
               (coupon.products || []).map((p: any) => ({
                 value: p._id || p,
                 label: p.name || p.title || "Product",
               }))
             );
-
             setSelectedSubCategories(
               (coupon.subcategories || []).map((s: any) => ({
                 value: s._id || s,
@@ -265,7 +247,6 @@ export default function CouponFormPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!name.trim()) return toast.error("Please enter coupon name");
     if (!code.trim())
       return toast.error("Please enter or generate a coupon code");
@@ -281,11 +262,9 @@ export default function CouponFormPage() {
       return toast.error("Please select at least one gift product");
     }
 
-
     const isAdminSelected = selectedStores.some(
       (s) => s.value === "admin"
     );
-
     const storeIdValues = selectedStores
       .filter((s) => s.value !== "admin")
       .map((s) => s.value);
@@ -295,57 +274,42 @@ export default function CouponFormPage() {
       code: code.toUpperCase(),
       description,
       header_title,
-
       discount_type: discountType,
       coupon_type: couponType,
-
       is_global: isAdmin
         ? !isAdminSelected &&
         storeIdValues.length === 0 &&
         isGlobal
         : false,
-
       include_admin_products: isAdmin
         ? isAdminSelected
         : false,
-
       storeIds: isStoreOwner
         ? [(user as any)?.storeId]
         : storeIdValues,
-
       storeId: isStoreOwner
         ? (user as any)?.storeId
         : storeIdValues.length > 0
           ? storeIdValues[0]
           : null,
-
       discount_value: Number(discountValue),
-
       min_purchase_amount: Number(minPurchaseAmount),
-
       max_discount_amount: maxDiscountAmount
         ? Number(maxDiscountAmount)
         : null,
-
       usage_limit: Number(usageLimit),
-
       userusage_limit: Number(userusageLimit),
-
       start_date: startDate
         ? new Date(startDate).toISOString()
         : null,
-
       end_date: endDate
         ? new Date(endDate).toISOString()
         : null,
-
       status: status ? "active" : "inactive",
-
       gift_product_ids:
         couponType === "free_gift"
           ? giftProducts.map((p) => p.value)
           : [],
-
       buy_x_get_y:
         couponType === "buy_x_get_y"
           ? {
@@ -354,22 +318,18 @@ export default function CouponFormPage() {
             free_products: freeProducts.map((p) => p.value),
           }
           : undefined,
-
       apply_type: apply,
-
       products:
         apply === "specificproducts" ||
           apply === "Excludeproduct"
           ? selectedProducts.map((p) => p.value)
           : [],
-
       subcategories:
         apply === "specificsubcategory" ||
           apply === "Excludecategories"
           ? selectedSubCategories.map((s) => s.value)
           : [],
     };
-
     try {
       let result;
       if (isEditMode && id) {
@@ -377,7 +337,6 @@ export default function CouponFormPage() {
       } else {
         result = await dispatch(createCoupon(payload));
       }
-
       if (
         createCoupon.fulfilled.match(result) ||
         updateCoupon.fulfilled.match(result)

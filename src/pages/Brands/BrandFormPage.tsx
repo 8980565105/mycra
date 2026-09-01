@@ -93,7 +93,6 @@ export default function BrandFormPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="shadow-md border border-gray-200">
             <CardHeader>
@@ -133,7 +132,6 @@ export default function BrandFormPage() {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <Card className="sticky top-6 shadow-md border border-gray-200">
             <CardHeader>
@@ -151,7 +149,6 @@ export default function BrandFormPage() {
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
           <div className="flex gap-3">
             <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
               {isEditMode ? "Update Brand" : "Create Brand"}

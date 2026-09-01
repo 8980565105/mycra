@@ -38,7 +38,6 @@ const brandsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch
       .addCase(fetchBrands.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -53,13 +52,11 @@ const brandsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Create
       .addCase(createBrand.fulfilled, (state, action) => {
         state.brands.unshift(action.payload);
         state.total += 1;
       })
 
-      // Update
       .addCase(updateBrand.fulfilled, (state, action) => {
         const index = state.brands.findIndex(
           (b) => b._id === action.payload._id
@@ -76,13 +73,11 @@ const brandsSlice = createSlice({
         }
       })
 
-      // Delete
       .addCase(deleteBrand.fulfilled, (state, action) => {
         state.brands = state.brands.filter((b) => b._id !== action.payload);
         state.total -= 1;
       })
 
-      // Bulk delete
       .addCase(bulkDeleteBrands.fulfilled, (state, action) => {
         state.brands = state.brands.filter(
           (b) => !action.payload.includes(b._id)

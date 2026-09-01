@@ -86,7 +86,6 @@ export const updatePolicyPageStatus = createAsyncThunk(
     }
   },
 );
-
 export const deletePolicyPage = createAsyncThunk(
   "policyPages/deletePolicyPage",
   async (id: string, { rejectWithValue }) => {
@@ -101,7 +100,6 @@ export const deletePolicyPage = createAsyncThunk(
     }
   },
 );
-
 export const bulkDeletePolicyPages = createAsyncThunk(
   "policyPages/bulkDeletePolicyPages",
   async (ids: string[], { rejectWithValue }) => {

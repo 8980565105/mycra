@@ -139,15 +139,12 @@ export default function PageFormPage() {
         },
       ];
     }
-
-
     setSections([...sections, newSection]);
   };
 
   const removeSection = (index: number) => {
     setSections(sections.filter((_, i) => i !== index));
   };
-
   const updateSection = (
     index: number,
     field: keyof SectionType,
@@ -159,7 +156,6 @@ export default function PageFormPage() {
       return updated;
     });
   };
-
   const addSlide = (sectionIndex: number) => {
     const updated = [...sections];
     if (!updated[sectionIndex].slides) updated[sectionIndex].slides = [];
@@ -174,7 +170,6 @@ export default function PageFormPage() {
     });
     setSections(updated);
   };
-
   const updateSlide = (
     sectionIndex: number,
     slideIndex: number,
@@ -191,7 +186,6 @@ export default function PageFormPage() {
       return updated;
     });
   };
-
   const removeSlide = (sectionIndex: number, slideIndex: number) => {
     const updated = [...sections];
     updated[sectionIndex].slides!.splice(slideIndex, 1);
@@ -226,13 +220,11 @@ export default function PageFormPage() {
       return updated;
     });
   };
-
   const removeItem = (sectionIndex: number, itemIndex: number) => {
     const updated = [...sections];
     updated[sectionIndex].items!.splice(itemIndex, 1);
     setSections(updated);
   };
-
   const addFaq = (sectionIndex: number) => {
     const updated = [...sections];
     if (!updated[sectionIndex].faqs) updated[sectionIndex].faqs = [];
@@ -243,7 +235,6 @@ export default function PageFormPage() {
     });
     setSections(updated);
   };
-
   const updateFaq = (
     sectionIndex: number,
     faqIndex: number,
@@ -260,27 +251,22 @@ export default function PageFormPage() {
       return updated;
     });
   };
-
   const removeFaq = (sectionIndex: number, faqIndex: number) => {
     const updated = [...sections];
     updated[sectionIndex].faqs!.splice(faqIndex, 1);
     setSections(updated);
   };
-
   const addFaq1 = (sectionIndex: number) => {
     const updated = [...sections];
-
     if (!updated[sectionIndex].faqs1) {
       updated[sectionIndex].faqs1 = [];
     }
-
     updated[sectionIndex].faqs1!.push({
       category: "",
       question: "",
       answer: "",
       order: updated[sectionIndex].faqs1!.length + 1,
     });
-
     setSections(updated);
   };
 
@@ -292,11 +278,9 @@ export default function PageFormPage() {
   ) => {
     setSections((prev) => {
       const updated = [...prev];
-
       if (!updated[sectionIndex].faqs1) {
         return updated;
       }
-
       updated[sectionIndex].faqs1![faqIndex] = {
         ...updated[sectionIndex].faqs1![faqIndex],
         [field]: value,
@@ -305,19 +289,15 @@ export default function PageFormPage() {
       return updated;
     });
   };
-
-
   const removeFaq1 = (
     sectionIndex: number,
     faqIndex: number
   ) => {
     setSections((prev) => {
       const updated = [...prev];
-
       if (!updated[sectionIndex].faqs1) {
         return updated;
       }
-
       updated[sectionIndex].faqs1 = updated[
         sectionIndex
       ].faqs1!
@@ -331,40 +311,32 @@ export default function PageFormPage() {
     });
   };
 
-
-
   const deleteFaqCategory = (
     sectionIndex: number,
     categoryIndex: number
   ) => {
     const updatedSections = [...sections];
-
     updatedSections[sectionIndex].faqCategories =
       updatedSections[
         sectionIndex
       ].faqCategories?.filter(
         (_, index) => index !== categoryIndex
       );
-
     setSections(updatedSections);
   };
 
   const addFaqCategory = (sectionIndex: number) => {
     setSections((prev) => {
       const updated = [...prev];
-
       if (!updated[sectionIndex].faqCategories) {
         updated[sectionIndex].faqCategories = [];
       }
-
       const categories = updated[sectionIndex].faqCategories!;
-
       categories.push({
         key: `category-${categories.length + 1}`,
         label: "",
         order: categories.length + 1,
       });
-
       return updated;
     });
   };
@@ -378,10 +350,8 @@ export default function PageFormPage() {
   ) => {
     setSections((prev) => {
       const updated = [...prev];
-
       const categories =
         updated[sectionIndex].faqCategories || [];
-
       categories[categoryIndex] = {
         ...categories[categoryIndex],
         [field]:
@@ -392,9 +362,7 @@ export default function PageFormPage() {
               .replace(/\s+/g, "-")
             : value,
       };
-
       updated[sectionIndex].faqCategories = categories;
-
       return updated;
     });
   };
@@ -402,7 +370,6 @@ export default function PageFormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pageName.trim()) return toast.error("Please enter page name");
-
     const payload: any = {
       page_name: pageName,
       slug: pageName.toLowerCase().replace(/\s+/g, "-"),
@@ -423,9 +390,7 @@ export default function PageFormPage() {
         };
       }),
     };
-
     if (selectedStoreId) payload.storeId = selectedStoreId;
-
     try {
       let result;
       if (isEditMode && id) {
@@ -433,7 +398,6 @@ export default function PageFormPage() {
       } else {
         result = await dispatch(createPage(payload));
       }
-
       if (
         createPage.fulfilled.match(result) ||
         updatePage.fulfilled.match(result)
@@ -925,126 +889,8 @@ export default function PageFormPage() {
                         </div>
                       </div>
                     )}
-
-                    {/* {section.type === "faqs1" && (
-
-                      <div className="space-y-5 mt-4">
-                        <div className="flex items-center justify-between border-t pt-5">
-                          <div>
-                            <Label className="text-base">
-                              FAQS Section 2 Items
-                            </Label>
-
-                          </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => addFaq1(sectionIndex)}
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add FAQ
-                          </Button>
-                        </div>
-                        {section.faqs1?.map((faq, faqIndex) => (
-                          <div
-                            key={faqIndex}
-                            className="relative border border-gray-200 rounded-xl p-5 mb-4 bg-gray-50"
-                          >
-                            <button
-                              type="button"
-                              onClick={() =>
-                                removeFaq1(
-                                  sectionIndex,
-                                  faqIndex
-                                )
-                              }
-                              className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
-                            >
-                              <Trash className="h-4 w-4" />
-                            </button>
-                            <div className="mb-4">
-                              <p className="text-sm font-semibold text-gray-700">
-                                FAQ #{faqIndex + 1}
-                              </p>
-                            </div>
-                            <div className="grid gap-4">
-                              
-
-                              <div className="space-y-2">
-                                <Label>Category</Label>
-
-                                <select
-                                  value={faq.category || ""}
-                                  onChange={(e) =>
-                                    updateFaq1(
-                                      sectionIndex,
-                                      faqIndex,
-                                      "category",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full h-10 rounded-md border border-gray-200 bg-white px-3 text-sm"
-                                >
-                                  <option value="">
-                                    Select Category
-                                  </option>
-
-                                  {(section.faqCategories || []).map((category) => (
-                                    <option
-                                      key={category.key}
-                                      value={category.key}
-                                    >
-                                      {category.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label>Question</Label>
-                                <Input
-                                  value={faq.question || ""}
-                                  placeholder="e.g. How can I place an order?"
-                                  onChange={(e) =>
-                                    updateFaq1(
-                                      sectionIndex,
-                                      faqIndex,
-                                      "question",
-                                      e.target.value
-                                    )
-                                  }
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Answer</Label>
-                                <Textarea
-                                  value={faq.answer || ""}
-                                  placeholder="Enter answer"
-                                  rows={4}
-                                  onChange={(e) =>
-                                    updateFaq1(
-                                      sectionIndex,
-                                      faqIndex,
-                                      "answer",
-                                      e.target.value
-                                    )
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )} */}
-
-
                     {section.type === "faqs1" && (
                       <div className="space-y-6 mt-4">
-
-                        {/* ============================= */}
-                        {/* FAQ 2 CATEGORIES */}
-                        {/* ============================= */}
-
                         <Card className="border border-gray-200">
                           <CardHeader>
                             <div className="flex items-center justify-between">
@@ -1052,12 +898,10 @@ export default function PageFormPage() {
                                 <CardTitle className="text-base">
                                   FAQ Categories
                                 </CardTitle>
-
                                 <p className="text-sm text-gray-500 mt-1">
                                   Create categories and select them in FAQ items.
                                 </p>
                               </div>
-
                               <Button
                                 type="button"
                                 size="sm"
@@ -1068,20 +912,15 @@ export default function PageFormPage() {
                               </Button>
                             </div>
                           </CardHeader>
-
                           <CardContent className="space-y-3">
-
                             {(section.faqCategories || []).map(
                               (category, categoryIndex) => (
                                 <div
                                   key={categoryIndex}
                                   className="grid grid-cols-12 gap-3 items-end border rounded-lg p-3"
                                 >
-
-                                  {/* Category Key */}
                                   <div className="col-span-5 space-y-2">
                                     <Label>Category Value</Label>
-
                                     <Input
                                       value={category.key}
                                       placeholder="orders"
@@ -1096,10 +935,8 @@ export default function PageFormPage() {
                                     />
                                   </div>
 
-                                  {/* Category Label */}
                                   <div className="col-span-5 space-y-2">
                                     <Label>Category Name</Label>
-
                                     <Input
                                       value={category.label}
                                       placeholder="Orders"
@@ -1113,8 +950,6 @@ export default function PageFormPage() {
                                       }
                                     />
                                   </div>
-
-                                  {/* Delete */}
                                   <div className="col-span-2">
                                     <Button
                                       type="button"
@@ -1130,7 +965,6 @@ export default function PageFormPage() {
                                       <Trash className="w-4 h-4" />
                                     </Button>
                                   </div>
-
                                 </div>
                               )
                             )}
@@ -1145,15 +979,9 @@ export default function PageFormPage() {
                           </CardContent>
                         </Card>
 
-
-                        {/* ============================= */}
-                        {/* FAQ ITEMS */}
-                        {/* ============================= */}
-
                         <Card className="border border-gray-200">
                           <CardHeader>
                             <div className="flex items-center justify-between">
-
                               <div>
                                 <CardTitle className="text-base">
                                   FAQ Items
@@ -1163,7 +991,6 @@ export default function PageFormPage() {
                                   Select a category, then add question and answer.
                                 </p>
                               </div>
-
                               <Button
                                 type="button"
                                 size="sm"
@@ -1175,17 +1002,12 @@ export default function PageFormPage() {
 
                             </div>
                           </CardHeader>
-
                           <CardContent className="space-y-4">
-
                             {section.faqs1?.map((faq, faqIndex) => (
-
                               <div
                                 key={faqIndex}
                                 className="relative border border-gray-200 rounded-xl p-5 bg-gray-50"
                               >
-
-                                {/* Delete FAQ */}
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -1198,24 +1020,17 @@ export default function PageFormPage() {
                                 >
                                   <Trash className="h-4 w-4" />
                                 </button>
-
-
                                 <div className="mb-4">
                                   <p className="text-sm font-semibold text-gray-700">
                                     FAQ #{faqIndex + 1}
                                   </p>
                                 </div>
 
-
                                 <div className="grid gap-4">
-
-                                  {/* CATEGORY */}
                                   <div className="space-y-2">
-
                                     <Label>
                                       Category <span className="text-red-500">*</span>
                                     </Label>
-
                                     <select
                                       value={faq.category || ""}
                                       onChange={(e) =>
@@ -1228,11 +1043,9 @@ export default function PageFormPage() {
                                       }
                                       className="w-full h-10 rounded-md border border-gray-200 bg-white px-3 text-sm"
                                     >
-
                                       <option value="">
                                         Select Category
                                       </option>
-
                                       {(section.faqCategories || []).map(
                                         (category) => (
                                           <option
@@ -1243,22 +1056,16 @@ export default function PageFormPage() {
                                           </option>
                                         )
                                       )}
-
                                     </select>
-
                                     {(!section.faqCategories ||
                                       section.faqCategories.length === 0) && (
                                         <p className="text-xs text-red-500">
                                           Please add at least one category first.
                                         </p>
                                       )}
-
                                   </div>
 
-
-                                  {/* QUESTION */}
                                   <div className="space-y-2">
-
                                     <Label>
                                       Question <span className="text-red-500">*</span>
                                     </Label>
@@ -1275,17 +1082,11 @@ export default function PageFormPage() {
                                         )
                                       }
                                     />
-
                                   </div>
-
-
-                                  {/* ANSWER */}
                                   <div className="space-y-2">
-
                                     <Label>
                                       Answer <span className="text-red-500">*</span>
                                     </Label>
-
                                     <Textarea
                                       value={faq.answer || ""}
                                       placeholder="Enter answer"
@@ -1299,26 +1100,18 @@ export default function PageFormPage() {
                                         )
                                       }
                                     />
-
                                   </div>
-
                                 </div>
-
                               </div>
-
                             ))}
-
-
                             {(!section.faqs1 ||
                               section.faqs1.length === 0) && (
                                 <div className="text-center py-8 text-sm text-gray-500">
                                   No FAQ items added.
                                 </div>
                               )}
-
                           </CardContent>
                         </Card>
-
                       </div>
                     )}
                   </div>
@@ -1328,7 +1121,6 @@ export default function PageFormPage() {
                 <Select
                   value=""
                   onValueChange={(val) => addSection(val as SectionType["type"])}
-
                 >
                   <SelectTrigger className="w-[200px] bg-primary text-white">
                     <SelectValue placeholder="+ Add Section" />
@@ -1342,14 +1134,7 @@ export default function PageFormPage() {
                     <SelectItem value="faqs1">FAQs 2</SelectItem>
                   </SelectContent>
                 </Select>
-
               </div>
-
-
-
-
-
-
             </CardContent>
           </Card>
         </div>

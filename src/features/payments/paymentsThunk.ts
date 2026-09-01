@@ -1,9 +1,7 @@
-// store/payments/paymentsThunk.ts
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-// Fetch payments (with pagination/search)
 export const fetchPayments = createAsyncThunk(
   "payments/fetchPayments",
   async (
@@ -26,7 +24,6 @@ export const fetchPayments = createAsyncThunk(
   },
 );
 
-// Get payment by ID
 export const getPaymentById = createAsyncThunk(
   "payments/getPaymentById",
   async (id: string, { rejectWithValue }) => {
@@ -40,7 +37,6 @@ export const getPaymentById = createAsyncThunk(
   },
 );
 
-// Delete payment
 export const deletePayment = createAsyncThunk(
   "payments/deletePayment",
   async (id: string, { rejectWithValue }) => {
@@ -54,7 +50,6 @@ export const deletePayment = createAsyncThunk(
   },
 );
 
-// Bulk delete payments
 export const bulkDeletePayments = createAsyncThunk(
   "payments/bulkDeletePayments",
   async (ids: string[], { rejectWithValue }) => {

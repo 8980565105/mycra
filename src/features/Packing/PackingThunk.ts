@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-// Fetch all paking
 export const fetchpaking = createAsyncThunk(
   "packing/fetchpaking",
   async (params: any, { rejectWithValue }) => {
@@ -16,7 +15,6 @@ export const fetchpaking = createAsyncThunk(
   },
 );
 
-// get paking by id
 export const getpakingById = createAsyncThunk(
   "packing/getpakingById",
   async (id: string, { rejectWithValue }) => {
@@ -30,7 +28,6 @@ export const getpakingById = createAsyncThunk(
   },
 );
 
-//create paking
 
 export const createpaking = createAsyncThunk(
   "packing/createpaking",
@@ -45,8 +42,6 @@ export const createpaking = createAsyncThunk(
   },
 );
 
-//update paking
-
 export const updatepaking = createAsyncThunk(
   "paking/updatepaking",
   async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
@@ -60,7 +55,6 @@ export const updatepaking = createAsyncThunk(
   },
 );
 
-//delete paking
 export const deletepaking = createAsyncThunk(
   "paking/deletepaking",
   async (id: string, { rejectWithValue }) => {
@@ -74,7 +68,6 @@ export const deletepaking = createAsyncThunk(
   },
 );
 
-//bulk delete paking
 export const bulkDeletepaking = createAsyncThunk(
   "paking/bulkDeletepaking",
   async (ids: string[], { rejectWithValue }) => {
@@ -88,7 +81,6 @@ export const bulkDeletepaking = createAsyncThunk(
   },
 );
 
-//update status paking
 export const updatepakingStatus = createAsyncThunk(
   "paking/updatepakingStatus",
   async (

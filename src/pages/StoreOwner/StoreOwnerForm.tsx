@@ -11,29 +11,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ui/ImageUpload";
-
-
 import { Textarea } from "@/components/ui/textarea";
 import { createUser, getUserById, updateUser } from "@/features/users/usersThunk";
 import { fetchStores } from "@/features/stores/storesThunk";
-
 export default function StoreOwnerFormPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
-
-  // ✅ Basic Info
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [status, setStatus] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-
-  // ✅ Store Info
-  const [storeId, setStoreId] = useState<string>(""); // 🟡 NEW: selected store ID
- 
-
+  const [storeId, setStoreId] = useState<string>("");
   const [storeName, setStoreName] = useState("");
   const [storeEmail, setStoreEmail] = useState("");
   const [storePhone, setStorePhone] = useState("");
@@ -42,8 +33,6 @@ export default function StoreOwnerFormPage() {
   const [storeBanner, setStoreBanner] = useState<string | null>(null);
   const [storeFavicon, setStoreFavicon] = useState<string | null>(null);
   const [storeDescription, setStoreDescription] = useState("");
-
-  // ✅ Store Address
   const [storeAddress, setStoreAddress] = useState({
     street: "",
     city: "",
@@ -51,43 +40,30 @@ export default function StoreOwnerFormPage() {
     country: "",
     zip_code: "",
   });
-
-  // ✅ Theme
   const [theme, setTheme] = useState({
     primaryColor: "#000000",
     secondaryColor: "#ffffff",
     buttonColor: "#007bff",
     fontFamily: "Roboto",
   });
-
   const { stores, loading, error } = useSelector((state: RootState) => state.stores);
-
   useEffect(() => {
     dispatch(fetchStores({ status: "active" })); // You can pass page/search if needed
   }, [dispatch]);
-
-
-    // ❗ depends on how you define "assigned" in your schema. If you check for a missing field:
   const availableStores = (stores || []).filter(store => store.assignedName === null);
-
-
-  // Fetch store owner if edit mode
   useEffect(() => {
     if (isEditMode && id) {
       dispatch(getUserById(id)).then((res: any) => {
         const u = res.payload;
         if (!u) return;
-
         setName(u.name ?? "");
         setEmail(u.email ?? "");
         setMobile(u.mobile_number ?? "");
         setStatus(u.is_active ?? true);
         setAvatarUrl(u.profile_picture ?? null);
-
         if (u.store?._id) {
-          setStoreId(u.store._id); // 🟡 preselect store if assigned
+          setStoreId(u.store._id);
         }
-
         setStoreName(u.store?.name ?? "");
         setStoreEmail(u.store?.email ?? "");
         setStorePhone(u.store?.phone ?? "");
@@ -112,22 +88,19 @@ export default function StoreOwnerFormPage() {
       });
     }
   }, [dispatch, id, isEditMode]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!storeId) {
       toast.error("Please select a store");
       return;
     }
-
     const payload = {
       name,
       email,
       mobile_number: mobile,
       is_active: status,
       profile_picture: avatarUrl,
-      store_id: storeId, // 🟡 Include store ID in payload
+      store_id: storeId,
       store: {
         name: storeName,
         email: storeEmail,
@@ -165,7 +138,6 @@ export default function StoreOwnerFormPage() {
 
   return (
     <div className="p-6 mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Link to="/store-owners">
           <Button variant="ghost" size="icon">
@@ -184,8 +156,6 @@ export default function StoreOwnerFormPage() {
 
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-
-          {/* Basic Info */}
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
@@ -194,7 +164,6 @@ export default function StoreOwnerFormPage() {
               <Input placeholder="Owner Name" value={name} onChange={(e) => setName(e.target.value)} required />
               <Input placeholder="Owner Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               <Input placeholder="Mobile Number" value={mobile} onChange={(e) => setMobile(e.target.value)} />
-
               <div>
                 <Label>Avatar</Label>
                 <ImageUpload
@@ -203,28 +172,23 @@ export default function StoreOwnerFormPage() {
                   size={120}
                 />
               </div>
-
-              {/* 🟡 Store Dropdown */}
-        <div>
-  <Label>Select Store</Label>
-  <Select value={storeId} onValueChange={setStoreId}>
-    <SelectTrigger>
-      <SelectValue placeholder="Choose a store" />
-    </SelectTrigger>
-    <SelectContent>
-      {availableStores.map(store => (
-        <SelectItem key={store._id} value={store._id}>
-          {store.name}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-</div>
-
+              <div>
+                <Label>Select Store</Label>
+                <Select value={storeId} onValueChange={setStoreId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a store" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableStores.map(store => (
+                      <SelectItem key={store._id} value={store._id}>
+                        {store.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
-
-          {/* Store Info */}
           <Card>
             <CardHeader>
               <CardTitle>Store Information</CardTitle>
@@ -239,35 +203,30 @@ export default function StoreOwnerFormPage() {
                 <div>
                   <Label>Logo</Label>
                   <ImageUpload
-  value={storeLogo}
-  onChange={(url) => setStoreLogo(url as string | null)}
-  size={100}
-/>
-
-                 
+                    value={storeLogo}
+                    onChange={(url) => setStoreLogo(url as string | null)}
+                    size={100}
+                  />
                 </div>
                 <div>
                   <Label>Banner</Label>
-                         <ImageUpload
-  value={storeBanner}
-  onChange={(url) => setStoreBanner(url as string | null)}
-  size={100}
-/>
-            
+                  <ImageUpload
+                    value={storeBanner}
+                    onChange={(url) => setStoreBanner(url as string | null)}
+                    size={100}
+                  />
                 </div>
                 <div>
                   <Label>Favicon</Label>
-                                    <ImageUpload
-  value={storeFavicon}
-  onChange={(url) => setStoreFavicon(url as string | null)}
-  size={64}
-/>
+                  <ImageUpload
+                    value={storeFavicon}
+                    onChange={(url) => setStoreFavicon(url as string | null)}
+                    size={64}
+                  />
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Store Address */}
           <Card>
             <CardHeader>
               <CardTitle>Store Address</CardTitle>
@@ -284,7 +243,6 @@ export default function StoreOwnerFormPage() {
             </CardContent>
           </Card>
 
-          {/* Theme */}
           <Card>
             <CardHeader>
               <CardTitle>Theme Settings</CardTitle>
@@ -310,7 +268,6 @@ export default function StoreOwnerFormPage() {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -324,7 +281,6 @@ export default function StoreOwnerFormPage() {
             </CardContent>
           </Card>
 
-          {/* Actions */}
           <div className="flex gap-3">
             <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
               {isEditMode ? "Update Store Owner" : "Create Store Owner"}

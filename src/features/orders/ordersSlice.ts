@@ -102,7 +102,6 @@ const initialState: OrdersState = {
   selectedOrder: null,
 };
 
-// ─── Helper: update order in list ────────────────────────────────────────────
 const updateInList = (orders: Order[], updated: Order) => {
   const idx = orders.findIndex((o) => o._id === updated._id);
   if (idx !== -1) orders[idx] = updated;
@@ -120,7 +119,6 @@ const ordersSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // fetchOrders
     builder
       .addCase(fetchOrders.pending, (state) => {
         state.loading = true;
@@ -136,7 +134,6 @@ const ordersSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // getOrderById
     builder
       .addCase(getOrderById.pending, (state) => {
         state.loading = true;
@@ -151,25 +148,21 @@ const ordersSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // updateOrder
     builder.addCase(updateOrder.fulfilled, (state, action) => {
       updateInList(state.orders, action.payload);
       if (state.selectedOrder?._id === action.payload._id)
         state.selectedOrder = action.payload;
     });
 
-    // updateOrderStatus
     builder.addCase(updateOrderStatus.fulfilled, (state, action) => {
       updateInList(state.orders, action.payload);
     });
 
-    // deleteOrder
     builder.addCase(deleteOrder.fulfilled, (state, action) => {
       state.orders = state.orders.filter((o) => o._id !== action.payload);
       state.total -= 1;
     });
 
-    // bulkDeleteOrders
     builder.addCase(bulkDeleteOrders.fulfilled, (state, action) => {
       state.orders = state.orders.filter(
         (o) => !action.payload.includes(o._id),
@@ -177,7 +170,6 @@ const ordersSlice = createSlice({
       state.total -= action.payload.length;
     });
 
-    // ─── Flow actions — all share same pattern ───────────────────────────────
     const flowThunks = [
       confirmOrder,
       cancelOrder,
@@ -197,7 +189,6 @@ const ordersSlice = createSlice({
         })
         .addCase(thunk.fulfilled, (state, action) => {
           state.actionLoading = false;
-          // response can be { order, packing } or just order
           const updated = action.payload?.order || action.payload;
           if (updated?._id) {
             updateInList(state.orders, updated);

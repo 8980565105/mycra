@@ -47,8 +47,6 @@ import Subcategories from "./pages/Subcategories/Subcategories"
 import SubCategoryFormPage from "./pages/Subcategories/SubcategoryForm";
 import ChildCategories from "./pages/ChildCategories/ChildCategories";
 import ChildCategoryFormPage from "./pages/ChildCategories/ChildCategoryForm";
-import FaqsFrom from "./pages/Faqs/FaqsFrom";
-import Faqspage from "./pages/Faqs/Faqs";
 import StoreView from "./pages/Stores/StoreView";
 import UserView from "./pages/Users/UserView";
 import GustUserHeader from "./components/layout/gustuserheader";
@@ -65,6 +63,7 @@ import PolicypagesFrom from "./pages/Policypages/PolicypagesFrom";
 import Policypages from "./pages/Policypages/Policypages";
 import Emails from "./pages/Emails/Emails";
 import EmailsForm from "./pages/Emails/EmailsFrom";
+import Settlement from "./pages/Settlement/Settlement";
 
 const queryClient = new QueryClient();
 
@@ -135,9 +134,6 @@ const App = () => (
               <Route path="customer-reviews/:id/edit" element={<CustomerReviewsFrom />} />
               <Route path="wishlists" element={<Wishlist />} />
               <Route path="carts" element={<Cart />} />
-              <Route path="faqs" element={<Faqspage />} />
-              <Route path="faqs/add" element={<FaqsFrom />} />\
-              <Route path="faqs/:id/edit" element={<FaqsFrom />} />
               <Route path="pages" element={<Pages />} />
               <Route path="pages/add" element={<PageFormPage />} />
               <Route path="pages/:id/edit" element={<PageFormPage />} />
@@ -163,6 +159,7 @@ const App = () => (
               <Route path="emails" element={<Emails />} />
               <Route path="emails/add" element={<EmailsForm />} />
               <Route path="emails/:id/edit" element={<EmailsForm />} />
+              <Route path="settlement" element={<Settlement />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
@@ -208,10 +205,8 @@ const App = () => (
               <Route path="customer-reviews/add" element={<CustomerReviewsFrom />} />
               <Route path="customer-reviews/:id/edit" element={<CustomerReviewsFrom />} />
               <Route path="wishlists" element={<Wishlist />} />
+              <Route path="settlement" element={<Settlement />} />
               <Route path="carts" element={<Cart />} />
-              <Route path="faqs" element={<Faqspage />} />
-              <Route path="faqs/add" element={<FaqsFrom />} />
-              <Route path="faqs/:id/edit" element={<FaqsFrom />} />
               <Route path="pages" element={<Pages />} />
               <Route path="pages/add" element={<PageFormPage />} />
               <Route path="pages/:id/edit" element={<PageFormPage />} />

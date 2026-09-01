@@ -1,13 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { addMoneyToWallet, adminAdjustBalance, adminVerifyKyc, fetchAllWallets, fetchWallet, verifyKyc, verifyOtp } from "./walletsThunk";
-// import {
-//   fetchWallet,
-//   addMoneyToWallet,
-//   verifyKyc,
-//   fetchAllWallets,
-//   adminAdjustBalance,
-//   adminVerifyKyc,
-// } from "./walletThunk";
+import {
+  addMoneyToWallet,
+  adminAdjustBalance,
+  adminVerifyKyc,
+  fetchAllWallets,
+  fetchWallet,
+  verifyKyc,
+  verifyOtp,
+} from "./walletsThunk";
 
 interface WalletState {
   wallet: any | null;

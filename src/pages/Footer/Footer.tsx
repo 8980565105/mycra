@@ -16,7 +16,6 @@ import { ConfirmDialog } from "@/components/ui/confirmDialog";
 export default function FooterPage() {
   const dispatch = useDispatch<AppDispatch>();
   const basePath = useBasePath();
-
   const columns = [
     { key: "label", label: "Label", width: "w-48" },
     { key: "url", label: "URL", width: "w-64" },

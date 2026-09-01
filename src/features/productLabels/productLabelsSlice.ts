@@ -1,7 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { bulkDeleteProductLabels, createProductLabel, deleteProductLabel, fetchProductLabels, updateProductLabel, updateProductLabelStatus } from "./productLabelsThunk";
-
-
 interface ProductLabel {
   _id: string;
   name: string;
@@ -12,7 +10,6 @@ interface ProductLabel {
   createdAt: string;
   updatedAt: string;
 }
-
 interface ProductLabelsState {
   labels: ProductLabel[];
   total: number;
@@ -33,7 +30,6 @@ const productLabelsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch
       .addCase(fetchProductLabels.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -47,19 +43,15 @@ const productLabelsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-
-      // Create
       .addCase(createProductLabel.fulfilled, (state, action) => {
         state.labels.unshift(action.payload);
         state.total += 1;
       })
 
-      // Update
       .addCase(updateProductLabel.fulfilled, (state, action) => {
         const index = state.labels.findIndex((l) => l._id === action.payload._id);
         if (index !== -1) state.labels[index] = action.payload;
       })
-
        .addCase(updateProductLabelStatus.fulfilled, (state, action) => {
               const index = state.labels.findIndex(
                 (c) => c._id === action.payload._id
@@ -69,13 +61,11 @@ const productLabelsSlice = createSlice({
               }
             })
 
-      // Delete
       .addCase(deleteProductLabel.fulfilled, (state, action) => {
         state.labels = state.labels.filter((l) => l._id !== action.payload);
         state.total -= 1;
       })
 
-      // Bulk delete
       .addCase(bulkDeleteProductLabels.fulfilled, (state, action) => {
         state.labels = state.labels.filter((l) => !action.payload.includes(l._id));
         state.total -= action.payload.length;

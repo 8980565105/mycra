@@ -21,7 +21,6 @@ import {
 import { fetchsubCategories } from "@/features/subcategories/subcategoriesThunk";
 import { fetchTypes } from "@/features/types/typesThunk";
 import { useBasePath } from "@/hooks/useBasePath";
-import { fetchProductLabels } from "@/features/productLabels/productLabelsThunk";
 import {
   createProduct,
   getProductById,
@@ -35,7 +34,6 @@ import {
 } from "@/features/attributes/attributesThunk";
 import { getTypeById } from "@/features/types/typesThunk";
 import { fetchBrands } from "@/features/brands/brandsThunk";
-
 export default function ProductFormPage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -48,7 +46,6 @@ export default function ProductFormPage() {
   const { brands } = useSelector((state: RootState) => state.brands);
   const { attributes, categoryAttributes } = useSelector((state: RootState) => state.attributes);
   const { labels: productLabels } = useSelector((state: RootState) => state.productLabels);
-
   const [name, setName] = useState("");
   const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
@@ -71,17 +68,14 @@ export default function ProductFormPage() {
   const [bulkStock, setBulkStock] = useState("");
   const [shippingType, setShippingType] = useState<string>("");
   const [shippingValue, setShippingValue] = useState<string>("");
-
   useEffect(() => {
     dispatch(fetchCategories({ page: 1, limit: 100, status: "active" }));
     dispatch(fetchsubCategories({ page: 1, limit: 1000, status: "active", role: "admin" }));
     dispatch(fetchTypes({ page: 1, limit: 1000, status: "active" }));
     dispatch(fetchBrands({ page: 1, limit: 1000, status: "active" }));
     dispatch(fetchAttributes({ page: 1, limit: 1000, status: "active" }));
-    dispatch(fetchProductLabels({ page: 1, limit: 100, status: "active" }));
   }, [dispatch]);
-
-  useEffect(() => {
+  useEffect(()  => {
     if (typeId) {
       dispatch(getTypeById(typeId)).then((res: any) => {
         if (res.payload) {
@@ -96,13 +90,11 @@ export default function ProductFormPage() {
       setSelectedTypeDetails(null);
     }
   }, [dispatch, typeId, categoryId]);
-
   const activeTypeObject = useMemo(() => {
     if (selectedTypeDetails) return selectedTypeDetails;
     if (!typeId) return null;
     return types.find((t: any) => (t._id || t) === typeId) || null;
   }, [selectedTypeDetails, types, typeId]);
-
   const availableBrands = useMemo(() => {
     if (!activeTypeObject) return [];
     const rawTypeBrands = Array.isArray(activeTypeObject.brandIds)
@@ -118,19 +110,16 @@ export default function ProductFormPage() {
     const typeBrandIds = rawTypeBrands.map((b: any) => (typeof b === "object" ? b._id : b));
     return brands.filter((brand: any) => typeBrandIds.includes(brand._id));
   }, [activeTypeObject, brands]);
-
   const allAttributePool = useMemo(() => {
     const map = new Map<string, any>();
     (attributes || []).forEach((a: any) => map.set(a._id, a));
     (categoryAttributes || []).forEach((a: any) => map.set(a._id, a));
     return Array.from(map.values());
   }, [attributes, categoryAttributes]);
-
   const typeVariantAttrIds = useMemo(() => {
     if (!activeTypeObject || !Array.isArray(activeTypeObject.variantAttributes)) return [];
     return activeTypeObject.variantAttributes.map((a: any) => (typeof a === "object" ? a._id : a));
   }, [activeTypeObject]);
-
   const typeSpecAttrIds = useMemo(() => {
     if (!activeTypeObject) return [];
     const allowed = Array.isArray(activeTypeObject.allowedAttributes)
@@ -140,7 +129,6 @@ export default function ProductFormPage() {
         : [];
     return allowed.map((a: any) => (typeof a === "object" ? a._id : a));
   }, [activeTypeObject]);
-
   const variantAttributesList = useMemo(() => {
     if (!typeId) return [];
     if (typeVariantAttrIds.length > 0) {
@@ -152,7 +140,6 @@ export default function ProductFormPage() {
     }
     return [];
   }, [typeId, typeVariantAttrIds, allAttributePool, activeTypeObject]);
-
   const specAttributesList = useMemo(() => {
     if (!typeId) return [];
     if (typeSpecAttrIds.length > 0) {
@@ -169,7 +156,6 @@ export default function ProductFormPage() {
     }
     return [];
   }, [typeId, typeSpecAttrIds, allAttributePool, activeTypeObject]);
-
   useEffect(() => {
     if (isEditMode && id) {
       dispatch(getProductById(id)).then((res: any) => {
@@ -230,10 +216,8 @@ export default function ProductFormPage() {
                 variantLabel: v.variantLabel || "",
               };
             });
-
             setVariants(mappedVariants);
             setSelectedSpecAttrs(loadedSpecAttrs);
-
             const dynAttrsForState: { [attrId: string]: string[] } = {};
             Object.entries(dynAttrsUnion).forEach(([attrId, valSet]) => {
               dynAttrsForState[attrId] = Array.from(valSet);
@@ -244,14 +228,12 @@ export default function ProductFormPage() {
       });
     }
   }, [dispatch, id, isEditMode]);
-
   const handleSingleSpecAttrChange = (attrId: string, valId: string) => {
     setSelectedSpecAttrs((prev) => ({
       ...prev,
       [attrId]: valId,
     }));
   };
-
   const toggleDynAttrSelection = (attrId: string, valId: string) => {
     setSelectedDynAttrs((prev) => {
       const current = prev[attrId] || [];
@@ -262,14 +244,12 @@ export default function ProductFormPage() {
       }
     });
   };
-
   const cartesianProduct = (arrays: any[][]): any[][] => {
     return arrays.reduce<any[][]>(
       (acc, curr) => acc.flatMap((d) => curr.map((e) => [...d, e])),
       [[]]
     );
   };
-
   const handleGenerateVariants = () => {
     const attributeSets: { key: string; items: { id: string; name: string; attrId?: string }[] }[] = [];
     if (variantAttributesList && variantAttributesList.length > 0) {
@@ -617,16 +597,7 @@ export default function ProductFormPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-
-
-
-
-
-
-
               </div>
-
               <div>
                 <Label>Description</Label>
                 <TiptapEditor value={description} onChange={(val) => setDescription(val)} />
@@ -643,7 +614,6 @@ export default function ProductFormPage() {
                   multiple
                 />
               </div>
-
               <div className="flex gap-4 text-xs">
                 <label className="flex items-center gap-2">
                   <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
@@ -658,7 +628,6 @@ export default function ProductFormPage() {
                   Trending
                 </label>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Shipping Charge Type</Label>
@@ -679,7 +648,6 @@ export default function ProductFormPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
                 {shippingType === "flat" && (
                   <div>
                     <Label>Flat Shipping Charge (₹)</Label>
@@ -691,7 +659,6 @@ export default function ProductFormPage() {
                     />
                   </div>
                 )}
-
                 {shippingType === "percentage" && (
                   <div>
                     <Label>Shipping Charge (%)</Label>
@@ -755,8 +722,6 @@ export default function ProductFormPage() {
               )}
             </CardContent>
           </Card>
-
-
           <Card className="shadow-sm border border-gray-200">
             <CardHeader className="bg-slate-50/50 border-b border-gray-100 flex flex-row items-center justify-between">
               <div>
@@ -855,7 +820,6 @@ export default function ProductFormPage() {
             </CardContent>
           </Card>
 
-          {/* Step 4: Variant Pricing & Table */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader className="bg-slate-50/50 border-b border-gray-100">
               <CardTitle className="text-lg font-semibold">Step 4: Variant Pricing & Table</CardTitle>
@@ -914,7 +878,6 @@ export default function ProductFormPage() {
                         <th className="p-3">Stock</th>
                         <th className="p-3">Image</th>
                         <th className="p-3 text-center">Action</th>
-
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -978,8 +941,6 @@ export default function ProductFormPage() {
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </td>
-
-
                           </tr>
                         );
                       })}

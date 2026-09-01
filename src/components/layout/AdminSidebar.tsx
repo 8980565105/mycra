@@ -62,7 +62,6 @@ const adminSections = [
       { title: "Attributes", url: "/admin/attributes", icon: Shapes },
       { title: "Brands", url: "/admin/brands", icon: Tag },
       { title: "Products", url: "/admin/products", icon: Package },
-      // { title: "Product Labels", url: "/admin/product-labels", icon: Tag },
     ],
   },
   {
@@ -94,12 +93,13 @@ const adminSections = [
     label: "Wallets",
     items: [
       { title: "User Wallets", url: "/admin/wallets/users", icon: Wallet },
+      { title: "Settlement ", url: "/admin/settlement", icon: Wallet },
     ],
   },
   {
     label: "Emails",
     items: [
-      { title: "Footer Emails", url: "/admin/emails",   icon: Wallet },
+      { title: "Footer Emails", url: "/admin/emails", icon: Wallet },
     ],
 
   },
@@ -143,6 +143,7 @@ const storeOwnerSections = [
       { title: "Orders", url: "/store_owner/orders", icon: ShoppingCart },
       { title: "payment", url: "/store_owner/payments", icon: CreditCard },
       { title: "Warehouse", url: "/store_owner/warehouse", icon: Warehouse },
+      { title: "Settlement ", url: "/store_owner/settlement", icon: Wallet },
     ],
   },
   {
@@ -153,7 +154,6 @@ const storeOwnerSections = [
       { title: "Cart", url: "/store_owner/carts", icon: ShoppingBasket },
     ],
   },
-
 ];
 
 export function AdminSidebar() {

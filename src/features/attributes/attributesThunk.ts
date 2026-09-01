@@ -1,6 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
-
 export interface Attribute {
   _id: string;
   name: string;
@@ -10,7 +9,6 @@ export interface Attribute {
   createdAt?: string;
   categoryId: string | { _id: string; name: string };
 }
-
 export interface AttributeValue {
   _id: string;
   attributeId: string | Attribute;

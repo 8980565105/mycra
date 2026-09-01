@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
 
-// ✅ Fetch logged-in user info (/me)
 export const fetchMe = createAsyncThunk(
   "profile/fetchMe",
   async (_, { rejectWithValue }) => {
@@ -16,7 +15,6 @@ export const fetchMe = createAsyncThunk(
   }
 );
 
-// ✅ Update profile (/me)
 export const updateMe = createAsyncThunk(
   "profile/updateMe",
   async (data: any, { rejectWithValue }) => {

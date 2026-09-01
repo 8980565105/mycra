@@ -37,19 +37,16 @@ export default function PolicyPageFormPage() {
     const { id } = useParams<{ id: string }>();
     const isEditMode = Boolean(id);
     const basePath = useBasePath();
-
     const [pageName, setPageName] = useState("");
     const [slug, setSlug] = useState("");
     const [slugTouched, setSlugTouched] = useState(false);
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState("active");
     const [order, setOrder] = useState<number | "">("");
-
     const [metaTitle, setMetaTitle] = useState("");
     const [metaDescription, setMetaDescription] = useState("");
     const [metaKeyphrase, setMetaKeyphrase] = useState("");
     const [seoImage, setSeoImage] = useState("");
-
     useEffect(() => {
         if (isEditMode && id) {
             dispatch(getPolicyPageById(id)).then((res: any) => {
@@ -69,16 +66,13 @@ export default function PolicyPageFormPage() {
             });
         }
     }, [dispatch, id, isEditMode]);
-
     const handlePageNameChange = (val: string) => {
         setPageName(val);
         setSlug(slugify(val));
     };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!pageName.trim()) return toast.error("Please enter page name");
-
         const payload: any = {
             page_name: pageName,
             slug: slug || slugify(pageName),
@@ -98,7 +92,6 @@ export default function PolicyPageFormPage() {
             } else {
                 result = await dispatch(createPolicyPage(payload));
             }
-
             if (
                 createPolicyPage.fulfilled.match(result) ||
                 updatePolicyPage.fulfilled.match(result)
@@ -116,7 +109,6 @@ export default function PolicyPageFormPage() {
             toast.error("Server Error");
         }
     };
-
     return (
         <div className="p-6 mx-auto">
             <div className="flex items-center gap-4 mb-6">

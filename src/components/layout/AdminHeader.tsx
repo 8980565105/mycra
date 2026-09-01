@@ -76,12 +76,10 @@ export function AdminHeader() {
 
   return (
     <div className="border-b border-header-border bg-header">
-      {/* Top Header */}
       <header className="flex h-16 items-center gap-4 px-6">
         <SidebarTrigger />
 
         <div className="flex-1 flex items-center gap-4">
-          {/* Search */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -93,10 +91,8 @@ export function AdminHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Theme Toggle */}
           <ThemeToggle />
 
-          {/* Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
@@ -128,7 +124,6 @@ export function AdminHeader() {
         </div>
       </header>
 
-      {/* Breadcrumbs */}
       <div className="px-6 py-3 bg-muted">
         <Breadcrumb>
           <BreadcrumbList>

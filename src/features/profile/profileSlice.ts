@@ -46,7 +46,6 @@ const profileSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ✅ Fetch Me
       .addCase(fetchMe.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -60,7 +59,6 @@ const profileSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // ✅ Update Me
       .addCase(updateMe.pending, (state) => {
         state.loading = true;
         state.error = null;

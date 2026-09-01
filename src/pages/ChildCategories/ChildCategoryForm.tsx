@@ -32,12 +32,10 @@ export default function ChildCategoryFormPage() {
   const isEditMode = Boolean(id);
   const basePath = useBasePath();
   const { categories: subCategories } = useSelector((state: RootState) => state.subcategori);
-
   const [name, setName] = useState("");
   const [subCategoryId, setSubCategoryId] = useState("");
   const [status, setStatus] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-
 
   useEffect(() => {
     dispatch(fetchsubCategories({ page: 1, limit: 1000, status: "active" }));
@@ -52,7 +50,7 @@ export default function ChildCategoryFormPage() {
           const subId = typeof item.subCategoryId === "object" ? item.subCategoryId?._id : item.subCategoryId;
           setSubCategoryId(subId || "");
           setStatus(item.status === "active");
-          setImageUrl(item.image_url || null);   // ✅ add
+          setImageUrl(item.image_url || null);   
         }
       });
     }
@@ -179,7 +177,6 @@ export default function ChildCategoryFormPage() {
           </Card>
         </div>
       </form >
-
     </div >
   );
 }

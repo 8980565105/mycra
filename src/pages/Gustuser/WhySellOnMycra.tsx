@@ -58,21 +58,6 @@ export default function WhySellOnMycra() {
         <div>
           <img src={whysellerimg} alt="img" className="" />
         </div>
-
-
-
-
-        {/* <div className="relative flex justify-center md:justify-end">
-          <div className="relative flex h-96 w-72 items-end justify-center overflow-hidden rounded-3xl bg-gradient-to-b from-sky-50 to-transparent">
-            <div className="relative flex flex-col items-center">
-              <div className="h-20 w-20 rounded-full bg-amber-200" />
-              <div className="mt-2 h-56 w-40 rounded-t-[80px] bg-[#1D4ED8]" />
-              <div className="absolute bottom-0 h-56 w-40 rounded-t-[80px] bg-gradient-to-b from-transparent via-transparent to-white/10" />
-            </div>
-            <div className="absolute right-6 top-8 h-3 w-3 rounded-full bg-amber-400" />
-            <div className="absolute left-6 top-16 h-2 w-2 rounded-full bg-sky-400" />
-          </div>
-        </div> */}
       </div>
     </section>
   );

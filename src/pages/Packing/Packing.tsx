@@ -10,26 +10,20 @@ import {
     updatepaking,
     createpaking,
 } from "@/features/Packing/PackingThunk"
-
-
 export default function PackingPage() {
     const dispatch = useDispatch<AppDispatch>();
-
     const [params, setParams] = useState({
         page: 1,
         limit: 10,
         search: "",
         status: "",
     });
-
     const [showModal, setShowModal] = useState(false);
     const [editItem, setEditItem] = useState<any>(null);
     const [form, setForm] = useState({ name: "", description: "" });
-
     useEffect(() => {
         dispatch(fetchpaking(params));
     }, [params]);
-
     const handleSubmit = () => {
         if (editItem) {
             dispatch(updatepaking({ id: editItem._id, data: form }));
@@ -40,9 +34,6 @@ export default function PackingPage() {
         setEditItem(null);
         setForm({ name: "", description: "" });
     };
-
-
-
     const columns = [
         { key: "name", label: "Name", width: "w-48" },
         { key: "description", label: "Description", width: "w-64" },
@@ -53,9 +44,7 @@ export default function PackingPage() {
             render: (row: any) =>
                 new Date(row.createdAt).toLocaleDateString("en-IN"),
         },
-
     ];
-
     return (
         <>
             <GenericTable
@@ -68,14 +57,12 @@ export default function PackingPage() {
                     { label: "Active", value: "active" },
                     { label: "Inactive", value: "inactive" },
                 ]}
-
                 fetchData={async ({ page, limit, search, status }) => {
                     const res = await dispatch(
                         fetchpaking({ page, limit, search, status })
                     ).unwrap();
                     return { data: res.packings, total: res.total };
                 }}
-
                 deleteItem={async (id) => {
                     await dispatch(deletepaking(id)).unwrap();
                 }}
@@ -87,10 +74,8 @@ export default function PackingPage() {
                         updatepakingStatus({ id, status: newStatus ? "active" : "inactive" })
                     ).unwrap();
                 }}
-
             />
 
-            {/* Add / Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">

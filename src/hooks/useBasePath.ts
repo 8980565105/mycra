@@ -1,9 +1,3 @@
-// hooks/useBasePath.ts
-// ─────────────────────────────────────────────────────────────
-// Role-based route prefix hook
-// Admin       → ""              (e.g. /categories)
-// Store Owner → "/store_owner"  (e.g. /store_owner/categories)
-// ─────────────────────────────────────────────────────────────
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 

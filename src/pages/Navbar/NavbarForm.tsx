@@ -10,7 +10,6 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useBasePath } from "@/hooks/useBasePath";
-
 import {
   createNavbarItem,
   getNavbarItemById,
@@ -20,12 +19,10 @@ import { ImageUpload } from "@/components/ui/ImageUpload";
 
 export default function NavbarFormPage() {
   const dispatch = useDispatch<AppDispatch>();
-    const basePath = useBasePath();
-  
+  const basePath = useBasePath();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
-
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
   const [icon, setIcon] = useState("");

@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
-// Fetch product labels
 export const fetchProductLabels = createAsyncThunk(
   "productLabels/fetchProductLabels",
   async (
@@ -32,7 +31,6 @@ export const fetchProductLabels = createAsyncThunk(
   },
 );
 
-// Get label by ID
 export const getProductLabelById = createAsyncThunk(
   "productLabels/getProductLabelById",
   async (id: string, { rejectWithValue }) => {
@@ -46,7 +44,6 @@ export const getProductLabelById = createAsyncThunk(
   },
 );
 
-// Create label
 export const createProductLabel = createAsyncThunk(
   "productLabels/createProductLabel",
   async (data: any, { rejectWithValue }) => {
@@ -62,7 +59,6 @@ export const createProductLabel = createAsyncThunk(
   },
 );
 
-// Update label
 export const updateProductLabel = createAsyncThunk(
   "productLabels/updateProductLabel",
   async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
@@ -78,7 +74,6 @@ export const updateProductLabel = createAsyncThunk(
   },
 );
 
-// ✅ Update label status
 export const updateProductLabelStatus = createAsyncThunk(
   "productLabels/updateProductLabelStatus",
   async (
@@ -97,7 +92,6 @@ export const updateProductLabelStatus = createAsyncThunk(
   },
 );
 
-// Delete label
 export const deleteProductLabel = createAsyncThunk(
   "productLabels/deleteProductLabel",
   async (id: string, { rejectWithValue }) => {
@@ -113,7 +107,6 @@ export const deleteProductLabel = createAsyncThunk(
   },
 );
 
-// Bulk delete labels
 export const bulkDeleteProductLabels = createAsyncThunk(
   "productLabels/bulkDeleteProductLabels",
   async (ids: string[], { rejectWithValue }) => {

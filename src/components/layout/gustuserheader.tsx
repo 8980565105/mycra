@@ -1,54 +1,3 @@
-// import React from 'react'
-// import { useNavigate } from 'react-router-dom'
-
-// export default function GustUserHeader() {
-
-//     const navigate = useNavigate();
-//     return (
-//         <>
-//             <header className="border-b border-slate-200">
-//                 <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-//                     <div className="flex items-center gap-2">
-//                         <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#1D4ED8] text-white font-bold text-lg">
-//                             M
-//                         </div>
-//                         <div className="leading-tight">
-//                             <div className="text-lg font-extrabold text-slate-900">Mycra</div>
-//                             <div className="-mt-1 text-[11px] font-medium tracking-wide text-slate-500">
-//                                 Seller Hub
-//                             </div>
-//                         </div>
-//                     </div>
-
-//                     <nav className="hidden items-center gap-8 text-sm font-medium text-slate-700 md:flex">
-//                         <a href="#" className="hover:text-[#1D4ED8]">Sell Online</a>
-//                         <a href="#" className="hover:text-[#1D4ED8]">Fees and Commission</a>
-//                         <a href="#" className="hover:text-[#1D4ED8]">Grow</a>
-//                         <a href="#" className="hover:text-[#1D4ED8]">Learn</a>
-//                     </nav>
-
-//                     <div className="flex items-center gap-4">
-//                         <button
-//                             onClick={() => navigate("/login")}
-//                             className="text-sm font-semibold text-slate-800 hover:text-[#1D4ED8]"
-//                         >
-//                             Login
-//                         </button>
-//                         <button 
-//                          onClick={() => navigate("/register")}
-//                         className="rounded-md bg-amber-400 px-5 py-2.5 text-sm font-bold text-slate-900 shadow-sm transition hover:bg-amber-300">
-//                             Start Selling
-//                         </button>
-//                     </div>
-//                 </div>
-//             </header>
-
-
-//         </>
-//     )
-// }
-
-
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
@@ -69,7 +18,6 @@ export default function GustUserHeader() {
             <header className="border-b border-slate-200 relative z-40">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-3">
-                        {/* Hamburger - mobile/tablet only */}
                         <button
                             onClick={() => setMenuOpen(true)}
                             className="flex items-center justify-center text-slate-700 hover:text-[#1D4ED8] lg:hidden"
@@ -116,7 +64,6 @@ export default function GustUserHeader() {
                 </div>
             </header>
 
-            {/* Overlay */}
             {menuOpen && (
                 <div
                     onClick={() => setMenuOpen(false)}
@@ -124,7 +71,6 @@ export default function GustUserHeader() {
                 />
             )}
 
-            {/* Slide-in drawer */}
             <div
                 className={`fixed left-0 top-0 z-50 h-full w-72 max-w-[80%] transform bg-white shadow-xl transition-transform duration-300 ease-in-out lg:hidden ${menuOpen ? "translate-x-0" : "-translate-x-full"
                     }`}

@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
 
-// Fetch all contact messages
 export const fetchContactMessages = createAsyncThunk(
   "contactUs/fetchAll",
   async (
@@ -26,7 +25,6 @@ export const fetchContactMessages = createAsyncThunk(
   },
 );
 
-// Get contact message by ID
 export const getContactMessageById = createAsyncThunk(
   "contactUs/getById",
   async (id: string, { rejectWithValue }) => {
@@ -40,7 +38,6 @@ export const getContactMessageById = createAsyncThunk(
   },
 );
 
-// Delete single contact message
 export const deleteContactMessage = createAsyncThunk(
   "contactUs/delete",
   async (id: string, { rejectWithValue }) => {
@@ -54,7 +51,6 @@ export const deleteContactMessage = createAsyncThunk(
   },
 );
 
-// Bulk delete contact messages
 export const bulkDeleteContactMessages = createAsyncThunk(
   "contactUs/bulkDelete",
   async (ids: string[], { rejectWithValue }) => {

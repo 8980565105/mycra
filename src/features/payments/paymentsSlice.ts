@@ -1,4 +1,3 @@
-// store/payments/paymentsSlice.ts
 import { createSlice } from "@reduxjs/toolkit";
 import {
   fetchPayments,
@@ -41,7 +40,6 @@ const paymentsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch payments
       .addCase(fetchPayments.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -56,7 +54,6 @@ const paymentsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Get payment by ID
       .addCase(getPaymentById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -71,13 +68,11 @@ const paymentsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Delete payment
       .addCase(deletePayment.fulfilled, (state, action) => {
         state.payments = state.payments.filter((p) => p._id !== action.payload);
         state.total -= 1;
       })
 
-      // Bulk delete payments
       .addCase(bulkDeletePayments.fulfilled, (state, action) => {
         state.payments = state.payments.filter(
           (p) => !action.payload.includes(p._id),

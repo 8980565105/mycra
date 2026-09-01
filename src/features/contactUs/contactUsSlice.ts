@@ -37,7 +37,6 @@ const contactUsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch all
       .addCase(fetchContactMessages.pending, (state) => {
         state.loading = true;
       })
@@ -50,15 +49,12 @@ const contactUsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Get by ID
       .addCase(getContactMessageById.fulfilled, (state, action) => {
         state.selectedItem = action.payload;
       })
-      // Delete single
       .addCase(deleteContactMessage.fulfilled, (state, action) => {
         state.items = state.items.filter((item) => item._id !== action.payload);
       })
-      // Bulk delete
       .addCase(bulkDeleteContactMessages.fulfilled, (state, action) => {
         state.items = state.items.filter(
           (item) => !action.payload.includes(item._id)

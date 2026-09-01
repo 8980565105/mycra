@@ -6,10 +6,8 @@ import {
   deletePayment,
   bulkDeletePayments,
 } from "@/features/payments/paymentsThunk";
-
 export default function PaymentsPage() {
   const dispatch = useDispatch<AppDispatch>();
-
   const columns = [
     { key: "transaction_id", label: "Transaction ID", width: "w-48" },
     {
@@ -19,7 +17,6 @@ export default function PaymentsPage() {
       render: (item: any) => item.user_id?.name || "-",
     },
     { key: "payment_method", label: "Payment Method", width: "w-48" },
-   
     {
       key: "amount_paid",
       label: "Amount",

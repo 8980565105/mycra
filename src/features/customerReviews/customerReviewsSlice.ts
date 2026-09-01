@@ -1,4 +1,3 @@
-// export default customerReviewsSlice.reducer;
 import { createSlice } from "@reduxjs/toolkit";
 import {
   fetchCustomerReviews,
@@ -12,12 +11,12 @@ import {
 } from "./customerReviewsThunk";
 
 interface CustomerReviewState {
-  customerReviews: any[]; // Admin/store panel list
-  publicReviews: any[]; // Frontend product page reviews
+  customerReviews: any[]; 
+  publicReviews: any[]; 
   total: number;
   publicTotal: number;
   loading: boolean;
-  submitting: boolean; // For frontend review form submit
+  submitting: boolean; 
   error: string | null;
   selectedReview: any | null;
 }
@@ -44,7 +43,6 @@ const customerReviewsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ─── Fetch all (admin/store panel) ─────────────────────────────────────
       .addCase(fetchCustomerReviews.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -59,12 +57,10 @@ const customerReviewsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // ─── Get by ID ──────────────────────────────────────────────────────────
       .addCase(getCustomerReviewById.fulfilled, (state, action) => {
         state.selectedReview = action.payload;
       })
 
-      // ─── Update review ──────────────────────────────────────────────────────
       .addCase(updateCustomerReview.fulfilled, (state, action) => {
         const updated = action.payload;
         const index = state.customerReviews.findIndex(
@@ -75,7 +71,6 @@ const customerReviewsSlice = createSlice({
         }
       })
 
-      // ─── Update status (approve/reject toggle) ──────────────────────────────
       .addCase(updateReviewsStatus.fulfilled, (state, action) => {
         const updated = action.payload;
         const index = state.customerReviews.findIndex(
@@ -86,7 +81,6 @@ const customerReviewsSlice = createSlice({
         }
       })
 
-      // ─── Delete single ──────────────────────────────────────────────────────
       .addCase(deleteCustomerReview.fulfilled, (state, action) => {
         state.customerReviews = state.customerReviews.filter(
           (r) => r._id !== action.payload,
@@ -94,7 +88,6 @@ const customerReviewsSlice = createSlice({
         state.total -= 1;
       })
 
-      // ─── Bulk delete ────────────────────────────────────────────────────────
       .addCase(bulkDeleteCustomerReviews.fulfilled, (state, action) => {
         state.customerReviews = state.customerReviews.filter(
           (r) => !action.payload.includes(r._id),
@@ -102,14 +95,12 @@ const customerReviewsSlice = createSlice({
         state.total -= action.payload.length;
       })
 
-      // ─── Create review (frontend user submits) ──────────────────────────────
       .addCase(createCustomerReview.pending, (state) => {
         state.submitting = true;
         state.error = null;
       })
       .addCase(createCustomerReview.fulfilled, (state, action) => {
         state.submitting = false;
-        // Add to public reviews list if exists (optimistic update)
         state.publicReviews.unshift(action.payload);
         state.publicTotal += 1;
       })
@@ -118,7 +109,6 @@ const customerReviewsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // ─── Fetch public product reviews (frontend product page) ───────────────
       .addCase(fetchPublicProductReviews.pending, (state) => {
         state.loading = true;
         state.error = null;

@@ -18,7 +18,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { fetchCategories } from "@/features/categories/categoriesThunk";
 import { fetchTypes } from "@/features/types/typesThunk";
-import { fetchProductLabels } from "@/features/productLabels/productLabelsThunk";
 import {
   Select,
   SelectContent,
@@ -185,7 +184,6 @@ export default function Products() {
   useEffect(() => {
     dispatch(fetchCategories({ page: 1, limit: 100 }));
     dispatch(fetchTypes({ page: 1, limit: 100 }));
-    dispatch(fetchProductLabels({ page: 1, limit: 100 }));
     dispatch(fetchsubCategories({ page: 1, limit: 100, status: "active" }));
   }, [dispatch]);
 
@@ -346,7 +344,6 @@ export default function Products() {
             </Link>
           </div>
         </div>
-
         <Card className="shadow-sm border border-gray-200">
           <CardContent className="space-y-4 p-4">
             <div className="flex flex-col md:flex-row gap-4 flex-wrap">
@@ -359,7 +356,6 @@ export default function Products() {
                   className="pl-10"
                 />
               </div>
-
               <Select
                 value={statusFilter || "all"}
                 onValueChange={(value) =>
@@ -377,7 +373,6 @@ export default function Products() {
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-
               <Select
                 value={roleFilter || "all"}
                 onValueChange={(val) =>
@@ -395,7 +390,6 @@ export default function Products() {
                   <SelectItem value="store_owner">store</SelectItem>
                 </SelectContent>
               </Select>
-
               {
                 roleFilter === "store_owner" && (
                   <Select
@@ -407,12 +401,10 @@ export default function Products() {
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Select Store" />
                     </SelectTrigger>
-
                     <SelectContent>
                       <SelectItem value="all">
                         All Stores
                       </SelectItem>
-
                       {stores.map((store) => (
                         <SelectItem
                           key={store.value}
@@ -425,10 +417,8 @@ export default function Products() {
                   </Select>
                 )
               }
-
             </div>
           </CardContent>
-
           {selectedIds.length > 0 && (
             <div className="p-4 border-t flex justify-end">
               <ConfirmDialog
@@ -481,7 +471,6 @@ export default function Products() {
                     <th className="p-3 w-32 text-right">Actions</th>
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-gray-100">
                   {loading ? (
                     <tr>
@@ -536,7 +525,6 @@ export default function Products() {
                         (sum, v) => sum + v.stock_quantity,
                         0
                       );
-
                       return (
                         <React.Fragment key={product._id}>
                           <tr className="hover:bg-gray-50 transition-colors">
@@ -549,7 +537,6 @@ export default function Products() {
                               />
                             </td>
                             <td className="p-3 flex items-center gap-2">
-
                               {Array.isArray(product.images) && product.images.length > 0 && (
                                 <img
                                   src={`${import.meta.env.VITE_API_URL_IMAGE}${product.images[0]}`}
@@ -557,21 +544,16 @@ export default function Products() {
                                   className="w-10 h-10 rounded object-cover"
                                 />
                               )}
-
                               <span className="truncate">{product.name}</span>
                             </td>
                             <td className="p-3 text-gray-500 truncate">
-
                               {typeof product.category_id === "object"
                                 ? product.category_id?.name
                                 : subCategories.find((c) => c._id === product.category_id)?.name || "-"}
                             </td>
-
                             <td className="p-3 text-gray-500 truncate">
                               {product?.createdByUser?.name || "-"}
                             </td>
-
-
 
                             <td className="p-3">
                               ₹
@@ -580,7 +562,6 @@ export default function Products() {
                                 : `${minPrice} - ${maxPrice}`}{" "}
                               / Stock: {totalStock}
                             </td>
-
                             <td className="p-3">
                               <Switch
                                 checked={product.status === "active"}
@@ -589,7 +570,6 @@ export default function Products() {
                                 }
                               />
                             </td>
-
                             <td className="p-3 text-right flex gap-2 justify-end items-center">
                               <Link
                                 to={`${basePath}/products/${product._id}/edit`}
@@ -610,7 +590,6 @@ export default function Products() {
                               </ConfirmDialog>
                             </td>
                           </tr>
-
                           {product?.variants?.length > 0 && (
                             <tr >
                               <td colSpan={6} className="p-0">
@@ -682,7 +661,6 @@ export default function Products() {
                 </tbody>
               </table>
             </div>
-
             {totalPages > 1 && (
               <div className="flex items-center justify-end gap-2 mt-4">
                 <Button

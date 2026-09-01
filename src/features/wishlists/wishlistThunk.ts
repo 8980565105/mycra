@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
 
-// Fetch all wishlist items
 export const fetchWishlistItems = createAsyncThunk(
   "wishlist/fetchAll",
   async (
@@ -30,7 +29,6 @@ export const fetchWishlistItems = createAsyncThunk(
   },
 );
 
-// Get wishlist item by ID
 export const getWishlistItemById = createAsyncThunk(
   "wishlist/getById",
   async (id: string, { rejectWithValue }) => {
@@ -44,7 +42,6 @@ export const getWishlistItemById = createAsyncThunk(
   },
 );
 
-// Delete single wishlist item
 export const deleteWishlistItem = createAsyncThunk(
   "wishlist/delete",
   async (id: string, { rejectWithValue }) => {
@@ -58,7 +55,6 @@ export const deleteWishlistItem = createAsyncThunk(
   },
 );
 
-// Bulk delete wishlist items
 export const bulkDeleteWishlistItems = createAsyncThunk(
   "wishlist/bulkDelete",
   async (ids: string[], { rejectWithValue }) => {

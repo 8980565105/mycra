@@ -28,7 +28,6 @@ const wishlistSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch all
       .addCase(fetchWishlistItems.pending, (state) => {
         state.loading = true;
       })
@@ -41,15 +40,12 @@ const wishlistSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Get by ID
       .addCase(getWishlistItemById.fulfilled, (state, action) => {
         state.selectedItem = action.payload;
       })
-      // Delete single
       .addCase(deleteWishlistItem.fulfilled, (state, action) => {
         state.items = state.items.filter((item) => item._id !== action.payload);
       })
-      // Bulk delete
       .addCase(bulkDeleteWishlistItems.fulfilled, (state, action) => {
         state.items = state.items.filter(
           (item) => !action.payload.includes(item._id)

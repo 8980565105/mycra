@@ -7,7 +7,6 @@ import {
   bulkDeletesubCategories,
   updatesubCategoryStatus,
 } from "./subcategoriesThunk";
-
 interface subCategory {
   _id: string;
   name: string;
@@ -18,7 +17,6 @@ interface subCategory {
   createdAt: string;
   updatedAt: string;
 }
-
 interface CategoriesState {
   categories: subCategory[];
   total: number;
@@ -39,7 +37,6 @@ const subcategoriesSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch
       .addCase(fetchsubCategories.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -54,13 +51,11 @@ const subcategoriesSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Create
       .addCase(createsubCategory.fulfilled, (state, action) => {
         state.categories.unshift(action.payload);
         state.total += 1;
       })
 
-      // Update
       .addCase(updatesubCategory.fulfilled, (state, action) => {
         const index = state.categories.findIndex(
           (c) => c._id === action.payload.id,
@@ -77,7 +72,6 @@ const subcategoriesSlice = createSlice({
         }
       })
 
-      // Delete
       .addCase(deletesubCategory.fulfilled, (state, action) => {
         state.categories = state.categories.filter(
           (c) => c._id !== action.payload,
@@ -85,7 +79,6 @@ const subcategoriesSlice = createSlice({
         state.total -= 1;
       })
 
-      // Bulk delete
       .addCase(bulkDeletesubCategories.fulfilled, (state, action) => {
         state.categories = state.categories.filter(
           (c) => !action.payload.includes(c._id),

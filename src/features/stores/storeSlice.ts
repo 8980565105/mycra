@@ -1,4 +1,3 @@
-// storeSlice.ts
 import { createSlice } from "@reduxjs/toolkit";
 import {
   fetchStores,
@@ -30,7 +29,6 @@ interface Store {
   createdAt: string;
   updatedAt: string;
 }
-
 interface StoresState {
   stores: Store[];
   store: Store | null;
