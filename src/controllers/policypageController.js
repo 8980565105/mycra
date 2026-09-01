@@ -6,9 +6,7 @@ const PolicyPage = require("../models/Policypage");
 const getpolicypage = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "", status } = req.query;
-
     const query = { ...(req.ownershipQuery || {}) };
-
     if (search) {
       query.$or = [
         { page_name: { $regex: search, $options: "i" } },
@@ -16,7 +14,6 @@ const getpolicypage = async (req, res) => {
         { meta_title: { $regex: search, $options: "i" } },
       ];
     }
-
     if (status) query.status = status;
 
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);

@@ -7,7 +7,6 @@ const Payment = require("../models/Payment");
 const User = require("../models/User");
 const Store = require("../models/Store");
 const Type = require("../models/Type");
-const ProductLabel = require("../models/ProductLabel");
 const Coupon = require("../models/Coupon");
 const { sendResponse } = require("../utils/response");
 
@@ -82,9 +81,6 @@ const getDashboard = async (req, res) => {
       currMonthUsers = currCustomerIds.length;
     }
     const totalProducts = await Product.countDocuments(productFilter);
-
-
-    
     const prevMonthProducts = await Product.countDocuments({
       ...productFilter,
       createdAt: { $gte: prevMonthStart, $lte: prevMonthEnd },
@@ -113,9 +109,6 @@ const getDashboard = async (req, res) => {
       isAdmin ? {} : creatorFilter,
     );
     const totalTypes = await Type.countDocuments(isAdmin ? {} : creatorFilter);
-    const totalProductLabels = await ProductLabel.countDocuments(
-      isAdmin ? {} : creatorFilter,
-    );
     const pendingOrders = await Order.countDocuments({
       ...orderFilter,
       status: "pending",
@@ -336,7 +329,6 @@ const getDashboard = async (req, res) => {
       totalOrders,
       totalUsers,
       totalTypes,
-      totalProductLabels,
       totalRevenue,
       activeCoupons,
       salesOverview,

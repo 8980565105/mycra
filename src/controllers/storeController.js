@@ -106,17 +106,13 @@ const getStoreById = async (req, res) => {
 
 const nodemailer = require("nodemailer");
 const escapeHtml = require("escape-html");
-
 const storeOtpMap = {};
-
 const createTransporter = () => {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   if (!user || !pass) return null;
-
   const port = parseInt(process.env.SMTP_PORT) || 465;
   const isSecure = port === 465;
-
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: port,
@@ -130,10 +126,8 @@ const sendOtpEmail = async (toEmail, otp, storeName = "Store Creation") => {
   const transporter = createTransporter();
   if (!transporter)
     throw new Error("SMTP not configured. Set SMTP_USER and SMTP_PASS in .env");
-
   const safeStoreName = escapeHtml(storeName);
   const safeOtp = escapeHtml(otp);
-
   await transporter.sendMail({
     from: `"${safeStoreName}" <${process.env.SMTP_USER}>`,
     to: toEmail,
@@ -149,7 +143,6 @@ const sendOtpEmail = async (toEmail, otp, storeName = "Store Creation") => {
       </div>`,
   });
 };
-
 const sendStoreOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -166,13 +159,10 @@ const sendStoreOtp = async (req, res) => {
         "A store with this email already exists",
       );
     }
-
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpKey = `store_${email.toLowerCase().trim()}`;
     storeOtpMap[otpKey] = { otp, expiresAt: Date.now() + 10 * 60 * 1000 };
-
     await sendOtpEmail(email, otp);
-
     return sendResponse(
       res,
       true,
@@ -183,17 +173,14 @@ const sendStoreOtp = async (req, res) => {
     return sendResponse(res, false, null, err.message);
   }
 };
-
 const verifyStoreOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
     if (!email || !otp) {
       return sendResponse(res, false, null, "Email and OTP are required");
     }
-
     const otpKey = `store_${email.toLowerCase().trim()}`;
     const record = storeOtpMap[otpKey];
-
     if (!record) {
       return sendResponse(
         res,

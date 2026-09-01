@@ -1,7 +1,5 @@
 const Coupon = require("../models/Coupon");
-
 const { sendResponse } = require("../utils/response");
-
 const getCoupons = async (req, res) => {
   try {
     let {
@@ -61,7 +59,6 @@ const getCoupons = async (req, res) => {
         },
       ];
     }
-
     if (download) {
       const coupons = await Coupon.find(query)
         .populate("storeId", "name store_name")
@@ -188,11 +185,9 @@ const createCoupon = async (req, res) => {
         req.body.include_admin_products = false;
       }
     }
-
     if (discount_type === "freeshiping" || coupon_type === "free_gift") {
       req.body.discount_value = 0;
     }
-
     if (coupon_type === "buy_x_get_y") {
       req.body.discount_value = 0;
       req.body.buy_x_get_y = {
@@ -201,11 +196,9 @@ const createCoupon = async (req, res) => {
         free_products: req.body.buy_x_get_y?.free_products || [],
       };
     }
-
     if (coupon_type === "free_gift") {
       req.body.discount_type = "fixed";
       req.body.discount_value = 0;
-
       if (!req.body.gift_product_ids || !req.body.gift_product_ids.length) {
         if (req.body.gift_product_id) {
           req.body.gift_product_ids = [req.body.gift_product_id];
@@ -221,9 +214,7 @@ const createCoupon = async (req, res) => {
     if (existingCoupon) {
       return sendResponse(res, false, null, "Coupon code already exists");
     }
-
     req.body.code = code.toUpperCase();
-
     const coupon = new Coupon({ ...req.body, createdBy: req.user.id });
     const savedCoupon = await coupon.save();
     sendResponse(res, true, savedCoupon, "Coupon created successfully");
@@ -243,7 +234,6 @@ const updateCoupon = async (req, res) => {
         return sendResponse(res, false, null, "Coupon code already exists");
       }
     }
-
     if (req.user?.role === "store_owner") {
       req.body.storeId = req.user.storeId;
       req.body.storeIds = [req.user.storeId];
@@ -251,9 +241,7 @@ const updateCoupon = async (req, res) => {
     } else if (req.user?.role === "admin") {
       const hasStores =
         Array.isArray(req.body.storeIds) && req.body.storeIds.length > 0;
-
       const includeAdmin = req.body.include_admin_products === true;
-
       if (!hasStores && !includeAdmin) {
         req.body.storeId = null;
         req.body.storeIds = [];
@@ -266,13 +254,10 @@ const updateCoupon = async (req, res) => {
         req.body.storeId = hasStores ? req.body.storeIds[0] : null;
       }
     }
-
     const { coupon_type } = req.body;
-
     if (coupon_type === "free_gift") {
       req.body.discount_type = "fixed";
       req.body.discount_value = 0;
-
       if (!req.body.gift_product_ids || !req.body.gift_product_ids.length) {
         if (req.body.gift_product_id) {
           req.body.gift_product_ids = [req.body.gift_product_id];
@@ -283,7 +268,6 @@ const updateCoupon = async (req, res) => {
       req.body.gift_product_ids = [];
       delete req.body.gift_product_id;
     }
-
     if (coupon_type === "buy_x_get_y") {
       req.body.discount_value = 0;
       req.body.buy_x_get_y = {
@@ -292,16 +276,13 @@ const updateCoupon = async (req, res) => {
         free_products: req.body.buy_x_get_y?.free_products || [],
       };
     }
-
     const updatedCoupon = await Coupon.findByIdAndUpdate(
       req.params.id,
       req.body,
       { returnDocument: "after" },
     );
-
     if (!updatedCoupon)
       return sendResponse(res, false, null, "Coupon not found");
-
     sendResponse(res, true, updatedCoupon, "Coupon updated successfully");
   } catch (err) {
     sendResponse(res, false, null, err.message);
@@ -312,19 +293,15 @@ const updateCouponStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const { id } = req.params;
-
     if (!["active", "inactive"].includes(status)) {
       return sendResponse(res, false, null, "Invalid status value");
     }
-
     const coupon = await Coupon.findByIdAndUpdate(
       id,
       { status },
       { returnDocument: "after" },
     );
-
     if (!coupon) return sendResponse(res, false, null, "Coupon not found");
-
     sendResponse(res, true, coupon, "Coupon status updated successfully");
   } catch (err) {
     sendResponse(res, false, null, err.message);
@@ -368,7 +345,6 @@ const applyCoupon = async (req, res) => {
     if (!userId) {
       return sendResponse(res, false, null, "Please login to apply coupon");
     }
-
     const coupon = await Coupon.findOne({ code: code.toUpperCase() })
       .populate("products", "name storeId")
       .populate("subcategories", "name")
@@ -378,11 +354,9 @@ const applyCoupon = async (req, res) => {
     if (!coupon) {
       return sendResponse(res, false, null, "Invalid coupon code");
     }
-
     if (coupon.status !== "active") {
       return sendResponse(res, false, null, "Coupon is not active");
     }
-
     if (
       coupon.min_purchase_amount &&
       Number(cart_total) < coupon.min_purchase_amount
@@ -394,20 +368,17 @@ const applyCoupon = async (req, res) => {
         `Minimum purchase of ₹${coupon.min_purchase_amount} required for this coupon`,
       );
     }
-
     if (coupon.coupon_type === "first_order") {
       const Order = require("../models/Order");
       const orderQuery = {
         user_id: userId,
         status: { $nin: ["cancelled"] },
       };
-
       let targetStoreId = coupon.storeId?._id
         ? String(coupon.storeId._id)
         : coupon.storeId
           ? String(coupon.storeId)
           : null;
-
       if (!targetStoreId && coupon.storeIds && coupon.storeIds.length > 0) {
         const firstStore = coupon.storeIds[0];
         targetStoreId =
@@ -415,16 +386,13 @@ const applyCoupon = async (req, res) => {
             ? String(firstStore._id)
             : String(firstStore);
       }
-
       if (targetStoreId) {
         orderQuery.$or = [
           { storeId: targetStoreId },
           { store_owner_id: targetStoreId },
         ];
       }
-
       const existingOrderCount = await Order.countDocuments(orderQuery);
-
       if (existingOrderCount > 0) {
         return sendResponse(
           res,
@@ -434,7 +402,6 @@ const applyCoupon = async (req, res) => {
         );
       }
     }
-
     const now = new Date();
     if (coupon.start_date && now < coupon.start_date) {
       return sendResponse(res, false, null, "Coupon is not started yet");
@@ -442,20 +409,17 @@ const applyCoupon = async (req, res) => {
     if (coupon.end_date && now > coupon.end_date) {
       return sendResponse(res, false, null, "Coupon has expired");
     }
-
     if (
       coupon.usage_limit !== null &&
       coupon.used_count >= coupon.usage_limit
     ) {
       return sendResponse(res, false, null, "Coupon usage limit reached");
     }
-
     if (coupon.userusage_limit !== null) {
       const userEntry = coupon.user_usage.find(
         (u) => u.user_id.toString() === userId.toString(),
       );
       const userUsedCount = userEntry ? userEntry.count : 0;
-
       if (userUsedCount >= coupon.userusage_limit) {
         return sendResponse(
           res,
@@ -475,19 +439,15 @@ const applyCoupon = async (req, res) => {
 const markCouponUsed = async (couponId, userId) => {
   const coupon = await Coupon.findById(couponId);
   if (!coupon) return;
-
   coupon.used_count += 1;
-
   const userEntry = coupon.user_usage.find(
     (u) => u.user_id.toString() === userId.toString(),
   );
-
   if (userEntry) {
     userEntry.count += 1;
   } else {
     coupon.user_usage.push({ user_id: userId, count: 1 });
   }
-
   await coupon.save();
 };
 

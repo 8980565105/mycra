@@ -3,7 +3,6 @@ const Type = require("../models/Type");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
 const { default: mongoose } = require("mongoose");
-
 const getPublicTypes = async (req, res) => {
   try {
     const filter = { status: "active" };

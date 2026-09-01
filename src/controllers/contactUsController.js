@@ -101,7 +101,6 @@ const bulkDeleteContacts = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-
 module.exports = {
   getContacts,
   getContactById,

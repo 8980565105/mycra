@@ -156,9 +156,6 @@ const getsubCategoryById = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// CREATE — storeId auto set
-// ═══════════════════════════════════════════════════════════════════
 const createsubCategory = async (req, res) => {
   const {
     name,

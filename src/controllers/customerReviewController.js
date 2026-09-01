@@ -3,7 +3,6 @@ const Product = require("../models/Product");
 const Store = require("../models/Store");
 const { sendResponse } = require("../utils/response");
 const { resolveStoreByDomain } = require("../config/domainResolver");
-
 const extractDomain = (req) => {
   try {
     const origin = req.headers.origin || "";

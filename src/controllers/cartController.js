@@ -368,7 +368,6 @@ const applyBuyXGetYCoupon = async (req, res) => {
     const cart = await Cart.findById(cart_id);
     if (!cart) return sendResponse(res, false, null, "Cart not found");
 
-    // total quantity of NON-gift items in cart
     const totalQty = cart.items
       .filter((item) => !item.is_gift)
       .reduce((sum, item) => sum + (item.quantity || 0), 0);
@@ -382,11 +381,9 @@ const applyBuyXGetYCoupon = async (req, res) => {
       );
     }
 
-    // how many "sets" of buy_quantity does the cart qualify for
     const eligibleSets = Math.floor(totalQty / buy_quantity);
     const totalFreeQty = eligibleSets * get_quantity;
 
-    // remove previous auto-added items from this coupon
     cart.items = cart.items.filter(
       (item) => !(item.is_gift && item.coupon_code === coupon.code),
     );
@@ -404,7 +401,6 @@ const applyBuyXGetYCoupon = async (req, res) => {
           `No variant found for free product "${product.name}"`,
         );
       }
-
       cart.items.push({
         product_id: product._id,
         variant_id: defaultVariant._id,
@@ -414,13 +410,10 @@ const applyBuyXGetYCoupon = async (req, res) => {
         coupon_code: coupon.code,
       });
     }
-
     await cart.save();
-
     const updatedCart = await Cart.findById(cart_id)
       .populate("items.product_id", "name images price")
       .populate("items.variant_id", "offerprice price images");
-
     sendResponse(res, true, updatedCart, "Free product added as per Buy X Get Y offer");
   } catch (err) {
     sendResponse(res, false, null, err.message);

@@ -1,8 +1,6 @@
 const Page = require("../models/Page");
 const { sendResponse } = require("../utils/response");
-// ─────────────────────────────────────────────────────────
-// Helper: Role based store filter
-// ─────────────────────────────────────────────────────────
+
 const buildStoreFilter = (req) => {
   if (req.user?.role === "admin") return {};
   if (req.user?.role === "store_owner") {
@@ -13,9 +11,7 @@ const buildStoreFilter = (req) => {
   }
   return {};
 };
-// ═══════════════════════════════════════════════════════
-// GET /pages
-// ═══════════════════════════════════════════════════════
+
 const getPages = async (req, res) => {
   try {
     let {
@@ -54,9 +50,6 @@ const getPages = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════
-// GET /pages/get/:slug — Public
-// ═══════════════════════════════════════════════════════
 const getPageBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -70,9 +63,7 @@ const getPageBySlug = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-// ═══════════════════════════════════════════════════════
-// GET /pages/:id
-// ═══════════════════════════════════════════════════════
+
 const getPageById = async (req, res) => {
   try {
     const filter = { _id: req.params.id, ...buildStoreFilter(req) };
@@ -83,9 +74,7 @@ const getPageById = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-// ═══════════════════════════════════════════════════════
-// POST /pages — Create
-// ═══════════════════════════════════════════════════════
+
 const createPage = async (req, res) => {
   try {
     const data = { ...req.body };
@@ -142,9 +131,7 @@ const createPage = async (req, res) => {
     sendResponse(res, false, null, err.message || "Failed to create page");
   }
 };
-// ═══════════════════════════════════════════════════════
-// PUT /pages/:id — Update
-// ═══════════════════════════════════════════════════════
+
 const updatePage = async (req, res) => {
   try {
     const data = { ...req.body };
@@ -159,9 +146,6 @@ const updatePage = async (req, res) => {
         .replace(/(^-|-$)+/g, "");
     }
 
-    // ─────────────────────────────────────────────────
-    // Duplicate slug check — same store ma bija page ma
-    // ─────────────────────────────────────────────────
     if (data.slug) {
       const currentPage = await Page.findOne(filter);
       if (currentPage && currentPage.storeId) {
@@ -215,9 +199,7 @@ const updatePage = async (req, res) => {
     sendResponse(res, false, null, err.message || "Failed to update page");
   }
 };
-// ═══════════════════════════════════════════════════════
-// PUT /pages/:id/status
-// ═══════════════════════════════════════════════════════
+
 const updatePageStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -238,9 +220,7 @@ const updatePageStatus = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-// ═══════════════════════════════════════════════════════
-// DELETE /pages/:id
-// ═══════════════════════════════════════════════════════
+
 const deletePage = async (req, res) => {
   try {
     const filter = { _id: req.params.id, ...buildStoreFilter(req) };
@@ -251,9 +231,7 @@ const deletePage = async (req, res) => {
     sendResponse(res, false, null, err.message);
   }
 };
-// ═══════════════════════════════════════════════════════
-// POST /pages/bulk-delete
-// ═══════════════════════════════════════════════════════
+
 const bulkDeletePages = async (req, res) => {
   try {
     const { ids } = req.body;

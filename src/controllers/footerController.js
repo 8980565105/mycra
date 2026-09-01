@@ -6,7 +6,6 @@ const getPublicFooters = async (req, res) => {
     const footers = await Footer.find({ status: "active" }).sort({
       createdAt: -1,
     });
-
     res.json({ success: true, data: footers });
   } catch (err) {
     sendResponse(res, false, null, err.message);
@@ -23,9 +22,7 @@ const getFooters = async (req, res) => {
       status,
     } = req.query;
     const download = isDownload.toLowerCase() === "true";
-
     const query = {};
-
     if (req.user) {
       if (req.user.role === "admin") {
       } else if (req.user.role === "store_owner") {
@@ -58,10 +55,8 @@ const getFooters = async (req, res) => {
         "All footers retrieved for download",
       );
     }
-
     page = parseInt(page);
     limit = parseInt(limit);
-
     const total = await Footer.countDocuments(query);
     const footers = await Footer.find(query)
       .skip((page - 1) * limit)
@@ -94,7 +89,6 @@ const getFooterById = async (req, res) => {
         );
       }
     }
-
     sendResponse(res, true, footer, "Footer retrieved successfully");
   } catch (err) {
     sendResponse(res, false, null, err.message);
@@ -111,10 +105,8 @@ const createFooter = async (req, res) => {
         "Forbidden: Only admin can create footer items",
       );
     }
-
     const data = { ...req.body };
     data.storeId = data.storeId || null;
-
     const footer = new Footer(data);
     const savedFooter = await footer.save();
     sendResponse(res, true, savedFooter, "Footer created successfully");
@@ -143,7 +135,6 @@ const updateFooter = async (req, res) => {
     if (req.user.role === "store_owner") {
       data.storeId = req.user.storeId;
     }
-
     const updatedFooter = await Footer.findByIdAndUpdate(req.params.id, data, {
       returnDocument: "after",
     });
@@ -157,11 +148,9 @@ const updateFooterStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const { id } = req.params;
-
     if (!["active", "inactive"].includes(status)) {
       return sendResponse(res, false, null, "Invalid status value");
     }
-
     const existing = await Footer.findById(id);
     if (!existing) return sendResponse(res, false, null, "Footer not found");
 

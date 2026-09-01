@@ -4,7 +4,6 @@ const Store = require("../models/Store");
 const { sendResponse } = require("../utils/response");
 const slugify = require("slugify");
 
-// Helper to clean domain format
 const cleanDomain = (raw) => {
   if (!raw) return "";
   try {
@@ -26,7 +25,6 @@ const cleanDomain = (raw) => {
   }
 };
 
-// 1. Save or Update Business Details
 const saveBusinessDetails = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -43,14 +41,11 @@ const saveBusinessDetails = async (req, res) => {
     if (!storeName) {
       return sendResponse(res, false, null, "Store name is required");
     }
-
     const domain = website ? cleanDomain(website) : "";
-
     let app = await SellerApplication.findOne({ user: userId });
     if (!app) {
       app = new SellerApplication({ user: userId });
     }
-
     app.businessDetails = {
       storeName: storeName.trim(),
       categoryId,
@@ -61,22 +56,17 @@ const saveBusinessDetails = async (req, res) => {
       phone: phone || "",
       email: email || req.user.email,
     };
-
     if (app.status === "rejected") {
       app.status = "draft";
     }
-
     await app.save();
-
     await User.findByIdAndUpdate(userId, { onboardingStatus: "in_progress" });
-
     return sendResponse(res, true, app, "Business details saved successfully");
   } catch (error) {
     return sendResponse(res, false, null, error.message);
   }
 };
 
-// 2. Save or Update Pickup Address
 const savePickupAddress = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -97,7 +87,6 @@ const savePickupAddress = async (req, res) => {
     if (!app) {
       app = new SellerApplication({ user: userId });
     }
-
     app.pickupAddress = {
       full_name: full_name || req.user.name,
       phone_number: phone_number || req.user.mobile_number || "",
@@ -110,28 +99,22 @@ const savePickupAddress = async (req, res) => {
       country: country || "India",
       zip_code: zip_code || "",
     };
-
     if (app.status === "rejected") {
       app.status = "draft";
     }
-
     await app.save();
-
     await User.findByIdAndUpdate(userId, { onboardingStatus: "in_progress" });
-
     return sendResponse(res, true, app, "Pickup address saved successfully");
   } catch (error) {
     return sendResponse(res, false, null, error.message);
   }
 };
 
-// 3. Save or Update Bank Details
 const saveBankDetails = async (req, res) => {
   try {
     const userId = req.user._id;
     const { accountNumber, accountHolderName, ifscCode, bankName, branchName } =
       req.body;
-
     if (!accountNumber || !ifscCode) {
       return sendResponse(
         res,
@@ -140,12 +123,10 @@ const saveBankDetails = async (req, res) => {
         "Account number and IFSC code are required",
       );
     }
-
     let app = await SellerApplication.findOne({ user: userId });
     if (!app) {
       app = new SellerApplication({ user: userId });
     }
-
     app.bankDetails = {
       accountNumber: accountNumber.trim(),
       accountHolderName: accountHolderName ? accountHolderName.trim() : "",
@@ -153,22 +134,17 @@ const saveBankDetails = async (req, res) => {
       bankName: bankName ? bankName.trim() : "",
       branchName: branchName ? branchName.trim() : "",
     };
-
     if (app.status === "rejected") {
       app.status = "draft";
     }
-
     await app.save();
-
     await User.findByIdAndUpdate(userId, { onboardingStatus: "in_progress" });
-
     return sendResponse(res, true, app, "Bank details saved successfully");
   } catch (error) {
     return sendResponse(res, false, null, error.message);
   }
 };
 
-// 4. Save or Update Documents & Tax details
 const saveDocuments = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -187,8 +163,6 @@ const saveDocuments = async (req, res) => {
     if (!app) {
       app = new SellerApplication({ user: userId });
     }
-
-    // Check files uploaded via multer or string URLs
     const uploadedGstDoc = req.files?.gstDoc?.[0]?.filename
       ? `/uploads/${req.files.gstDoc[0].filename}`
       : gstDocUrl || app.taxAndDocs?.gstDocUrl || "";
@@ -204,7 +178,6 @@ const saveDocuments = async (req, res) => {
     const uploadedAddressDoc = req.files?.addressProof?.[0]?.filename
       ? `/uploads/${req.files.addressProof[0].filename}`
       : addressProofUrl || app.taxAndDocs?.addressProofUrl || "";
-
     app.taxAndDocs = {
       gstNumber: gstNumber
         ? gstNumber.trim().toUpperCase()
@@ -221,22 +194,16 @@ const saveDocuments = async (req, res) => {
       cancelledChequeUrl: uploadedChequeDoc,
       addressProofUrl: uploadedAddressDoc,
     };
-
     if (app.status === "rejected") {
       app.status = "draft";
     }
-
     await app.save();
-
     await User.findByIdAndUpdate(userId, { onboardingStatus: "in_progress" });
-
     return sendResponse(res, true, app, "Documents saved successfully");
   } catch (error) {
     return sendResponse(res, false, null, error.message);
   }
 };
-
-// 5. Get current seller onboarding status and details
 const getOnboardingStatus = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -265,12 +232,10 @@ const getOnboardingStatus = async (req, res) => {
   }
 };
 
-// 6. Submit application for Admin approval
 const submitApplication = async (req, res) => {
   try {
     const userId = req.user._id;
     const app = await SellerApplication.findOne({ user: userId });
-
     if (!app) {
       return sendResponse(
         res,
@@ -279,15 +244,12 @@ const submitApplication = async (req, res) => {
         "Please complete onboarding steps before submitting.",
       );
     }
-
     if (!app.businessDetails?.storeName) {
       return sendResponse(res, false, null, "Business details are incomplete.");
     }
-
     app.status = "submitted";
     app.rejectionReason = "";
     await app.save();
-
     await User.findByIdAndUpdate(userId, {
       onboardingStatus: "pending_approval",
     });
@@ -303,9 +265,6 @@ const submitApplication = async (req, res) => {
   }
 };
 
-// --- ADMIN CONTROLLERS ---
-
-// 7. Admin: Get all seller onboarding applications
 const getSellerApplications = async (req, res) => {
   try {
     const { status } = req.query;
@@ -339,7 +298,6 @@ const approveSellerApplication = async (req, res) => {
       return sendResponse(res, false, null, "Application is already approved.");
     }
     if (!app.businessDetails?.categoryId) {
-      // NEW safety check
       return sendResponse(
         res,
         false,
@@ -355,7 +313,6 @@ const approveSellerApplication = async (req, res) => {
       businessDetails.domain ||
       slugify(storeName, { lower: true, strict: true });
 
-    // Create Store
     const store = await Store.create({
       name: storeName,
       email: storeEmail,
@@ -377,7 +334,6 @@ const approveSellerApplication = async (req, res) => {
       status: "active",
     });
 
-    // Update User
     await User.findByIdAndUpdate(app.user._id, {
       role: "store_owner",
       storeId: store._id,
@@ -385,7 +341,6 @@ const approveSellerApplication = async (req, res) => {
       onboardingStatus: "approved",
     });
 
-    // Update Application
     app.status = "approved";
     app.rejectionReason = "";
     await app.save();
@@ -401,7 +356,6 @@ const approveSellerApplication = async (req, res) => {
   }
 };
 
-// 9. Admin: Reject Seller Application with feedback
 const rejectSellerApplication = async (req, res) => {
   try {
     const { applicationId } = req.params;

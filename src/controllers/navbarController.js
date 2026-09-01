@@ -96,7 +96,7 @@ const createNavbar = async (req, res) => {
       order: order || 0,
       status: status || "active",
       image_url,
-      storeId: null, // admin navbar - store specific nathi
+      storeId: null,
     });
 
     const savedNavbar = await navbar.save();

@@ -5,7 +5,6 @@ const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
-
 const createEmails = async (req, res) => {
   try {
     const { email } = req.body;

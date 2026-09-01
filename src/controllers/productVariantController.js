@@ -1,6 +1,5 @@
 const ProductVariant = require("../models/ProductVariant");
 const { sendResponse } = require("../utils/response");
-
 const getVariants = async (req, res) => {
   try {
     const { product_id } = req.params;
@@ -15,17 +14,14 @@ const getVariants = async (req, res) => {
     return sendResponse(res, false, null, err.message);
   }
 };
-
 const createVariants = async (req, res) => {
   try {
     const { product_id } = req.params;
     const { variants } = req.body; 
     if (!variants || !Array.isArray(variants) || variants.length === 0)
       return sendResponse(res, false, null, "No variants provided");
-
     const variantsToInsert = variants.map((v) => ({ ...v, product_id }));
     const createdVariants = await ProductVariant.insertMany(variantsToInsert);
-
     return sendResponse(
       res,
       true,

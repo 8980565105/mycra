@@ -97,7 +97,7 @@ const createBrand = async (req, res) => {
     description: description || "",
     status: status || "active",
     createdBy: req.user._id,
-    storeId, // ✅ KEY
+    storeId,
   };
 
   try {

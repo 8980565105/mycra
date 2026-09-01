@@ -3,14 +3,12 @@ const Product = require("../models/Product");
 const { sendResponse } = require("../utils/response");
 const ProductVariant = require("../models/ProductVariant");
 const Type = require("../models/Type");
-
 const mongoose = require("mongoose");
 const ChildCategory = require("../models/ChildCategory");
 const isOwnerOrAdmin = (req, product) => {
   if (req.user.role === "admin") return true;
   return product.storeId?.toString() === req.user.storeId?.toString();
 };
-
 const buildPipeline = ({
   productMatch,
   variantMatch,
@@ -75,7 +73,6 @@ const buildPipeline = ({
       },
     });
   }
-
   pipeline.push(
     {
       $lookup: {
@@ -97,7 +94,6 @@ const buildPipeline = ({
               as: "type",
             },
           },
-
           {
             $addFields: {
               type_id: { $arrayElemAt: ["$type", 0] },
@@ -495,7 +491,6 @@ const getProducts = async (req, res) => {
         },
       });
     }
-
     if (store && store !== "all" && mongoose.Types.ObjectId.isValid(store)) {
       const storeObjId = new mongoose.Types.ObjectId(store);
       countPipeline.push({
@@ -508,7 +503,6 @@ const getProducts = async (req, res) => {
         },
       });
     }
-
     countPipeline.push(
       {
         $lookup: {
@@ -530,7 +524,6 @@ const getProducts = async (req, res) => {
 
     const countResult = await Product.aggregate(countPipeline);
     const totalCount = countResult[0]?.total || 0;
-
     sendResponse(
       res,
       true,
@@ -550,7 +543,6 @@ const getProducts = async (req, res) => {
 const getPublicProductById = async (req, res) => {
   try {
     const { id } = req.params;
-
     let product;
     if (mongoose.Types.ObjectId.isValid(id)) {
       product = await Product.findById(id)
@@ -562,9 +554,7 @@ const getPublicProductById = async (req, res) => {
         .populate("category_id", "name")
         .lean();
     }
-
     if (!product) return sendResponse(res, false, null, "Product not found");
-
     const variants = await ProductVariant.find({ product_id: product._id })
       .populate("type_id", "name")
       .populate("attributes.attributeId", "name code")
@@ -595,7 +585,6 @@ const getProductById = async (req, res) => {
         return sendResponse(res, false, null, "Forbidden: Not your product");
       }
     }
-
     const variants = await ProductVariant.find({ product_id: product._id })
       .populate("type_id", "name")
       .populate("attributes.attributeId", "name")

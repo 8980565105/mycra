@@ -2,29 +2,23 @@ const ChildCategory = require("../models/ChildCategory");
 const SubCategory = require("../models/Subcategory");
 const { sendResponse } = require("../utils/response");
 const mongoose = require("mongoose");
-
 exports.getChildCategories = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
     const matchStage = {};
-
     if (req.query.search) {
       matchStage.name = { $regex: req.query.search, $options: "i" };
     }
-
     if (req.query.status) {
       matchStage.status = req.query.status;
     }
-
     if (req.query.subCategoryId) {
       matchStage.subCategoryId = new mongoose.Types.ObjectId(
         req.query.subCategoryId,
       );
     }
-
     const childCategories = await ChildCategory.aggregate([
       { $match: matchStage },
       {
@@ -58,9 +52,7 @@ exports.getChildCategories = async (req, res) => {
       { $skip: skip },
       { $limit: limit },
     ]);
-
     const total = await ChildCategory.countDocuments(matchStage);
-
     res.status(200).json({
       success: true,
       data: childCategories,
@@ -75,7 +67,6 @@ exports.getChildCategories = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 exports.getAllChildCategories = async (req, res) => {
   try {
     const matchStage = { status: "active" };
@@ -99,7 +90,6 @@ exports.getAllChildCategories = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 exports.getChildCategoryById = async (req, res) => {
   try {
     const childCategory = await ChildCategory.findById(req.params.id).populate(
@@ -133,7 +123,7 @@ exports.createChildCategory = async (req, res) => {
       name,
       subCategoryId,
       CategoryId,
-      image_url: image_url || null, // ✅ add
+      image_url: image_url || null, 
       status: status || "active",
       createdBy: req.user?._id || null,
     });
@@ -152,7 +142,6 @@ exports.createChildCategory = async (req, res) => {
 exports.updateChildCategory = async (req, res) => {
   try {
     const { name, subCategoryId, status } = req.body;
-
     let CategoryId;
     if (subCategoryId) {
       const subCategory = await SubCategory.findById(subCategoryId);
@@ -160,22 +149,18 @@ exports.updateChildCategory = async (req, res) => {
         CategoryId = subCategory.parent_id;
       }
     }
-
     const updateObj = { name, subCategoryId, status };
     if (CategoryId) updateObj.CategoryId = CategoryId;
-
     const childCategory = await ChildCategory.findByIdAndUpdate(
       req.params.id,
       updateObj,
       { new: true, runValidators: true },
     ).populate("subCategoryId");
-
     if (!childCategory) {
       return res
         .status(404)
         .json({ success: false, message: "Child Category not found" });
     }
-
     res.status(200).json({
       success: true,
       data: childCategory,
@@ -185,7 +170,6 @@ exports.updateChildCategory = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 exports.updateChildCategory = async (req, res) => {
   try {
     const { name, subCategoryId, status, image_url } = req.body;
@@ -200,7 +184,7 @@ exports.updateChildCategory = async (req, res) => {
 
     const updateObj = { name, subCategoryId, status };
     if (CategoryId) updateObj.CategoryId = CategoryId;
-    if (image_url !== undefined) updateObj.image_url = image_url; // ✅ add
+    if (image_url !== undefined) updateObj.image_url = image_url; 
 
     const childCategory = await ChildCategory.findByIdAndUpdate(
       req.params.id,
@@ -281,9 +265,7 @@ exports.bulkDeleteChildCategories = async (req, res) => {
         .status(400)
         .json({ success: false, message: "No IDs provided" });
     }
-
     const result = await ChildCategory.deleteMany({ _id: { $in: ids } });
-
     res.status(200).json({
       success: true,
       data: { deletedCount: result.deletedCount },

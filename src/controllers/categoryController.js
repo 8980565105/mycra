@@ -3,7 +3,6 @@ const slugify = require("slugify");
 const Category = require("../models/Category");
 const { sendResponse } = require("../utils/response");
 const { applyOwnershipFilter } = require("../middlewares/ownershipFilter");
-
 const getAllCategories = async (req, res) => {
   try {
     const categories = await Category.find({ status: "active" })
@@ -14,7 +13,6 @@ const getAllCategories = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
 const getCategories = async (req, res) => {
   try {
     let {

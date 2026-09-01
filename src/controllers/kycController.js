@@ -46,12 +46,10 @@ const setKycData = async (req, res) => {
     });
   }
 };
-
 const validatePan = async (req, res) => {
   try {
     const userId = req.user._id;
     const { mobile, pan, nameOnPan, dob } = req.body;
-
     const kycRecord = await KycRecord.findOne({ user: userId });
     if (!kycRecord) {
       return res.status(404).json({
@@ -59,31 +57,25 @@ const validatePan = async (req, res) => {
         message: "KycRecord nathi malyu. Admin pase KYC data set karavo.",
       });
     }
-
     const cleanMobileInput = (mobile || "").trim();
     const cleanPanInput = (pan || "").trim().toUpperCase();
     const cleanNameInput = (nameOnPan || "").trim().toLowerCase().replace(/\s+/g, " ");
     const cleanDobInput = (dob || "").trim();
-
     const cleanMobileStored = (kycRecord.mobile || "").trim();
     const cleanPanStored = (kycRecord.pan || "").trim().toUpperCase();
     const cleanNameStored = (kycRecord.nameOnPan || "").trim().toLowerCase().replace(/\s+/g, " ");
     const cleanDobStored = (kycRecord.dob || "").trim();
-
     const mobileMatch = cleanMobileStored === cleanMobileInput;
     const panMatch = cleanPanStored === cleanPanInput;
     const nameMatch = cleanNameStored === cleanNameInput;
     const dobMatch = cleanDobStored === cleanDobInput;
-
     const isMatch = mobileMatch && panMatch && nameMatch && dobMatch;
-
     if (!isMatch) {
       console.log("❌ PAN verification mismatch details:");
       console.log(`- Mobile Match: ${mobileMatch} (Stored: "${cleanMobileStored}" vs Input: "${cleanMobileInput}")`);
       console.log(`- PAN Match: ${panMatch} (Stored: "${cleanPanStored}" vs Input: "${cleanPanInput}")`);
       console.log(`- Name Match: ${nameMatch} (Stored: "${cleanNameStored}" vs Input: "${cleanNameInput}")`);
       console.log(`- DOB Match: ${dobMatch} (Stored: "${cleanDobStored}" vs Input: "${cleanDobInput}")`);
-
       return res.status(400).json({
         success: false,
         message: "PAN details match nathi thata",
@@ -98,7 +90,6 @@ const validatePan = async (req, res) => {
 
     kycRecord.panVerified = true;
     await kycRecord.save();
-
     return res.status(200).json({
       success: true,
       message: "PAN details match thai gaya",
@@ -116,7 +107,6 @@ const generateOtp = async (req, res) => {
   try {
     const userId = req.user._id;
     const { aadhaar } = req.body;
-
     const kycRecord = await KycRecord.findOne({ user: userId });
     if (!kycRecord) {
       return res.status(404).json({
@@ -124,25 +114,21 @@ const generateOtp = async (req, res) => {
         message: "KYC data set nathi karyu. Admin no sampark karo.",
       });
     }
-
     if (!kycRecord.panVerified) {
       return res.status(400).json({
         success: false,
         message: "Phela PAN card verification complete karo.",
       });
     }
-
     if (kycRecord.aadhaar !== aadhaar) {
       return res.status(400).json({
         success: false,
         message: "Aadhaar details match nathi thata",
       });
     }
-
-    // Generate a random 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     kycRecord.tempOtp = otp;
-    kycRecord.tempOtpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 mins validity
+    kycRecord.tempOtpExpiry = new Date(Date.now() + 5 * 60 * 1000); 
     await kycRecord.save();
 
     console.log("-----------------------------------------");
@@ -152,7 +138,7 @@ const generateOtp = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "OTP generate thai gayo che terminal ma",
-      otp: process.env.NODE_ENV === "production" ? undefined : otp, // Dev/testing helper
+      otp: process.env.NODE_ENV === "production" ? undefined : otp, 
     });
   } catch (error) {
     return res.status(500).json({
@@ -189,13 +175,11 @@ const verifyOtp = async (req, res) => {
       });
     }
 
-    // Mark verified
     kycRecord.aadhaarVerified = true;
     kycRecord.tempOtp = null;
     kycRecord.tempOtpExpiry = null;
     await kycRecord.save();
 
-    // Update Wallet
     let wallet = await Wallet.findOne({ user: userId });
     if (!wallet) {
       wallet = new Wallet({ user: userId });

@@ -4,13 +4,10 @@ const Transection = require("../models/Transactions");
 const getBalance = async (req, res) => {
   try {
     const userId = req.user._id;
-
     let wallet = await Wallet.findOne({ user: userId });
-
     if (!wallet) {
       wallet = await Wallet.create({ user: userId });
     }
-
     return res.status(200).json({
       success: true,
       wallet,
@@ -39,7 +36,6 @@ const addMoney = async (req, res) => {
       wallet = await Wallet.create({ user: userId });
     }
 
-    // KYC check (frontend ma jem batavyu chhe)
     if (!wallet.isKycVerified) {
       return res.status(403).json({
         success: false,
@@ -54,11 +50,8 @@ const addMoney = async (req, res) => {
       });
     }
 
-    // Balance update
     wallet.balance += Number(amount);
     await wallet.save();
-
-    // Transaction entry banavo
     const transection = await Transection.create({
       user: userId,
       amount,

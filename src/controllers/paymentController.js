@@ -402,10 +402,8 @@ const finalizeStripePayment = async (req, res) => {
     if (!payment) {
       return sendResponse(res, false, null, "Payment record not found");
     }
-
     if (payment.order_id) {
       const existingOrder = await Order.findById(payment.order_id);
-
       return sendResponse(
         res,
         true,
@@ -416,13 +414,10 @@ const finalizeStripePayment = async (req, res) => {
         "Order already created",
       );
     }
-
     const checkout = payment.checkout_data;
-
     if (!checkout) {
       return sendResponse(res, false, null, "Checkout data not found");
     }
-
     const {
       user_id,
       items,
@@ -432,30 +427,22 @@ const finalizeStripePayment = async (req, res) => {
       platform_charge,
       shippingAddress,
     } = checkout;
-
     if (!user_id || !Array.isArray(items) || !items.length) {
       return sendResponse(res, false, null, "Invalid checkout data");
     }
-
     let subtotal = 0;
-
     const orderItems = [];
-
     let store_owner_id = null;
-
     for (const item of items) {
       const variant = await ProductVariant.findById(item.variant_id).populate(
         "product_id",
       );
-
       if (!variant) {
         throw new Error("Product variant not found");
       }
-
       if (variant.stock_quantity < Number(item.quantity)) {
         throw new Error(`Not enough stock for ${variant.sku}`);
       }
-
       if (!store_owner_id && variant.product_id) {
         store_owner_id =
           variant.product_id.storeId?._id ||
@@ -463,43 +450,27 @@ const finalizeStripePayment = async (req, res) => {
           variant.product_id.createdBy?._id ||
           variant.product_id.createdBy;
       }
-
       const price = Number(variant.offerprice) || 0;
-
       subtotal += price * Number(item.quantity);
-
       variant.stock_quantity -= Number(item.quantity);
-
       await variant.save();
-
       orderItems.push({
         product_id: variant.product_id._id,
-
         variant_id: variant._id,
-
         quantity: Number(item.quantity),
-
         price_at_order: price,
       });
     }
 
     const order = new Order({
       user_id,
-
       total_price: Number(total_price),
-
       coupon_id: coupon_id || null,
-
       shippingAddress,
-
       payment_method: "Online",
-
       payment_status: "paid",
-
       transaction_id: paymentIntent.id,
-
       status: "pending",
-
       store_owner_id: store_owner_id || null,
     });
 
@@ -509,26 +480,18 @@ const finalizeStripePayment = async (req, res) => {
       "customer",
       "Online payment successful - order placed",
     );
-
     const savedOrder = await order.save();
-
     await OrderItem.insertMany(
       orderItems.map((item) => ({
         ...item,
         order_id: savedOrder._id,
       })),
     );
-
     payment.order_id = savedOrder._id;
-
     payment.status = "completed";
-
     payment.transaction_id = paymentIntent.id;
-
     payment.payment_date = new Date();
-
     await payment.save();
-
     const populatedOrder = await Order.findById(savedOrder._id).populate(
       "user_id",
       "name email",
@@ -536,11 +499,8 @@ const finalizeStripePayment = async (req, res) => {
 
     const { email: placedEmail, name: placedName } =
       getCustomerInfo(populatedOrder);
-
     sendOrderPlaced(populatedOrder, placedEmail, placedName);
-
     sendAdminNewOrder(populatedOrder, placedName, placedEmail);
-
     return sendResponse(
       res,
       true,
@@ -552,57 +512,9 @@ const finalizeStripePayment = async (req, res) => {
     );
   } catch (err) {
     console.error("Finalize Stripe payment error:", err);
-
     return sendResponse(res, false, null, err.message);
   }
 };
-
-// const finalizeStripePayment = async (req, res) => {
-//   try {
-//     const { paymentIntentId } = req.body;
-
-//     if (!paymentIntentId) {
-//       return sendResponse(res, false, null, "Payment Intent ID is required");
-//     }
-
-//     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-//     if (paymentIntent.status !== "succeeded") {
-//       return sendResponse(
-//         res,
-//         false,
-//         null,
-//         `Payment is not successful. Current status: ${paymentIntent.status}`,
-//       );
-//     }
-
-//     const result = await finalizeOrderFromPaymentIntent(paymentIntentId);
-
-//     if (result.processing) {
-//       return sendResponse(
-//         res,
-//         false,
-//         null,
-//         "Payment is being processed. Please wait.",
-//       );
-//     }
-
-//     return sendResponse(
-//       res,
-//       true,
-//       {
-//         order: result.order,
-//         payment: result.payment,
-//       },
-//       result.alreadyProcessed
-//         ? "Order already created"
-//         : "Payment successful and order created",
-//     );
-//   } catch (err) {
-//     console.error("Finalize Stripe payment error:", err);
-//     return sendResponse(res, false, null, err.message);
-//   }
-// };
 
 const updateStripePaymentMethod = async (req, res) => {
   try {

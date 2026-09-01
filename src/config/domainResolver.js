@@ -2,14 +2,6 @@ const Store = require("../models/Store");
 
 const domainCache = {};
 
-/**
- * Domain string thhi Store._id return kare.
- * Localhost development mate port sathe match kare.
- * Production mate www. hatave ane lowercase kare.
- *
- * @param {string} rawDomain  - req.headers.host ya origin thhi aavtu domain (with port)
- * @returns {string|null}     - store._id string, or null if not found
- */
 const resolveStoreByDomain = async (rawDomain) => {
   if (!rawDomain) return null;
 
@@ -33,10 +25,6 @@ const resolveStoreByDomain = async (rawDomain) => {
   return null;
 };
 
-/**
- * Cache clear karo (e.g. store domain update thay tyare)
- * @param {string} domain
- */
 const clearDomainCache = (domain) => {
   if (domain) {
     const isLocalhost = domain.includes("localhost");

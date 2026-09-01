@@ -471,7 +471,6 @@ const getOrderById = async (req, res) => {
         return sendResponse(res, false, null, "Forbidden: Not your order");
       }
     }
-
     const items = await OrderItem.find({ order_id: order._id })
       .populate("product_id", "name price sku")
       .populate({
@@ -1154,9 +1153,6 @@ const generatePackingSlip = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 8. ASSIGN COURIER
-// ═══════════════════════════════════════════════════════════════════════════════
 const assignCourier = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -1196,9 +1192,6 @@ const assignCourier = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 9. SHIP ORDER
-// ═══════════════════════════════════════════════════════════════════════════════
 const shipOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -1229,9 +1222,6 @@ const shipOrder = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 10. UPDATE TRACKING
-// ═══════════════════════════════════════════════════════════════════════════════
 const updateTracking = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -1274,9 +1264,6 @@ const updateTracking = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 11. MARK DELIVERED
-// ═══════════════════════════════════════════════════════════════════════════════
 const markDelivered = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -1305,9 +1292,6 @@ const markDelivered = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 12. MARK RTO / RETURNED / REFUNDED
-// ═══════════════════════════════════════════════════════════════════════════════
 const markRTO = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -1338,9 +1322,6 @@ const markRTO = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 13. GENERATE INVOICE
-// ═══════════════════════════════════════════════════════════════════════════════
 const generateInvoice = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate(
@@ -1444,9 +1425,6 @@ const generateInvoice = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 14. UPDATE ORDER
-// ═══════════════════════════════════════════════════════════════════════════════
 const updateOrder = async (req, res) => {
   try {
     const { status, coupon_id } = req.body;
@@ -1509,9 +1487,6 @@ const updateOrder = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 15. UPDATE STATUS
-// ═══════════════════════════════════════════════════════════════════════════════
 const updateOrderStatus = async (req, res) => {
   try {
     const status = safeString(req.body.status);
@@ -1543,9 +1518,6 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 16. DELETE ORDER
-// ═══════════════════════════════════════════════════════════════════════════════
 const deleteOrder = async (req, res) => {
   try {
     const deletedOrder = await Order.findByIdAndDelete(req.params.id);
@@ -1557,9 +1529,6 @@ const deleteOrder = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 17. BULK DELETE
-// ═══════════════════════════════════════════════════════════════════════════════
 const bulkDeleteOrders = async (req, res) => {
   try {
     const ids = safeArray(req.body.ids);

@@ -1,7 +1,6 @@
 const Packing = require("../models/paking");
 const { sendResponse } = require("../utils/response");
 
-// ─── GET ALL PACKING ──────────────────────────────────────────────────────────
 const getPacking = async (req, res) => {
   try {
     let {
@@ -58,7 +57,6 @@ const getPacking = async (req, res) => {
   }
 };
 
-// ─── GET PACKING BY ID ────────────────────────────────────────────────────────
 const getPackingById = async (req, res) => {
   try {
     const packing = await Packing.findById(req.params.id).populate("order_id");
@@ -79,7 +77,6 @@ const createPacking = async (req, res) => {
   }
 };
 
-// ─── UPDATE PACKING ───────────────────────────────────────────────────────────
 const updatePacking = async (req, res) => {
   try {
     const updated = await Packing.findByIdAndUpdate(req.params.id, req.body, {
@@ -92,7 +89,6 @@ const updatePacking = async (req, res) => {
   }
 };
 
-// ─── UPDATE PACKING STATUS ────────────────────────────────────────────────────
 const updatePackingStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -111,7 +107,6 @@ const updatePackingStatus = async (req, res) => {
   }
 };
 
-// ─── DELETE PACKING ───────────────────────────────────────────────────────────
 const deletePacking = async (req, res) => {
   try {
     const deleted = await Packing.findByIdAndDelete(req.params.id);
@@ -122,7 +117,6 @@ const deletePacking = async (req, res) => {
   }
 };
 
-// ─── BULK DELETE PACKING ──────────────────────────────────────────────────────
 const bulkDeletePacking = async (req, res) => {
   try {
     const { ids } = req.body;
