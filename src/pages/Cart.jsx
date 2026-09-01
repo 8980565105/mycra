@@ -288,14 +288,7 @@ export default function Cart() {
                       {appliedCoupon ? "REMOVE COUPON" : "APPLY COUPON"}
                     </Button>
                   </div>
-                  {/* <Link to="/updatecart">
-                    <Button
-                      variant="secondary"
-                      className="uppercase !text-18 md:min-w-[181px] self-center md:self-auto"
-                    >
-                      UPDATE CART
-                    </Button>
-                  </Link> */}
+                
                 </div>
                 </div>
               </div>
