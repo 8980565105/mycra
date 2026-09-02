@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Row from "../ui/Row";
 import { getRecentlyViewed } from "../utils/recentlyViewed";
 import { getImageUrl } from "../utils/helper";
@@ -10,6 +10,7 @@ export default function CustomerAlsoViewed({
   currentProductId = null,
 }) {
   const recentIds = getRecentlyViewed();
+  const [activeVariant, setActiveVariant] = useState(null);
 
   const displayList = useMemo(() => {
     const byId = products.reduce((acc, p) => {
@@ -88,6 +89,9 @@ export default function CustomerAlsoViewed({
               ))}
             </div>
           </div>
+          <p className="text-p  mb-[8px]">
+            {activeVariant?.brand_id?.name || "No Brand"}
+          </p>
           <h3 className="text-14 sec-text-color line-clamp-2">
             {product?.name || product?.title}
           </h3>

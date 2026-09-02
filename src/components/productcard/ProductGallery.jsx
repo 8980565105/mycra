@@ -99,7 +99,8 @@ export default function ProductGallery({
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-[30px]">
+    <div className="flex flex-col md:flex-row gap-[30px] items-start">
+    <div className="w-full hidden md:flex md:sticky md:top-[110px] self-start gap-[20px] z-10">
       <div
         className="hidden md:flex md:flex-col gap-[20px] h-[727px] overflow-y-auto hide-scrollbar p-1"
         style={{
@@ -154,7 +155,7 @@ export default function ProductGallery({
           ))}
         </div>
       </div>
-
+    </div>
       <div className="block md:hidden w-full rounded-[10px]">
         {fullImageUrls.length > 0 ? (
           <Slider {...sliderSettings}>

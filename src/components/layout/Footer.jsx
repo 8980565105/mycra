@@ -188,10 +188,9 @@ export default function Footer() {
                 {!loading &&
                   navigationLinks?.map((item) => (
                     <li
-                      key={item._id}
-                      className="hover:text-[var(--primary-color)] hover:underline"
+                      key={item._id}     
                     >
-                      <Link to={item.url}>{item.label}</Link>
+                      <Link to={item.url}  className="hover:text-[var(--primary-color)] hover:underline">{item.label}</Link>
                     </li>
                   ))}
               </ul>
@@ -206,9 +205,8 @@ export default function Footer() {
                   supportLinks?.map((item) => (
                     <li
                       key={item._id}
-                      className="hover:text-[var(--primary-color)] hover:underline"
                     >
-                      <Link to={item.url}>{item.label}</Link>
+                      <Link to={item.url} className="hover:text-[var(--primary-color)] hover:underline">{item.label}</Link>
                     </li>
                   ))}
               </ul>
