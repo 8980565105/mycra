@@ -300,6 +300,9 @@ export default function ProductInfo({
       setSelectedVariant(first);
     }
   }, [product, setSelectedColor, setSelectedVariant]);
+  console.log("ACTIVE VARIANT:", activeVariant);
+  console.log("BRAND ID:", activeVariant?.brand_id);
+  console.log("BRAND NAME:", activeVariant?.brand_id?.name);
 
   useEffect(() => {
     if (!selectedColor) return;

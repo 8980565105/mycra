@@ -249,13 +249,12 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
 
   const getUniqueColors = (variants = []) => {
     const colorMap = new Map();
-    variants?.forEach((variant) => {
-      // variant.color?.forEach((clr) => {
-        const clr = getColorFromVariant(variant);
-        if (clr.code && !colorMap.has(clr.code)) {
-          colorMap.set(clr.code, clr.name);
-        }
-      // });
+    variants.forEach((variant) => {
+      const clr = getColorFromVariant(variant);
+      if (!clr) return;
+      if (clr.code && !colorMap.has(clr.code)) {
+        colorMap.set(clr.code, clr.name);
+      }
     });
     return Array.from(colorMap.entries()).map(([code, name]) => ({
       code,
@@ -554,13 +553,13 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                         {p.name}
                       </p>
                       <div className="flex flex-col justify-center items-center">
-                        <p className="text-black text-[12px] md:text-[15px] lg:text-[15px] mb-1">
+                        <p className="flex items-center text-black text-[12px] md:text-[15px] lg:text-[15px] mb-1">
                           Rs{" "}
                           {discountedPrice.toLocaleString("en-IN", {
                             maximumFractionDigits: 0,
                           })}
                           {hasOffer && (
-                            <span className="line-through text-light text-[10px] md:text-[12px] lg:text-[12px] ml-[5px]">
+                            <span className="line-through text-[#BCBCBC] text-[10px] md:text-[12px] lg:text-[12px] ml-[5px]">
                               Rs{" "}
                               {originalPrice.toLocaleString("en-IN", {
                                 maximumFractionDigits: 0,
@@ -574,6 +573,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                           </p>
                         )}
                       </div>
+                      {uniqueColors.length > 0 && (
                       <div className="flex gap-1.5 py-1 justify-center">
                         {uniqueColors.map((clr, idx) => {
                           const clrVariant = getVariantForColor(p, clr.code);
@@ -582,7 +582,8 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                           const isSelected = currentSelectedColor === clr.code;
                           return (
                             <button
-                              key={idx}
+                              // key={idx}
+                              key={`${clr.code}-${idx}`}
                               title={
                                 clrOutOfStock
                                   ? `${clr.name} (Out of Stock)`
@@ -604,6 +605,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                           );
                         })}
                       </div>
+                      )}
                       {isOutOfStock && (
                         <p className="text-theme text-[12px] mt-1">
                           Out of Stock

@@ -180,7 +180,7 @@ export default function Footer() {
               </div>
             </div>
             <div>
-              <h2 className="font-regular text-20px mb-[35px] tracking-[3%]">
+              <h2 className="font-regular text-20px mb-[35px] tracking-[3%] text-black">
                 NAVIGATION LINKS
                 <span className="theme-border-block w-[45px]"></span>
               </h2>
@@ -196,7 +196,7 @@ export default function Footer() {
               </ul>
             </div>
             <div>
-              <h2 className="font-regular text-20px mb-[35px] tracking-[3%]">
+              <h2 className="font-regular text-20px mb-[35px] tracking-[3%] text-black">
                 CUSTOMER SUPPORT
                 <span className="theme-border-block w-[45px]"></span>
               </h2>
@@ -212,7 +212,7 @@ export default function Footer() {
               </ul>
             </div>
             <div>
-              <h2 className="font-regular text-20px mb-[35px] tracking-[3%]">
+              <h2 className="font-regular text-20px mb-[35px] tracking-[3%] text-black">
                 JOIN NOW !<span className="theme-border-block w-[45px]"></span>
               </h2>
               <p className="text-sm mb-3 text-light">{footertext}</p>

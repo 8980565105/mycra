@@ -73,9 +73,9 @@ export default function Product() {
           </div>
         </Row>
 
-        <Row>
+        {/* <Row>
           <ProductTabs product={product} selectedVariant={selectedVariant} />
-        </Row>
+        </Row> */}
       </Section>
 
       <Section>
