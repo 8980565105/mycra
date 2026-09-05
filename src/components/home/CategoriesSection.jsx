@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -32,8 +32,6 @@ const STATIC_CATEGORIES = [
 
 const CategoriesSection = () => {
   const navigate = useNavigate();
-  const sliderRef = useRef(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const { items: categories, loading } = useSelector(
@@ -43,41 +41,41 @@ const CategoriesSection = () => {
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const displayCategories =
     !loading && categories?.length > 0 ? categories : STATIC_CATEGORIES;
 
+  const filteredCategories = displayCategories.filter(
+    (cat) => cat.parent_id !== null || cat.isStatic
+  );
+
   const slidesToShow =
     windowWidth <= 767
       ? 2
       : windowWidth <= 980
-        ? 3
-        : windowWidth <= 1280
-          ? 4
-          : 5;
-
-  const totalDots = Math.ceil(displayCategories.length / slidesToShow);
-  const slidesToScroll = slidesToShow;
+      ? 3
+      : windowWidth <= 1280
+      ? 4
+      : 5;
 
   const settings = {
-    dots: false,
-    infinite: true,
+    dots: true,
+    infinite: filteredCategories.length > slidesToShow,
     speed: 500,
     slidesToShow,
-    slidesToScroll,
+    slidesToScroll: slidesToShow,
     arrows: false,
-    beforeChange: (_, next) => {
-      setCurrentSlide(Math.floor(next / slidesToShow));
-    },
   };
 
   return (
     <>
-      {displayCategories.length > 0 ? (
-        <>
-          <Slider ref={sliderRef} {...settings}>
+    {filteredCategories.length > 0 ? (
+      <div class="cat-slider">
+        <Slider {...settings} className="pb-10">
             {displayCategories
               .filter((cat) => cat.parent_id !== null)
               .map((category, index) => (
@@ -106,23 +104,42 @@ const CategoriesSection = () => {
                 </div>
               ))}
           </Slider>
+      </div>
+    ) : (
+      <p className="text-center">No categories found</p>
+    )}
 
-          <div className="flex justify-center mt-[35px] sm:mt-[65px] space-x-[6px]">
-            {Array.from({ length: totalDots }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => sliderRef.current.slickGoTo(i * slidesToShow)}
-                className={`transition-all duration-300 ${currentSlide === i
-                    ? "w-[40px] h-[10px] rounded-full bg-color"
-                    : "w-[10px] h-[10px] rounded-full bg-[#D2AF9F]"
-                  }`}
-              />
-            ))}
-          </div>
-        </>
-      ) : (
-        <p className="text-center">No categories found</p>
-      )}
+    <style>{`
+      .cat-slider .slick-dots {
+        bottom: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+      }
+      .cat-slider .slick-dots li {
+        width: 10px !important;
+        height: 10px !important;
+        margin: 0 !important;
+        border-radius: 50px !important;
+      }
+      .cat-slider .slick-dots li button {
+        width: 10px !important;
+        height: 10px !important;
+        padding: 0 !important;
+        background: #D2AF9F !important;
+        border-radius: 50px !important;
+      }
+      .cat-slider .slick-dots li button:before {
+        display: none !important;
+      }
+      .cat-slider .slick-dots li.slick-active,
+      .cat-slider .slick-dots li.slick-active button {
+        background: #F43297 !important;
+        width: 40px !important;
+      }
+    `}</style>
     </>
   );
 };

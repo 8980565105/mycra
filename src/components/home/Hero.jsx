@@ -39,23 +39,36 @@ export default function Hero() {
     );
   }
 
+  // const settings = {
+  //   dots: true,
+  //   infinite: true,
+  //   speed: 1000,
+  //   slidesToShow: 1,
+  //   slidesToScroll: 1,
+  //   autoplay: true,
+  //   autoplaySpeed: 4000,
+  //   arrows: false,
+  //   appendDots: (dots) => (
+  //     <div className="absolute bottom-[20px] left-0 w-full">
+  //       <ul className="flex justify-center items-center gap-[5px]">{dots}</ul>
+  //     </div>
+  //   ),
+  //   customPaging: () => (
+  //     <div className="slick-dot-bar w-[40px] h-[3px] rounded-full transition-all duration-300" />
+  //   ),
+  // };
   const settings = {
-    dots: true,
-    infinite: true,
+    dots: heroSlides.length > 1,
+    infinite: heroSlides.length > 1,
     speed: 1000,
     slidesToShow: 1,
     slidesToScroll: 1,
-    autoplay: true,
+    autoplay: heroSlides.length > 1,
     autoplaySpeed: 4000,
+    pauseOnHover: false,
     arrows: false,
-    appendDots: (dots) => (
-      <div style={{ position: "absolute", bottom: "24px", width: "100%" }}>
-        <ul className="flex justify-center gap-3">{dots}</ul>
-      </div>
-    ),
-    customPaging: () => (
-      <div className="w-[40px] h-[3px] bg-white/50 rounded-full transition-all duration-300 slick-dot-bar" />
-    ),
+    swipe: true,
+    draggable: true,
   };
 
   return (
@@ -74,19 +87,19 @@ export default function Hero() {
           <a href="#" aria-label="Twitter">
             <FaTwitter
               size={16}
-              className="text-[#D2AF9F] hover:text-white transition-colors"
+              className="text-[#D2AF9F] hover:text-[var(--primary-color)] transition-colors"
             />
           </a>
-          <a href="#" aria-label="Heart">
+          <a href="/wishlist" aria-label="Heart">
             <FaRegHeart
               size={16}
-              className="text-[#D2AF9F] hover:text-white transition-colors"
+              className="text-[#D2AF9F] hover:text-[var(--primary-color)] transition-colors"
             />
           </a>
         </div>
       </div>
 
-      <section className="relative lg:ml-[50px] mt-4 mx-2 lg:mx-0 overflow-hidden rounded-lg">
+      <section className="relative lg:ml-[50px] mt-4 mx-2 lg:mx-0 overflow-hidden rounded-lg hero-slider">
         <Slider {...settings} className="w-full">
           {heroSlides.map((slide, index) => (
             <div key={index}>
@@ -136,12 +149,31 @@ export default function Hero() {
       </section>
 
       <style>{`
-        .slick-active .slick-dot-bar {
-          background-color: white !important;
-          width: 50px !important;
-        }
-        .slick-dots {
+        .hero-slider .slick-dots {
           bottom: 20px !important;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          gap: 8px !important;
+          width: 100% !important;
+        }
+        .hero-slider .slick-dots li {
+          width: 50px !important;
+          height: 4px !important;
+          margin: 0 !important;
+        }
+        .hero-slider .slick-dots li button {
+          width: 50px !important;
+          height: 4px !important;
+          padding: 0 !important;
+          background: #fff !important;
+          border-radius: 50px !important;
+        }
+        .hero-slider .slick-dots li button:before {
+          display: none !important;
+        }
+        .hero-slider .slick-dots li.slick-active button {
+          background: #F43297 !important;
         }
       `}</style>
     </div>
