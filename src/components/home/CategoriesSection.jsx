@@ -74,7 +74,7 @@ const CategoriesSection = () => {
   return (
     <>
     {filteredCategories.length > 0 ? (
-      <div class="cat-slider">
+      <div className="cat-slider">
         <Slider {...settings} className="pb-10">
             {displayCategories
               .filter((cat) => cat.parent_id !== null)

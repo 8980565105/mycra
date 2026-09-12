@@ -7,6 +7,7 @@ import {
 } from "../../features/auth/authThunk";
 import toast, { Toaster } from "react-hot-toast";
 import ChangePassword from "./ChangePassword";
+import { ChevronDown } from "lucide-react";
 
 function AccountDetails({ onSwitchForget }) {
   const { user, loading } = useSelector((state) => state.auth);
@@ -112,18 +113,23 @@ function AccountDetails({ onSwitchForget }) {
             />
           </div>
 
-          <div className="flex flex-col">
+          <div className="relative flex flex-col">
             <select
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="input-common"
+              className="input-common w-full appearance-none pr-12"
             >
               <option value="">Select gender</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="other">Other</option>
             </select>
+            <ChevronDown
+              size={20}
+              strokeWidth={1.8}
+              className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-500"
+            />
           </div>
 
           <div className="flex flex-col">
