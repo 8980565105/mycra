@@ -261,6 +261,7 @@ function App() {
           <Route path="/faqs" element={<Faqs />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/transectionhistory" element={<TransactionHistory />} />
+          <Route path="/gifcard" element={<GiftCardToBalance />} />
           <Route path="/walletkycintro" element={<WalletKycIntro />} />
           <Route path="/continuewithkyc" element={<ContinueWithKyc />} />
           <Route path="/kycform" element={<KycForm />} />
