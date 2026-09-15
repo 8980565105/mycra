@@ -34,8 +34,24 @@ const getTransactions = async (req, res) => {
     if (status) {
       filter.status = { $in: Array.isArray(status) ? status : [status] };
     }
+    // if (search) {
+    //   filter.description = { $regex: search, $options: "i" };
+    // }
     if (search) {
-      filter.description = { $regex: search, $options: "i" };
+      filter.$or = [
+        {
+          description: { $regex: search, $options: "i", },
+        },
+        {
+          category: { $regex: search, $options: "i", },
+        },
+        {
+          paymentMode: { $regex: search, $options: "i", },
+        },
+        {
+          referenceId: { $regex: search, $options: "i", },
+        },
+      ];
     }
     if (timePeriod && timePeriod !== "Older transactions") {
       const [monthName, year] = timePeriod.split(" ");
@@ -175,9 +191,56 @@ const updateTransactionStatus = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+const getTransectionFilterOptions = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const [ categories, types, paymentModes, statuses, ] = await Promise.all([
+      Transection.distinct("category", {
+        user: userId,
+      }),
+
+      Transection.distinct("type", {
+        user: userId,
+      }),
+
+      Transection.distinct("paymentMode", {
+        user: userId,
+      }),
+
+      Transection.distinct("status", {
+        user: userId,
+      }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+
+      filters: {
+        categories: categories.filter(Boolean).sort(),
+        types: types.filter(Boolean).sort(),
+        paymentModes: paymentModes.filter(Boolean).sort(),
+        statuses: statuses.filter(Boolean).sort(),
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Get transaction filter options error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load transiction filters",
+    });
+  }
+};
+
 module.exports = {
   getTransactions,
   getTransactionById,
   getAllTransactionsAdmin,
   updateTransactionStatus,
+  getTransectionFilterOptions
 };

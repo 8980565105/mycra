@@ -10,9 +10,11 @@
     getTransactions,
     updateTransactionStatus,
     getAllTransactionsAdmin,
+    getTransectionFilterOptions,
     } = require("../controllers/transectionController");
 
     router.get("/", authMiddleware, getTransactions);
+    router.get("/filter-options", authMiddleware, getTransectionFilterOptions);
     router.get("/:id", authMiddleware, getTransactionById);
 
     router.get(
@@ -28,5 +30,4 @@
     authorizeMinRole("admin"),
     updateTransactionStatus,
     );
-
     module.exports = router;
