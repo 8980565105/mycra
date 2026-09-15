@@ -4,6 +4,7 @@ import {
   fetchTransectionById,
   fetchAllTransectionsAdmin,
   updateTransectionStatus,
+  fetchTransectionFilterOptions,
 } from "./transectionThunk";
 
 const initialState = {
@@ -20,6 +21,15 @@ const initialState = {
   adminTotalPages: 1,
   adminLoading: false,
   adminError: null,
+  filterOptions: {
+  categories: [],
+  types: [],
+  paymentModes: [],
+  statuses: [],
+},
+
+filterLoading: false,
+filterError: null,
 };
 
 const transectionSlice = createSlice({
@@ -51,6 +61,24 @@ const transectionSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
+      .addCase(fetchTransectionFilterOptions.pending, (state) => {
+        state.filterLoading = true;
+        state.filterError = null;
+      })
+      .addCase(fetchTransectionFilterOptions.fulfilled, (state, action) => {
+        state.filterLoading = false;
+        state.filterOptions = {
+          categories: action.payload?.categories || [],
+          types: action.payload?.types || [],
+          paymentModes: action.payload?.paymentModes || [],
+          statuses: action.payload?.statuses || [],
+        };
+      })
+      .addCase(fetchTransectionFilterOptions.rejected, (state, action) => {
+          state.filterLoading = false;
+          state.filterError = action.payload || "Failed to load filters";
+        })
 
       .addCase(fetchTransectionById.pending, (state) => {
         state.loading = true;

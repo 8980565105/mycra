@@ -3,7 +3,7 @@ import { Check, Search, Loader2 } from "lucide-react";
 import Section from "../components/ui/Section";
 import Row from "../components/ui/Row";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchTransections } from "../features/transection/transectionThunk";
+import { fetchTransections, fetchTransectionFilterOptions } from "../features/transection/transectionThunk";
 
 const CATEGORY_OPTIONS = [
   "Amazon.in",
@@ -40,9 +40,12 @@ const TABS = ["All", "Refund", "Cashback"];
 
 export default function TransactionHistory() {
   const dispatch = useDispatch();
-  const { transections, totalPages, loading, error } = useSelector(
+  const { transections = [], totalPages = 1, loading, error, filterOptions, filterLoading,} = useSelector(
     (state) => state.transection
   );
+  const { categories = [], types = [], paymentModes = [], statuses = [], } = filterOptions || {};
+
+  console.log("FILTER OPTIONS FROM REDUX:", filterOptions, "| CATEGORIES:", categories, "| TYPES:", types, "| PAYMENT MODES:", paymentModes, "| STATUSES:", statuses);
 
   const [activeTab, setActiveTab] = useState("All");
   const [search, setSearch] = useState("");
@@ -52,6 +55,10 @@ export default function TransactionHistory() {
   const [timePeriod, setTimePeriod] = useState("");
   const [status, setStatus] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    dispatch(fetchTransectionFilterOptions());
+  }, [dispatch]);
 
   useEffect(() => {
     const params = {
@@ -66,19 +73,19 @@ export default function TransactionHistory() {
       params.search = search.trim();
     }
     if (category.length > 0) {
-      params.category = category;
+      params.category = category.join(",");
     }
     if (type.length > 0) {
-      params.type = type;
+      params.type = type.join(",");
     }
     if (paymentMode.length > 0) {
-      params.paymentMode = paymentMode;
+      params.paymentMode = paymentMode.join(",");
     }
     if (timePeriod) {
       params.timePeriod = timePeriod;
     }
     if (status.length > 0) {
-      params.status = status;
+      params.status = status.join(",");
     }
 
     dispatch(fetchTransections(params));
@@ -122,7 +129,7 @@ export default function TransactionHistory() {
     search !== "";
 
   return (
-    <Section className="min-h-screen p-8 font-sans">
+    <Section className="min-h-screen  font-sans">
       <Row>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-[28px] font-bold text-gray-900">
@@ -143,8 +150,8 @@ export default function TransactionHistory() {
           </div>
         </div>
 
-        <div className="flex gap-8  ">
-          <div className="w-64 bg-white rounded-lg box-shadow p-4 h-fit">
+        <div className="grid grid-cols-1 custom-lg:grid-cols-[1fr_3fr] gap-[30px] items-start w-full">
+          <div className="w-full bg-white rounded-lg box-shadow p-4">
             <div className="flex justify-between">
               <h2 className="font-bold text-gray-900 mb-3">Filters</h2>
               {hasFilters && (
@@ -157,36 +164,68 @@ export default function TransactionHistory() {
               )}
             </div>
             <FilterGroup title="Category">
-              {CATEGORY_OPTIONS.map((opt) => (
-                <Checkbox
-                  key={opt}
-                  label={opt}
-                  checked={category.includes(opt)}
-                  onChange={() => toggle(category, setCategory, opt)}
-                />
-              ))}
+              {filterLoading ? (
+                <div className="text-sm text-gray-400">
+                  Loading...
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="text-sm text-gray-400">
+                  No categories
+                </div>
+              ) : (
+                categories.map((opt) => (
+                  <Checkbox
+                    key={opt}
+                    label={opt}
+                    checked={category.includes(opt)}
+                    onChange={() =>
+                      toggle( category, setCategory, opt )
+                    }
+                  />
+                ))
+              )}
             </FilterGroup>
 
             <FilterGroup title="Type">
-              {TYPE_OPTIONS.map((opt) => (
-                <Checkbox
-                  key={opt}
-                  label={opt}
-                  checked={type.includes(opt)}
-                  onChange={() => toggle(type, setType, opt)}
-                />
-              ))}
+              {filterLoading ? (
+                <div className="text-sm text-gray-400">
+                  Loading...
+                </div>
+              ) : types.length === 0 ? (
+                <div className="text-sm text-gray-400">
+                  No types
+                </div>
+              ) : (
+                types.map((opt) => (
+                  <Checkbox
+                    key={opt}
+                    label={opt}
+                    checked={type.includes(opt)}
+                    onChange={() => toggle( type, setType, opt )}
+                  />
+                ))
+              )}
             </FilterGroup>
 
             <FilterGroup title="Payment mode">
-              {PAYMENT_MODE_OPTIONS.map((opt) => (
-                <Checkbox
-                  key={opt}
-                  label={opt}
-                  checked={paymentMode.includes(opt)}
-                  onChange={() => toggle(paymentMode, setPaymentMode, opt)}
-                />
-              ))}
+              {filterLoading ? (
+                <div className="text-sm text-gray-400">
+                  Loading...
+                </div>
+              ) : paymentModes.length === 0 ? (
+                <div className="text-sm text-gray-400">
+                  No payment modes
+                </div>
+              ) : (
+                paymentModes.map((opt) => (
+                  <Checkbox
+                    key={opt}
+                    label={opt}
+                    checked={paymentMode.includes(opt)}
+                    onChange={() => toggle( paymentMode, setPaymentMode, opt ) }
+                  />
+                ))
+              )}
             </FilterGroup>
 
             <FilterGroup title="Time period">
@@ -201,18 +240,29 @@ export default function TransactionHistory() {
             </FilterGroup>
 
             <FilterGroup title="Status" last>
-              {STATUS_OPTIONS.map((opt) => (
-                <Checkbox
-                  key={opt}
-                  label={opt}
-                  checked={status.includes(opt)}
-                  onChange={() => toggle(status, setStatus, opt)}
-                />
-              ))}
+              {filterLoading ? (
+                <div className="text-sm text-gray-400">
+                  Loading...
+                </div>
+              ) : statuses.length === 0 ? (
+                <div className="text-sm text-gray-400">
+                  No statuses
+                </div>
+              ) : (
+                statuses.map((opt) => (
+                  <Checkbox
+                    key={opt}
+                    label={opt}
+                    checked={status.includes(opt)}
+                    onChange={() => toggle( status, setStatus, opt)
+                    }
+                  />
+                ))
+              )}
             </FilterGroup>
           </div>
 
-          <div className="flex-1 bg-white rounded-lg box-shadow p-4">
+          <div className=" bg-white rounded-lg box-shadow p-4">
             <div className="flex gap-6 border-b border-gray-200 mb-6">
               {TABS.map((tab) => (
                 <button
@@ -220,8 +270,8 @@ export default function TransactionHistory() {
                   onClick={() => setActiveTab(tab)}
                   className={`pb-2 text-sm font-medium ${
                     activeTab === tab
-                      ? "text-gray-900 border-b-2 border-gray-900"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "text-[var(--primary-color)] border-b-2 border-color"
+                      : "text-[#989696] hover:text-gray-700"
                   }`}
                 >
                   {tab}
@@ -259,7 +309,7 @@ export default function TransactionHistory() {
                       <li key={tx._id} className="py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-900 text-base">
+                            <span className="font-semibold text-gray-900 text-[18px]">
                               {tx.description || tx.category || "Transaction"}
                             </span>
                             <span
@@ -274,7 +324,7 @@ export default function TransactionHistory() {
                               {tx.status}
                             </span>
                           </div>
-                          <div className="text-xs text-gray-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                          <div className="text-[14px] text-[#989696] mt-1 flex flex-wrap gap-x-4 gap-y-1 items-center">
                             <span>{dateStr}</span>
                             <span>• Mode: {tx.paymentMode}</span>
                             <span>• Type: {tx.type}</span>
@@ -365,7 +415,7 @@ function Checkbox({ label, checked, onChange }) {
 
       <span
         className={`ml-2 text-[14px] transition-colors ${
-          checked ? "text-color font-medium" : "text-gray-700"
+          checked ? "text-color font-medium" : "text-[rgba(0,0,0,0.7)]"
         }`}
       >
         {label}
@@ -397,7 +447,7 @@ function Radio({ label, checked, onChange }) {
 
       <span
         className={`ml-2 text-[14px] transition-colors ${
-          checked ? "text-color font-medium" : "text-gray-700"
+          checked ? "text-color font-medium" : "text-[rgba(0,0,0,0.7)]"
         }`}
       >
         {label}

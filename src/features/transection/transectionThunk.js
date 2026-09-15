@@ -32,6 +32,23 @@ export const fetchTransectionById = createAsyncThunk(
   }
 );
 
+export const fetchTransectionFilterOptions = createAsyncThunk(
+  "transection/fetchFilterOptions",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        ROUTES.transection.FilterOptions
+      );
+
+      return response.data.filters;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message ||
+          "Failed to load filter options"
+      );
+    }
+  }
+);
 // ============ ADMIN / STORE_OWNER ============
 
 // GET all transactions (admin, store_owner)

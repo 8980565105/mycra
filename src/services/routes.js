@@ -128,6 +128,7 @@
     getById: (id) => `/transactions/${id}`,
     adminAll: "/transactions/admin/all",
     adminUpdateStatus: (id) => `/transactions/admin/status/${id}`,
+    FilterOptions: "/transactions/filter-options",
   },
   attribute: {
     getAll: "/attributes",
