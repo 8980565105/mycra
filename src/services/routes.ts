@@ -273,6 +273,10 @@ export const ROUTES = {
     adminAdjust: (userId: string) => `/wallet/admin/adjust/${userId}`,
     adminVerifyKyc: (userId: string) => `/wallet/admin/verify-kyc/${userId}`,
   },
+  giftCards: {
+    adminCreate: "/gift-cards/admin/create",
+    adminAll: "/gift-cards/admin/all",
+  },
   kyc: {
     adminSet: (userId: string) => `/kyc/admin/set/${userId}`,
     validatePan: "/kyc/validate-pan",
