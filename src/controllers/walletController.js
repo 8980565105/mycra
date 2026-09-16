@@ -1,4 +1,6 @@
 const Wallet = require("../models/Wallet");
+const User = require("../models/User");
+const GiftCard = require("../models/GiftCard");
 const Transection = require("../models/Transactions");
 
 const getBalance = async (req, res) => {
@@ -6,7 +8,12 @@ const getBalance = async (req, res) => {
     const userId = req.user._id;
     let wallet = await Wallet.findOne({ user: userId });
     if (!wallet) {
-      wallet = await Wallet.create({ user: userId });
+      wallet = await Wallet.create({ user: userId,
+        // balance: 0,
+        // giftCardBalance: 0,
+        // voucherBalance: 0,
+        // giftCards: [],
+       });
     }
     return res.status(200).json({
       success: true,
@@ -118,56 +125,139 @@ const adminVerifyKyc = async (req, res) => {
   }
 };
 
+// const getAllWallets = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 20, search } = req.query;
+//     const skip = (Number(page) - 1) * Number(limit);
+
+//     const User = require("../models/User");
+
+    // const userFilter = { role: "store_user" };
+    // if (req.user.role === "store_owner") {
+    //   userFilter.storeId = req.user.storeId;
+    // }
+
+//     if (search) {
+//       const searchRegex = new RegExp(search, "i");
+//       userFilter.$or = [
+        // { name: searchRegex },
+        // { email: searchRegex },
+        // { mobile_number: searchRegex }
+//       ];
+//     }
+
+//     const users = await User.find(userFilter)
+      // .sort({ createdAt: -1 })
+      // .skip(skip)
+      // .limit(Number(limit));
+
+//     const total = await User.countDocuments(userFilter);
+
+//     const wallets = [];
+//     for (const user of users) {
+//       let wallet = await Wallet.findOne({ user: user._id });
+//       if (!wallet) {
+//         wallet = await Wallet.create({ user: user._id });
+//       }
+//       const walletObj = wallet.toObject();
+//       const userObj = user.toObject();
+//       userObj.phone = user.mobile_number; 
+//       walletObj.user = userObj;
+//       wallets.push(walletObj);
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       wallets,
+//       total,
+//       page: Number(page),
+//       totalPages: Math.ceil(total / Number(limit)),
+//     });
+//   } catch (error) {
+//     return res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 const getAllWallets = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+    const { page = 1, limit = 20, search = "", } = req.query;
 
-    const User = require("../models/User");
-
+    const currentPage = Math.max(Number(page) || 1, 1);
+    const perPage = Math.max(Number(limit) || 10, 1);
     const userFilter = { role: "store_user" };
-    if (req.user.role === "store_owner") {
-      userFilter.storeId = req.user.storeId;
+    if (req.user?.role === "store_owner") {
+      if (req.user.storeId) {
+        userFilter.storeId = req.user.storeId;
+      }
     }
 
-    if (search) {
-      const searchRegex = new RegExp(search, "i");
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
       userFilter.$or = [
         { name: searchRegex },
         { email: searchRegex },
-        { mobile_number: searchRegex }
+        { phone: searchRegex }
       ];
     }
 
-    const users = await User.find(userFilter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
-
     const total = await User.countDocuments(userFilter);
+    const users = await User.find(userFilter)
+      .skip((currentPage - 1) * perPage)
+      .limit(perPage)
+      .lean();
 
-    const wallets = [];
-    for (const user of users) {
-      let wallet = await Wallet.findOne({ user: user._id });
-      if (!wallet) {
-        wallet = await Wallet.create({ user: user._id });
-      }
-      const walletObj = wallet.toObject();
-      const userObj = user.toObject();
-      userObj.phone = user.mobile_number; 
-      walletObj.user = userObj;
-      wallets.push(walletObj);
-    }
+    const wallets = await Promise.all(
+      users.map(async (user) => {
+        let wallet = await Wallet.findOne({
+          user: user._id,
+        }).lean();
+
+        if (!wallet) {
+          wallet = await Wallet.create({
+            user: user._id,
+            balance: 0,
+            giftCardBalance: 0,
+            voucherBalance: 0,
+          });
+
+          wallet = wallet.toObject();
+        }
+        const giftCards = await GiftCard.find({assignedTo: user._id})
+          .select("_id cardNumber originalAmount remainingBalance status expiresAt recipientName recipientEmail")
+          .lean();
+
+        const giftCardBalance = giftCards.reduce(
+          (sum, card) => sum + Number(card.remainingBalance || 0),
+          0
+        );
+
+        const balance = Number(wallet.balance || 0);
+        const voucherBalance = Number( wallet.voucherBalance || 0 );
+        const totalBalance = balance + giftCardBalance + voucherBalance;
+
+        return {
+          ...wallet,
+          user,
+          giftCards,
+          giftCardBalance,
+          voucherBalance,
+          balance,
+          totalBalance,
+        };
+      })
+    );
 
     return res.status(200).json({
       success: true,
       wallets,
       total,
-      page: Number(page),
-      totalPages: Math.ceil(total / Number(limit)),
+      page: currentPage,
+      limit: perPage,
+      totalPages: Math.ceil(total / perPage),
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error( "getAllWallets error:", error );
+    return res.status(500).json({success: false, message: error.message || "Failed to fetch wallets"});
   }
 };
 

@@ -43,6 +43,7 @@ const brandRoutes = require("./src/routes/brandRoutes");
 const pageVisitRoutes = require("./src/routes/pageRoutes");
 const policypageRoutes = require("./src/routes/policypageRoutes");
 const emailRoutes = require("./src/routes/emailRoute");
+const giftCardRoutes = require( "./src/routes/giftCardRoutes");
 const {
   handleStripeWebhook,
 } = require("./src/controllers/stripeWebhookController");
@@ -178,6 +179,7 @@ app.use("/api/kyc", kycRoutes);
 app.use("/api/seller", sellerRoutes);
 app.use("/api/policypages", policypageRoutes);
 app.use("/api/emails", emailRoutes);
+app.use("/api/gift-cards", giftCardRoutes);
 app.use(errorHandler);
 
 // ═══════════════════════════════════════════════════════
