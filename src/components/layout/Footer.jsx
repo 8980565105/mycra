@@ -141,8 +141,9 @@ export default function Footer() {
           opacity: isMobile ? (isOpen ? 1 : 0) : 1,
         }}
       >
-        <div className="text-light bg-theme">
-          <Row className="py-[50px] md:py-[80px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="text-light">
+          <Section className="bg-[#D2AF9F4D] !pb-0">
+          <Row className="py-[30px] custom-lg:pt-[50px] custom-lg:pb-[80px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="space-y-[22px] max-w-[280px] w-full">
               <Link
                 to="/"
@@ -151,7 +152,7 @@ export default function Footer() {
                 <img
                   src={dynamicLogoUrl || mylogo}
                   alt="Logo"
-                  className="h-10 custom-lg:h-14"
+                  className="h-10 custom-lg:h-14 object-contain"
                 />
               </Link>
               <div className="flex items-center gap-[20px] text-sm">
@@ -274,6 +275,7 @@ export default function Footer() {
               </div>
             </div>
           </Row>
+          </Section>
           <Section className="bg-theme">
             <Row>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[50px] md:gap-[30px] items-center">

@@ -111,18 +111,18 @@
 
 //               <div className="flex items-start gap-2 text-xs text-gray-500 mt-4">
 //                 <Info size={14} className="text-gray-400 mt-0.5 shrink-0" />
-                // <span>
-                //   For optimal utilisation, balance expiring the earliest will be
-                //   redeemed first.
-                // </span>
+//                 <span>
+//                   For optimal utilisation, balance expiring the earliest will be
+//                   redeemed first.
+//                 </span>
 //               </div>
 
-              // <button
-              //   onClick={() => navigation("/help")}
-              //   className="text-sm text-blue-600 hover:underline mt-3 block"
-              // >
-              //   Need more help?
-              // </button>
+//               <button
+//                 onClick={() => navigation("/help")}
+//                 className="text-sm text-blue-600 hover:underline mt-3 block"
+//               >
+//                 Need more help?
+//               </button>
 //             </div>
 
 //             <div className="bg-amber-300 rounded-lg overflow-hidden relative p-8 flex items-center justify-between">
@@ -133,10 +133,10 @@
 //                 <p className="text-lg text-gray-900 mb-4">
 //                   Select from a wide range of Gift Cards
 //                 </p>
-                // <div className="font-bold text-gray-900 text-xl">
-                //   amazon <span className="font-normal">pay</span>
-                //   <div className="text-base font-medium -mt-1">gift card</div>
-                // </div>
+//                 <div className="font-bold text-gray-900 text-xl">
+//                   amazon <span className="font-normal">pay</span>
+//                   <div className="text-base font-medium -mt-1">gift card</div>
+//                 </div>
 //               </div>
 //               <div className="hidden sm:block w-40 h-40 rounded-full bg-white/70" />
 //             </div>
@@ -204,33 +204,40 @@ import {
   AlertCircle,
   WalletCards,
   History,
+  Copy,
+  Check,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-import {
-  fetchWallet,
-  redeemGiftCard,
-} from "../../features/wallet/walletThunk";
+import { fetchWallet } from "../../features/wallet/walletThunk";
 import Button from "../ui/Button";
-
+import { getMyGiftCards } from "../../features/giftCards/giftCardThunk";
+import Section from "../ui/Section";
+import Row from "../ui/Row";
+import giftcard from "../../assets/gift-card.jpg";
 
 export default function GiftCardToBalance() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { giftCards } = useSelector((state) => state.giftCards);
 
-  const { wallet, loading } = useSelector(
-    (state) => state.wallet
-  );
-
+const { user } = useSelector(
+  (state) => state.auth
+);
+  // useEffect(() => {
+  //   dispatch(getMyGiftCards());
+  // }, [dispatch]);
 
   const [giftCardCode, setGiftCardCode] = useState("");
-  const [redeeming, setRedeeming] = useState(false);
+  const [giftCardPin, setGiftCardPin] = useState("");
+  const [checkingGiftCard, setCheckingGiftCard] = useState(false);
 
   const [redeemSuccess, setRedeemSuccess] = useState("");
   const [redeemError, setRedeemError] = useState("");
-
+  const [checkedGiftCard, setCheckedGiftCard] = useState(null);
+  const [copiedCardNumber, setCopiedCardNumber] = useState(null);
   const [activeTab, setActiveTab] = useState("personal");
 
   const [receiverEmail, setReceiverEmail] = useState("");
@@ -244,84 +251,78 @@ export default function GiftCardToBalance() {
   const [buying, setBuying] = useState(false);
   const [buySuccess, setBuySuccess] = useState("");
   const [buyError, setBuyError] = useState("");
-  
 
   useEffect(() => {
+  if (!user) return;
+
+  const fullName = [ user.firstName, user.lastName ].filter(Boolean).join(" ");
+  const dynamicName = user.name || user.fullName || fullName || user.username || "";
+
+  setGifterName(dynamicName);
+}, [user]);
+
+  useEffect(() => {
+    dispatch(getMyGiftCards());
     dispatch(fetchWallet());
   }, [dispatch]);
 
-  const activeGiftCards =
-    wallet?.giftCards?.filter(
-      (card) => card.status === "active"
-    ) || [];
-
-  const totalGiftCardBalance = activeGiftCards.reduce(
-    (total, card) =>
-      total + Number(card.remainingBalance || 0),
-    0
-  );
+  const activeGiftCards = giftCards?.filter((card) => card.status === "Active" && Number(card.remainingBalance || 0) > 0 ) || [];
+  const totalGiftCardBalance = activeGiftCards.reduce((total, card) => total + Number(card.remainingBalance || 0), 0);
 
   const formatCurrency = (amount) => {
-    return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+    return `₹${Number(
+      amount || 0
+    ).toLocaleString("en-IN")}`;
   };
 
   const formatDate = (date) => {
-    if (!date) return "—";
+    if (!date) {
+      return "—";
+    }
 
-    return new Date(date).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "—";
+    }
+
+    return parsedDate.toLocaleDateString(
+      "en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }
+    );
   };
 
   const maskGiftCardCode = (code = "") => {
-    if (!code) return "—";
+    if (!code) { return "—"; }
 
-    if (code.length <= 4) {
-      return code;
-    }
+    if (code.length <= 4) { return code; }
 
     return `${"*".repeat(code.length - 4)}${code.slice(-4)}`;
   };
 
-  const handleAddGiftCard = async () => {
-    setRedeemSuccess("");
-    setRedeemError("");
-
-    const code = giftCardCode.trim();
-
-    if (!code) {
-      setRedeemError("Please enter your gift card number.");
-      return;
-    }
-
+  const handleCopyCardNumber = async (cardNumber) => {
     try {
-      setRedeeming(true);
+      await navigator.clipboard.writeText(cardNumber);
 
-      await dispatch(
-        redeemGiftCard({
-          code,
-        })
-      ).unwrap();
+      setCopiedCardNumber(cardNumber);
 
-      setRedeemSuccess(
-        "Gift Card added to your balance successfully."
-      );
-
-      setGiftCardCode("");
-
-      dispatch(fetchWallet());
-
+      setTimeout(() => {
+        setCopiedCardNumber(null);
+      }, 2000);
     } catch (error) {
-      setRedeemError(
-        error?.message ||
-          error ||
-          "Unable to redeem gift card."
-      );
-    } finally {
-      setRedeeming(false);
+      console.error("Failed to copy gift card number:", error);
     }
+  };
+
+  const handleClearGiftCardForm = () => {
+    setGiftCardCode("");
+    setGiftCardPin("");
+    setCheckedGiftCard(null);
+    setRedeemError("");
+    setRedeemSuccess("");
   };
 
   const totalPurchaseAmount = Number(cardValue || 0) * Number(numberOfCards || 1);
@@ -352,10 +353,7 @@ export default function GiftCardToBalance() {
       );
 
     } catch (error) {
-      setBuyError(
-        error?.message ||
-          "Unable to purchase gift card."
-      );
+      setBuyError(error?.message || "Unable to purchase gift card.");
     } finally {
       setBuying(false);
     }
@@ -363,13 +361,13 @@ export default function GiftCardToBalance() {
 
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] py-5 sm:py-8">
+    <Section className="min-h-screen bg-[#f5f5f5] ">
 
-      <div className="w-full max-w-[1150px] mx-auto px-3 sm:px-5 lg:px-6">
+      <Row className="!max-w-[1150px]">
 
-        <div className="bg-white shadow-sm rounded-sm overflow-hidden">
+        <div className="bg-white shadow-sm rounded-sm overflow-hidden p-6">
 
-          <div className="px-5 sm:px-7 py-4 border-b border-gray-200">
+          <div className="pb-4 border-b border-gray-200">
 
             <div className="flex items-center justify-between gap-4">
 
@@ -379,7 +377,11 @@ export default function GiftCardToBalance() {
 
               <button
                 type="button"
-                onClick={() => navigate("/my-account/wallets")}
+                onClick={() =>
+                  navigate(
+                    "/my-account/wallets"
+                  )
+                }
                 className="text-xs sm:text-sm text-[var(--primary-color)] font-medium hover:underline whitespace-nowrap"
               >
                 Check Gift Card balance
@@ -389,7 +391,7 @@ export default function GiftCardToBalance() {
 
           </div>
 
-          <div className="px-4 sm:px-7 pt-5">
+          <div className="pt-5">
 
             <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-sm p-4 sm:p-5">
 
@@ -398,28 +400,34 @@ export default function GiftCardToBalance() {
                 <div className="flex items-center gap-3">
 
                   <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white rounded-md flex items-center justify-center shrink-0">
-                    <Gift size={22} className="text-green-600" />
+
+                    <Gift
+                      size={22}
+                      className="text-green-600"
+                    />
+
                   </div>
 
                   <div>
                     <h2 className="text-white text-sm sm:text-base font-bold uppercase">
-                      {activeGiftCards.length} Active Gift Card
+
+                      {activeGiftCards.length}
+
+                      {" "}
+
+                      Active Gift Card
                       {activeGiftCards.length !== 1
                         ? "s"
                         : ""}
                     </h2>
 
-                    <button
-                      type="button"
-                      className="text-white/90 text-xs flex items-center gap-1 mt-0.5"
-                    >
-                      Hide all active
-                      <ChevronDown size={12} />
-                    </button>
+                    <div className="text-white/90 text-xs mt-0.5">
+                      Available Gift Card Balance
+                    </div>
+
                   </div>
 
                 </div>
-
 
                 <div className="text-white text-xl sm:text-2xl font-bold whitespace-nowrap">
                   {formatCurrency(
@@ -438,9 +446,9 @@ export default function GiftCardToBalance() {
 
                       <div
                         key={
-                          card._id || index
+                          card._id || card.cardNumber || index
                         }
-                        className="grid grid-cols-1 sm:grid-cols-[1.4fr_1.4fr_0.9fr_auto] gap-3 sm:gap-5 px-4 py-3 border-b border-gray-100 last:border-b-0"
+                        className="grid grid-cols-1 sm:grid-cols-[1fr_1.5fr_0.9fr_0.5fr] gap-3 sm:gap-7 px-4 py-4 border-b border-gray-100 last:border-b-0"
                       >
 
                         <div>
@@ -449,7 +457,7 @@ export default function GiftCardToBalance() {
                             Received from
                           </p>
 
-                          <p className="text-xs text-gray-800 font-medium break-all">
+                          <p className="text-xs text-gray-800 font-medium break-all mt-1">
                             {card.receivedFrom ||
                               card.senderEmail ||
                               "Gift Card"}
@@ -457,33 +465,41 @@ export default function GiftCardToBalance() {
 
                         </div>
 
-
                         {/* CARD NUMBER */}
 
-                        <div>
+                        <div className="flex flex-col gap-2">
 
-                          <p className="text-[9px] text-gray-400 uppercase">
-                            Gift Card No.
+                        <p className="text-[9px] text-gray-400 uppercase">
+                          Gift Card No.
+                        </p>
+
+                        <div className="flex items-center  gap-4 w-full">
+                          <p className="text-xs text-gray-800 font-medium break-all">
+                            {maskGiftCardCode(card.cardNumber)}
                           </p>
 
-                          <p className="text-xs text-gray-800 font-medium">
-                            {maskGiftCardCode(
-                              card.code
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCardNumber(card.cardNumber)}
+                            className="shrink-0 text-[var(--primary-color)] hover:text-theme"
+                            title="Copy Gift Card Number"
+                          >
+                            {copiedCardNumber === card.cardNumber ? (
+                              <Check size={14} />
+                            ) : (
+                              <Copy size={14} />
                             )}
-                          </p>
-
+                          </button>
                         </div>
 
-
-                        {/* EXPIRY */}
-
+                      </div>
                         <div>
 
                           <p className="text-[9px] text-gray-400 uppercase">
                             Expires
                           </p>
 
-                          <p className="text-xs text-gray-800 font-medium">
+                          <p className="text-xs text-gray-800 font-medium mt-1">
                             {formatDate(
                               card.expiresAt
                             )}
@@ -491,15 +507,14 @@ export default function GiftCardToBalance() {
 
                         </div>
 
-
-                        {/* AMOUNT */}
-
                         <div className="sm:text-right">
 
+                          <p className="text-[9px] text-gray-400 uppercase ">
+                            Gift Card Amount
+                          </p>
+
                           <p className="text-sm sm:text-base font-bold text-gray-900">
-                            {formatCurrency(
-                              card.remainingBalance
-                            )}
+                            {formatCurrency(Number(card.remainingBalance || 0))}
                           </p>
 
                         </div>
@@ -532,25 +547,17 @@ export default function GiftCardToBalance() {
 
           </div>
 
-
-          {/* ===================================================
-              ADD GIFT CARD BUTTON
-          ==================================================== */}
-
-          <div className="px-4 sm:px-7 pt-3">
+          <div className=" pt-3">
 
             <button
               type="button"
               onClick={() =>
-                document
-                  .getElementById(
-                    "add-gift-card"
-                  )
+                document.getElementById("add-gift-card")
                   ?.scrollIntoView({
                     behavior: "smooth",
                   })
               }
-               className="w-full flex items-center gap-2 px-4 py-4 border border-gray-200 bg-white text-xs font-semibold text-[var(--primary-color)] hover:bg-gray-50 transition"
+              className="w-full flex items-center gap-2 px-4 py-4 border border-gray-200 bg-white text-xs font-semibold text-[var(--primary-color)] hover:bg-gray-50 transition"
             >
 
               <Plus size={16} />
@@ -561,15 +568,7 @@ export default function GiftCardToBalance() {
 
           </div>
 
-
-          {/* ===================================================
-              REDEEM GIFT CARD
-          ==================================================== */}
-
-          <div
-            id="add-gift-card"
-            className="px-4 sm:px-7 pt-6"
-          >
+          <div id="add-gift-card" className="pt-6" >
 
             <div className="border border-gray-200 rounded-md p-4 sm:p-5">
 
@@ -581,46 +580,60 @@ export default function GiftCardToBalance() {
                 />
 
                 <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-                  Add Gift Card to Balance
+                  Check Gift Card
                 </h2>
 
               </div>
 
-
-              <div className="flex flex-col sm:flex-row gap-3">
-
+              <p className="text-xs text-gray-500 mb-4">
+                Enter your Gift Card Number and 6-digit PIN to check the available balance.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input
                   type="text"
                   value={giftCardCode}
                   onChange={(e) =>
-                    setGiftCardCode(
-                      e.target.value
-                    )
+                    setGiftCardCode(e.target.value.toUpperCase())
                   }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleAddGiftCard();
-                    }
-                  }}
                   placeholder="Enter Gift Card Number"
-                  className="flex-1 h-12 px-4 border border-gray-200 rounded-sm text-sm outline-none focus:border-[var(--primary-color)]"
+                  className="w-full h-12 px-4 border border-gray-200 rounded-sm text-sm text-gray-900 outline-none focus:border-[var(--primary-color)]"
                 />
+                <input
+                  type="password"
+                  value={giftCardPin}
+                  onChange={(e) =>
+                    setGiftCardPin(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  placeholder="Enter 6-digit PIN"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="w-full h-12 px-4 border border-gray-200 rounded-sm text-sm text-gray-900 outline-none focus:border-[var(--primary-color)]"
+                />
+              </div>
+              <p className="text-[11px] text-gray-400 mt-2">
+                Example: GC-ABCD-EFGH-IJKL
+              </p>
+              <div className="flex flex-wrap gap-3 mt-4">
 
                 <Button
                   variant="common"
-                  onClick={handleAddGiftCard}
-                  disabled={redeeming}
-
+                  disabled={checkingGiftCard || !giftCardCode.trim() || !giftCardPin.trim()}
                 >
-                  {redeeming
-                    ? "Adding..."
-                    : "ADD GIFT CARD"}
+
+                  {checkingGiftCard ? "Checking..." : "CHECK GIFT CARD"}
+
                 </Button>
 
+                {(giftCardCode || giftCardPin || checkedGiftCard) && (
+                  <button
+                    type="button"
+                    onClick={handleClearGiftCardForm}
+                    className="h-11 px-4 border border-gray-200 rounded-sm text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                  >
+                    CLEAR
+                  </button>
+                )}
               </div>
-
-
-              {/* SUCCESS */}
 
               {redeemSuccess && (
 
@@ -628,28 +641,115 @@ export default function GiftCardToBalance() {
 
                   <CheckCircle size={17} />
 
-                  {redeemSuccess}
+                  <span>{redeemSuccess}</span>
 
                 </div>
 
               )}
-
-
-              {/* ERROR */}
 
               {redeemError && (
                 <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
                   <AlertCircle size={17} />
-                  {redeemError}
+                  <span>{redeemError}</span>
                 </div>
               )}
 
-            </div>
+              {checkedGiftCard && (
+                <div className="mt-5 border border-green-200 bg-green-50 rounded-md p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle size={19} className="text-green-600" />
+                    <h3 className="text-sm font-semibold text-green-700">
+                      Gift Card Verified
+                    </h3>
+                  </div>
 
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                      <span className="text-xs text-gray-500">
+                        Gift Card Number
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-900 break-all">
+                          {checkedGiftCard.cardNumber}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCardNumber(checkedGiftCard.cardNumber)}
+                          className="text-blue-600 hover:text-blue-800 shrink-0"
+                          title="Copy Gift Card Number"
+                        >
+                          {copiedCardNumber ? (
+                            <Check size={14} />
+                          ) : (
+                            <Copy size={14} />
+                          )}
+
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500">
+                        Original Amount
+                      </span>
+
+                      <span className="text-xs font-semibold text-gray-900">
+                        {formatCurrency(checkedGiftCard.originalAmount)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500">
+                        Available Balance
+                      </span>
+
+                      <span className="text-base font-bold text-green-700">
+                        {formatCurrency(checkedGiftCard.remainingBalance)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+
+                      <span className="text-xs text-gray-500">
+                        Status
+                      </span>
+
+                      <span className="text-xs font-semibold text-green-600">
+                        {checkedGiftCard.status}
+                      </span>
+
+                    </div>
+
+                    <div className="flex items-center justify-between">
+
+                      <span className="text-xs text-gray-500">
+                        Expires
+                      </span>
+
+                      <span className="text-xs font-semibold text-gray-900">
+                        {formatDate(checkedGiftCard.expiresAt)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-green-200">
+                    <p className="text-xs text-green-700 leading-5">
+                      This gift card is available for use at checkout. Your balance will be deducted when you use the gift card for an order.
+                    </p>
+                  </div>
+
+                </div>
+
+              )}
+              <div className="flex items-start gap-2 text-xs text-gray-500 mt-5">
+                <Info size={14} className="text-gray-400 mt-0.5 shrink-0" />
+                <span>
+                  Gift card balance can be used during checkout. The earliest expiring balance can be used first.
+                </span>
+              </div>
+            </div>
           </div>
 
-
-          <div className="px-4 sm:px-7 py-7">
+          <div className=" py-7">
 
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
               Buy a Gift Card
@@ -658,7 +758,6 @@ export default function GiftCardToBalance() {
 
             <div className="bg-[#f5faff] border border-gray-200 rounded-sm overflow-hidden">
 
-              {/* TABS */}
 
               <div className="flex border-b border-gray-200 px-4 sm:px-5">
 
@@ -668,11 +767,10 @@ export default function GiftCardToBalance() {
                     setActiveTab("personal")
                   }
                   className={`py-4 mr-6 text-[14px] sm:text-xs font-semibold border-b-2 ${
-                      activeTab === "personal"
-                        ? "text-[var(--primary-color)] border-[var(--primary-color)]"
-                        : "text-gray-400 border-transparent"
-                    }
-                  `}
+                    activeTab === "personal"
+                      ? "text-[var(--primary-color)] border-[var(--primary-color)]"
+                      : "text-gray-400 border-transparent"
+                  }`}
                 >
                   PERSONAL GIFT CARDS
                 </button>
@@ -683,12 +781,11 @@ export default function GiftCardToBalance() {
                   onClick={() =>
                     setActiveTab("corporate")
                   }
-                  className={` py-4 text-[14px] sm:text-xs font-semibold border-b-2 ${
+                  className={`py-4 text-[14px] sm:text-xs font-semibold border-b-2 ${
                       activeTab === "corporate"
                         ? "text-[var(--primary-color)] border-[var(--primary-color)]"
                         : "text-gray-400 border-transparent"
-                    }
-                  `}
+                    }`}
                 >
                   CORPORATE REQUIREMENTS
                 </button>
@@ -698,31 +795,19 @@ export default function GiftCardToBalance() {
 
               {activeTab === "personal" && (
 
-                <div className="p-4 sm:p-5 lg:p-6">
+                <div className="p-4 sm:p-5 lg:p-6 mt-4">
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
 
-                    {/* FORM */}
 
                     <div className="space-y-3">
-
-                      {/* EMAIL */}
-
                       <input
                         type="email"
                         placeholder="Receiver's Email ID"
                         value={receiverEmail}
-                        onChange={(e) =>
-                          setReceiverEmail(
-                            e.target.value
-                          )
-                        }
-                        // className="w-full h-12 px-4 bg-white border border-gray-200 text-sm outline-none focus:border-[var(--primary-color)]"
+                        onChange={(e) => setReceiverEmail(e.target.value)}
                         className="input-common"
                       />
-
-
-                      {/* NAME */}
 
                       <input
                         type="text"
@@ -734,12 +819,7 @@ export default function GiftCardToBalance() {
                           )
                         }
                         className="input-common"
-                        // className="w-full h-12 px-4 bg-white border border-gray-200 text-sm outline-none focus:border-[var(--primary-color)]"
                       />
-
-
-                      {/* CARD VALUE + NUMBER */}
-
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                         <div className="relative">
@@ -769,10 +849,7 @@ export default function GiftCardToBalance() {
                             </option>
                           </select>
 
-                          <ChevronDown
-                            size={15}
-                            className=" absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 "
-                          />
+                          <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" />
 
                         </div>
 
@@ -781,35 +858,22 @@ export default function GiftCardToBalance() {
 
                           <select
                             value={numberOfCards}
-                            onChange={(e) =>
-                              setNumberOfCards(
-                                Number(
-                                  e.target.value
-                                )
-                              )
+                            onChange={(e) => setNumberOfCards(Number(e.target.value) )
                             }
-                             className="input-common appearance-none"
+                            className="input-common appearance-none"
                           >
 
-                            <option value={1}> No. of Cards 1 </option>
-
-                            <option value={2}> No. of Cards 2 </option>
-
-                            <option value={3}> No. of Cards 3 </option>
+                            <option value={1}>No. of Cards 1</option>
+                            <option value={2}>No. of Cards 2</option>
+                            <option value={3}>No. of Cards 3</option>
 
                           </select>
 
-                          <ChevronDown
-                            size={15}
-                            className=" absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500"
-                          />
+                          <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" />
 
                         </div>
 
                       </div>
-
-
-                      {/* GIFTER */}
 
                       <input
                         type="text"
@@ -820,9 +884,8 @@ export default function GiftCardToBalance() {
                             e.target.value
                           )
                         }
-                         className="input-common"
+                        className="input-common"
                       />
-
 
                       {/* MESSAGE */}
 
@@ -835,7 +898,7 @@ export default function GiftCardToBalance() {
                             e.target.value
                           )
                         }
-                         className="input-common"
+                        className="input-common min-h-[100px]"
                       />
 
                       <div className="text-right text-[11px] text-gray-400">
@@ -854,9 +917,6 @@ export default function GiftCardToBalance() {
 
                       )}
 
-
-                      {/* SUCCESS */}
-
                       {buySuccess && (
                         <div className="flex items-center gap-2 text-sm text-green-600">
                           <CheckCircle size={16} />
@@ -868,7 +928,7 @@ export default function GiftCardToBalance() {
 
                     <div>
 
-                      <div className=" relative min-h-[235px] sm:min-h-[270px] rounded-lg overflow-hidden bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-color)] p-5 sm:p-6 text-white shadow-sm">
+                      <div className="relative min-h-[235px] sm:min-h-[270px] rounded-lg overflow-hidden bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-color)] p-5 sm:p-6 text-white shadow-sm">
                         <div className="flex justify-end">
 
                           <div className="text-lg sm:text-xl font-extrabold">
@@ -899,12 +959,12 @@ export default function GiftCardToBalance() {
 
                         </div>
 
-                        <div className=" absolute left-0 right-0 bottom-0 flex justify-center ">
+                        <div className="mt-8  ">
 
                           <img
-                            src="/images/gift-card.png"
+                            src={giftcard}
                             alt="Gift Card"
-                            className=" w-44 sm:w-56 h-24 sm:h-32 object-contain "
+                            className="w-full rounded-[10px] object-contain "
                           />
 
                         </div>
@@ -962,7 +1022,7 @@ export default function GiftCardToBalance() {
                         variant="common"
                         onClick={handleBuyGiftCard}
                         disabled={buying}
-                        className="!w-full mt-[50px] uppercas e"
+                        className="!w-full mt-[50px] uppercase"
                       >
 
                         {buying
@@ -982,8 +1042,10 @@ export default function GiftCardToBalance() {
                       setReceiverName("");
                       setGifterName("");
                       setMessage("");
+                      setBuySuccess("");
+                      setBuyError("");
                     }}
-                    className=" mt-5 flex items-center gap-2 text-xs font-medium text-[var(--primary-color)] hover:underline "
+                    className="mt-5 flex items-center gap-2 text-xs font-medium text-[var(--primary-color)] hover:underline"
                   >
 
                     <Plus size={14} />
@@ -1025,9 +1087,7 @@ export default function GiftCardToBalance() {
 
           </div>
 
-
-          <div className="px-4 sm:px-7 pb-7">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="border border-gray-200 hover:border-[var(--primary-color)] rounded-md p-4">
                 <div className="flex items-center gap-2 mb-3">
 
@@ -1036,30 +1096,30 @@ export default function GiftCardToBalance() {
                     className="text-[var(--primary-color)]"
                   />
 
-                  <h3 className="text-dark text-20px font-semibold  leading">
+                  <h3 className="text-dark text-[20px] font-semibold leading">
                     Gift Card Information
                   </h3>
 
                 </div>
 
-                <p className="text-[#989696] text-14 break">
+                <p className="text-[#989696] text-[14px] break leading-6">
                   Gift card balance can be used according to the applicable gift card terms and conditions.
                 </p>
 
               </div>
 
-              <div className="border border-gray-200  hover:border-[var(--primary-color)] rounded-md p-4">
+              <div className="border border-gray-200 hover:border-[var(--primary-color)] rounded-md p-4">
 
                 <div className="flex items-center gap-2 mb-3">
 
                   <WalletCards size={20} className="text-[var(--primary-color)]" />
-                  <h3 className="text-dark text-20px font-semibold leading">
+                  <h3 className="text-dark text-[20px] font-semibold leading">
                     Wallet Balance
                   </h3>
 
                 </div>
 
-                <p className="text-[#989696] text-14 break">
+                <p className="text-[#989696] text-[14px] break">
                   Current Gift Card Balance
                 </p>
 
@@ -1076,33 +1136,27 @@ export default function GiftCardToBalance() {
                 onClick={() =>
                   navigate("/my-account/wallets")
                 }
-                className=" text-left border border-gray-200 rounded-md p-4 hover:border-[var(--primary-color)] transition"
+                className="text-left border border-gray-200 rounded-md p-4 hover:border-[var(--primary-color)] transition"
               >
 
                 <div className="flex items-center gap-2 mb-3">
 
                   <History size={20} className="text-[var(--primary-color)]" />
 
-                  <h3 className="text-dark text-20px font-semibold leading">
+                  <h3 className="text-dark text-[20px] font-semibold leading">
                     Gift Card History
                   </h3>
 
                 </div>
 
-                <p className="text-[#989696] text-14 break">
+                <p className="text-[#989696] text-[14px] break leading-6">
                   View your gift card transactions and wallet activity.
                 </p>
-
               </button>
-
             </div>
-
-          </div>
-
         </div>
+      </Row>
 
-      </div>
-
-    </div>
+    </Section>
   );
 }

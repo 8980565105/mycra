@@ -146,7 +146,7 @@ export default function Wallets() {
                     <input
                       type="numeric"
                       min={0}
-                      maxlength={6}
+                      maxLength={6}
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       className="w-full outline-none"
@@ -175,12 +175,11 @@ export default function Wallets() {
                         type="button"
                         onClick={() => quickAdd(val)}
                         disabled={isDisabled}
-                        className={`border rounded-full px-3 py-1 text-sm font-medium transition
-        ${isDisabled
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition ${isDisabled
                             ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
                             : "border-gray-300 text-gray-800 hover:bg-gray-50 cursor-pointer"
                           }
-      `}
+                        `}
                       >
                         + ₹{val}
                       </button>

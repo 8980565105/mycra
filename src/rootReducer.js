@@ -24,6 +24,7 @@ import attributeReducer from "./features/attribut/attributSlice";
 import childcategoryReducer from "./features/childcategory/childcategorySlice";
 import policyPagesReducer from "./features/Policypages/policypagesslice";
 import emailReducer from "./features/Emails/EmailsSlice";
+import giftCardReducer from "./features/giftCards/giftCradSlice"
 
 export const rootReducer = {
   auth: authReducer,
@@ -52,4 +53,5 @@ export const rootReducer = {
   attributes: attributeReducer,
   policyPages: policyPagesReducer,
   emails: emailReducer,
+  giftCards: giftCardReducer,
 };

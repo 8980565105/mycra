@@ -118,6 +118,12 @@
     adminAdjust: (userId) => `/wallet/admin/adjust/${userId}`,
     adminVerifyKyc: (userId) => `/wallet/admin/verify-kyc/${userId}`,
   },
+  giftCards: {
+    // adminCreate: "/gift-cards/admin/create",
+    // adminAll: "/gift-cards/admin/all",
+    my: "/gift-cards/my",
+    receiver: "/gift-cards/receiver",
+  },
   kyc: {
     validatePan: "/kyc/validate-pan",
     generateOtp: "/kyc/generate-otp",
