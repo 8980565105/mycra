@@ -7,6 +7,11 @@ const productVariantSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
+    brand_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+      default: null,
+    },
     type_id: { type: mongoose.Schema.Types.ObjectId, ref: "Type" },
     attributes: [
       {

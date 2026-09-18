@@ -85,7 +85,14 @@ const buildPipeline = ({
               ...variantMatch,
             },
           },
-
+          {
+            $lookup: {
+              from: "brands",
+              localField: "brand_id",
+              foreignField: "_id",
+              as: "brand",
+            },
+          },
           {
             $lookup: {
               from: "types",
@@ -97,6 +104,7 @@ const buildPipeline = ({
           {
             $addFields: {
               type_id: { $arrayElemAt: ["$type", 0] },
+              brand_id: { $arrayElemAt: ["$brand", 0] },
             },
           },
           {
@@ -150,6 +158,8 @@ const buildPipeline = ({
               mrp: { $first: "$mrp" },
               stock_quantity: { $first: "$stock_quantity" },
               images: { $first: "$images" },
+              brand_id: { $first: "$brand_id" },
+              brand: { $first: "$brand" },
               type_id: { $first: "$type_id" },
               type: { $first: "$type" },
               labels: { $first: "$labels" },
@@ -557,6 +567,7 @@ const getPublicProductById = async (req, res) => {
     if (!product) return sendResponse(res, false, null, "Product not found");
     const variants = await ProductVariant.find({ product_id: product._id })
       .populate("type_id", "name")
+      .populate("brand_id", "name")
       .populate("attributes.attributeId", "name code")
       .populate("attributes.valueId", "value colorHex")
       .lean();
@@ -587,6 +598,7 @@ const getProductById = async (req, res) => {
     }
     const variants = await ProductVariant.find({ product_id: product._id })
       .populate("type_id", "name")
+      .populate("brand_id", "name")
       .populate("attributes.attributeId", "name")
       .populate("attributes.valueId", "value")
       .lean();
