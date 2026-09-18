@@ -12,6 +12,13 @@ import {
   X,
   Star,
   Trash2,
+  FileText,
+  History,
+  Package,
+  MapPin,
+  CreditCard,
+  User,
+  Download,
 } from "lucide-react";
 import sortImg from "../../assets/sorting.png";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,8 +26,13 @@ import { fetchUserOrders, cancelOrder } from "../../features/orders/orderThunk";
 import { addReview } from "../../features/reivews/reviewsThunk";
 import { resetReviewStatus } from "../../features/reivews/reviewsSlice";
 import toast, { Toaster } from "react-hot-toast";
+import Button from "../ui/Button"
+import jsPDF from "jspdf";
+import OrderPdf from "./OrderPdf";
 
 export default function Orders() {
+  const dispatch = useDispatch();
+  const limit = 5;
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -31,6 +43,22 @@ export default function Orders() {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [openActionId, setOpenActionId] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailType, setDetailType] = useState("");
+  const openDetailModal = (order, type) => {
+    setSelectedOrder(order);
+    setDetailType(type);
+    setOpenActionId(null);
+    setIsDetailOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setSelectedOrder(null);
+    setDetailType("");
+    setIsDetailOpen(false);
+  };
+  const [loggedInUser, setLoggedInUser] = useState(null);
   const [reviewData, setReviewData] = useState({
     rating: 5,
     title: "",
@@ -42,8 +70,30 @@ export default function Orders() {
   );
   const sortRef = useRef(null);
   const filterRef = useRef(null);
-  const limit = 5;
-  const dispatch = useDispatch();
+  const actionRef = useRef(null);
+  useEffect(() => {
+  const userStr = localStorage.getItem("user");
+
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      setLoggedInUser(user);
+    } catch (error) {
+      console.error("Invalid user data in localStorage:", error);
+      setLoggedInUser(null);
+    }
+  }
+}, []);
+  const getUserDetail = (field) => {
+    if (!loggedInUser) return "N/A";
+
+    return (
+      loggedInUser[field] ||
+      loggedInUser.user?.[field] ||
+      loggedInUser.customer?.[field] ||
+      "N/A"
+    );
+  };
   useEffect(() => {
     if (reviewSuccess) {
       toast.success("Review submitted successfully!", {
@@ -101,6 +151,9 @@ export default function Orders() {
       }
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setIsFilterOpen(false);
+      }
+      if (actionRef.current && !actionRef.current.contains(event.target)) {
+        setOpenActionId(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -176,6 +229,38 @@ export default function Orders() {
     setIsCancelOpen(false);
   };
   if (loading) return <p className="text-center py-10">Loading orders...</p>;
+
+ const downloadOrderPdf = (order) => {
+  try {
+    const orders = OrderPdf({
+      order,
+      getUserDetail,
+      formatDate,
+    });
+
+    const success = orders.generateOrderPdf();
+
+    if (success) {
+      toast.success("Order Pdf downloaded successfully!", {
+          position: "top-center",
+        }
+      );
+
+      setOpenActionId(null);
+    } else {
+      toast.error("Failed to generate Pdf.", {
+          position: "top-center",
+        }
+      );
+    }
+  } catch (error) {
+    console.error("Download Pdf error:", error);
+    toast.error("Failed to generate Pdf.", {
+        position: "top-center",
+      }
+    );
+  }
+};
   return (
     <div>
       <Toaster position="top-center" />
@@ -277,10 +362,10 @@ export default function Orders() {
         </div>
       </div>
 
-      <table className="hidden min-[980px]:table w-full box-shadow rounded-[10px] border-collapse overflow-hidden">
+      <table className="hidden min-[980px]:table w-full box-shadow rounded-[10px] border-collapse">
         <thead className="light-color text-20px text-dark">
           <tr>
-            <th className="p-[12px] px-[30px] py-[10px] text-left font-normal">
+            <th className="p-[12px] px-[30px] py-[10px] text-left font-normal rounded-tl-[10px]">
               #
             </th>
             <th className="p-[12px] py-[10px] text-left flex gap-[7px] items-center font-normal">
@@ -294,7 +379,7 @@ export default function Orders() {
               Address
             </th>
             <th className="p-[12px] py-[10px] text-left font-normal">Status</th>
-            <th className="p-[12px] py-[10px] px-[30px] text-center font-normal">
+            <th className="p-[12px] py-[10px] px-[30px] text-center font-normal rounded-tr-[10px]">
               Action
             </th>
           </tr>
@@ -304,7 +389,7 @@ export default function Orders() {
             filteredOrders.map((order, index) => (
               <tr
                 key={order._id}
-                className="border-b light-border border-0.5 text-p sec-text-color"
+                className="border-b light-border border-0.5 text-p sec-text-color last:border-b-0 break"
               >
                 <td className="p-3 px-[30px] h-[75px]">
                   {index + 1 + (page - 1) * limit}
@@ -347,23 +432,226 @@ export default function Orders() {
                     {order.status}
                   </span>
                 </td>
-                <td className="p-3 px-[30px] h-[75px]">
-                  <div className="flex justify-center items-center gap-[10px] sec-text-color">
-                    <button onClick={() => openReviewModal(order)}>
+                <td className="p-3 px-[30px] h-[75px] flex w-full justify-end">
+                  <div className="inline-flex items-center gap-[5px] sec-text-color">
+                    <button onClick={() => openReviewModal(order)}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-[#999] transition hover:bg-gray-100 hover:text-gray-700">
                       <MessageCircleMore size={20} />
                     </button>
-                    <button onClick={() => openViewModal(order)}>
+                    <button onClick={() => openViewModal(order)}
+                      className="flex h-8 w-8 items-center justify-center rounded-md text-[#999] transition hover:bg-gray-100 hover:text-gray-700">
                       <Eye size={20} />
                     </button>
                     {order.status !== "cancelled" && (
                       <button
                         onClick={() => openCancelModal(order)}
-                        className="text-red-500"
+                        className="flex h-8 w-8 items-center text-red-500 justify-center rounded-md text-[#999] transition hover:bg-gray-100 hover:text-gray-700"
                       >
                         <Trash2 size={20} />
                       </button>
                     )}
-                    <MoreVertical size={20} />
+                    {/* <MoreVertical size={20} /> */}
+                    <div
+                      ref={actionRef}
+                      className="relative"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* More Action Button */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOpenActionId(openActionId === order._id
+                              ? null
+                              : order._id
+                          )
+                        }
+                        className="flex h-8 w-8 items-center justify-center rounded-md text-[#999] transition hover:bg-gray-100 hover:text-gray-700"
+                        title="More Actions"
+                      >
+                        <MoreVertical size={20} />
+                      </button>
+
+                      {/* More Action Dropdown */}
+                    {openActionId === order._id && (
+                      <div className="absolute right-0 top-[38px] z-10 w-[210px] overflow-hidden rounded-[8px] border border-gray-200 bg-white  shadow-xl" >
+
+                        {/* Customer Details */}
+                        <button
+                          type="button"
+                          onClick={() => openDetailModal(order, "customer")}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-p sec-text-color transition hover:bg-gray-50"
+                        >
+                          <User size={17} strokeWidth={1.8} />
+                          <span>Custmer Details</span>
+                        </button>
+
+                        {/* Shipping Details */}
+                        <button
+                          type="button"
+                          onClick={() => openDetailModal(order, "shipping")}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-p sec-text-color transition hover:bg-gray-50"
+                        >
+                          <MapPin size={17} strokeWidth={1.8} />
+                          <span>Shipping Details</span>
+                        </button>
+
+
+                        {/* download pdf */}
+                      <button
+                          type="button"
+                          onClick={() => downloadOrderPdf(order)}
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-p sec-text-color transition hover:bg-gray-50"
+                        >
+                          <Download size={17} strokeWidth={1.8} />
+                          <span>Order PDF</span>
+                        </button>
+                      </div>
+                    )}
+                    {isDetailOpen && selectedOrder && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity">
+                        <div className="w-full max-w-[600px] max-h-[85vh] overflow-hidden rounded-xl bg-white shadow-2xl max-h-[65vh] overflow-y-auto no-scrollbar ">
+
+                          {/* Header */}
+                          <div className="flex items-center justify-between border-b p-5">
+                            <div>
+                              <h3 className="text-20px font-semibold text-black ">
+                                {detailType === "customer" && "Customer Details"}
+                                {detailType === "shipping" && "Shipping Details"}
+                              </h3>
+
+                              {/* <p className="mt-1 text-[12px] sec-text-color">
+                                Order #{selectedOrder.order_id || selectedOrder._id}
+                              </p> */}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={closeDetailModal}
+                              className="rounded-full text-gray-500 transition hover:text-black"
+                            >
+                              <X size={22} />
+                            </button>
+                          </div>
+
+                          {/* Content */}
+                          <div className="p-6">
+
+                            {/* CUSTOMER */}
+                            {detailType === "customer" && (
+                              <div className="gap-4 grid grid-cols-2 text-black">
+                                <div className="rounded-lg bg-gray-50 p-4">
+                                  <p className="text-sm">
+                                    Customer Name
+                                  </p>
+
+                                  <p className="mt-1 text-[14px]  sec-text-color">
+                                    {selectedOrder.user_id?.name || selectedOrder.customer?.name ||
+                                      selectedOrder.user?.name || getUserDetail("name")}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-lg bg-gray-50 p-4">
+                                  <p className="text-sm ">
+                                    Email
+                                  </p>
+
+                                  <p className="mt-1 text-[14px] sec-text-color">
+                                    {selectedOrder.user_id?.email || selectedOrder.customer?.email ||
+                                      selectedOrder.user?.email || getUserDetail("email")}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-lg bg-gray-50 p-4">
+                                  <p className="text-sm ">
+                                    Phone
+                                  </p>
+
+                                  <p className="mt-1 text-[14px] sec-text-color">
+                                    {selectedOrder.shippingAddress?.phone || selectedOrder.user_id?.phone ||
+                                      selectedOrder.customer?.phone || selectedOrder.user?.phone || getUserDetail("phone")}
+                                  </p>
+                                </div>
+
+                              </div>
+                            )}
+
+                            {/* SHIPPING */}
+                            {detailType === "shipping" && (
+                              <div className="space-y-4 text-black">
+
+                                <div className="rounded-lg bg-gray-50 p-4">
+                                  <p className="text-sm">
+                                    Address
+                                  </p>
+                                  <p className="mt-1 text-[14px]  sec-text-color">
+                                    {selectedOrder.shippingAddress?.address ||
+                                      "No address provided"}
+                                  </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                                  <div className="rounded-lg bg-gray-50 p-4">
+                                    <p className="text-sm ">
+                                      City
+                                    </p>
+                                    <p className="mt-1 text-[14px] sec-text-color">
+                                      {selectedOrder.shippingAddress?.city || "N/A"}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-lg bg-gray-50 p-4">
+                                    <p className="text-sm ">
+                                      State
+                                    </p>
+                                    <p className="mt-1 text-[14px] sec-text-color">
+                                      {selectedOrder.shippingAddress?.state || "N/A"}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-lg bg-gray-50 p-4">
+                                    <p className="text-sm ">
+                                      Pincode
+                                    </p>
+                                    <p className="mt-1 text-[14px] sec-text-color">
+                                      {selectedOrder.shippingAddress?.pincode ||
+                                        selectedOrder.shippingAddress?.zip ||
+                                        "N/A"}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-lg bg-gray-50 p-4">
+                                    <p className="text-sm">
+                                      Country
+                                    </p>
+                                    <p className="mt-1 text-[14px] sec-text-color">
+                                      {selectedOrder.shippingAddress?.country || "N/A"}
+                                    </p>
+                                  </div>
+
+                                </div>
+
+                              </div>
+                            )}
+
+                          </div>
+
+                          {/* Footer */}
+                          <div className="flex justify-end border-t p-4">
+                            <Button
+                              type="button"
+                              variant="common"
+                              onClick={closeDetailModal}
+                              className="!p-[10px]"
+                            >
+                              Close
+                            </Button>
+                          </div>
+
+                        </div>
+                      </div>
+                    )}
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -396,8 +684,7 @@ export default function Orders() {
                       <button
                         key={i}
                         onClick={() => setPage(i + 1)}
-                        className={`w-[34px] h-[34px] text-light p-1 text-14 rounded-[3px] ${page === i + 1 ? "light-color " : "box-shadow"
-                          }`}
+                        className={`w-[34px] h-[34px] text-light p-1 text-14 rounded-[3px] ${page === i + 1 ? "light-color " : "box-shadow"}`}
                       >
                         {i + 1}
                       </button>
@@ -421,9 +708,14 @@ export default function Orders() {
 
       {isViewOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity">
-          <div className="bg-white w-[90%] max-w-[600px] rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold text-dark">Order Details</h3>
+          <div className="bg-white w-[90%] max-w-[600px] rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in duration-300 overflow-y-auto max-h-[65vh] no-scrollbar">
+            <div className="flex items-center justify-between p-5 border-b">
+              <div>
+                <h3 className="text-20px font-semibold text-black ">Order Details</h3>
+                <p className="mt-1 text-[12px] sec-text-color">
+                  OrderId: {selectedOrder.order_id || selectedOrder._id}
+                </p>
+                </div>
               <button
                 onClick={closeModal}
                 className="text-gray-500 hover:text-black"
@@ -432,51 +724,65 @@ export default function Orders() {
               </button>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-400">Order ID</p>
-                  <p className="font-medium">
-                    {selectedOrder.order_id || selectedOrder._id}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Status</p>
-                  <p className="capitalize font-medium text-blue-600">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <p className="text-sm ">Status</p>
+                  {/* <p className="capitalize font-medium text-blue-600">
                     {selectedOrder.status}
-                  </p>
+                  </p> */}
+                  <span
+                    className={`inline-flex justify-center items-center mt-1 p-1 text-[12px] font-medium rounded-[5px] min-w-[80px] capitalize ${
+                      selectedOrder.status === "completed"
+                        ? "bg-[rgba(62,232,99,10%)] text-[#3EE878]"
+                        : selectedOrder.status === "pending"
+                          ? "bg-[rgba(235,23,36,10%)] text-[#EB1724]"
+                          : selectedOrder.status === "cancelled"
+                            ? "bg-[rgba(239,68,68,10%)] text-red-500"
+                            : selectedOrder.status === "shipped"
+                              ? "bg-purple-100 text-purple-700"
+                              : selectedOrder.status === "ready_to_ship"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-yellow-100 text-yellow-600"
+                    }`}
+                  >
+                    {selectedOrder.status?.replace("_", " ")}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-400">Total Price</p>
-                  <p className="font-bold">
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <p className="text-sm ">Total Price</p>
+                  <p className="text-[14px] leading-6 sec-text-color mt-1">
                     ₹{selectedOrder.total_price?.toLocaleString()}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-400">Total Price</p>
-                  <p className="font-bold">
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <p className="text-sm">Total Price</p>
+                  <p className="text-[14px] leading-6 sec-text-color mt-1">
                     ₹{(selectedOrder.total_price * 0.1).toLocaleString("en-IN")}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-400">Payment Method</p>
-                  <p>{selectedOrder.payment_method || "N/A"}</p>
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <p className="text-sm ">Payment Method</p>
+                  <p className="text-[14px] leading-6 sec-text-color mt-1">
+                    {selectedOrder.payment_method || "N/A"}
+                  </p>
                 </div>
-                <div className="col-span-2">
-                  <p className="text-sm text-gray-400">Shipping Address</p>
-                  <p className="text-sm">
+              </div>
+               <div className=" rounded-lg bg-gray-50 p-4">
+                  <p className="text-sm ">Shipping Address</p>
+                  <p className="text-[14px] leading-6 sec-text-color mt-1">
                     {selectedOrder.shippingAddress?.address ||
                       "No address provided"}
                   </p>
                 </div>
-              </div>
             </div>
             <div className="p-4 border-t flex justify-end">
-              <button
+              <Button
+                variant="common"
                 onClick={closeModal}
-                className="bg-gray-100 px-4 py-2 rounded text-sm font-medium hover:bg-gray-200"
+                className="!p-[10px]"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -631,6 +937,7 @@ export default function Orders() {
         totalPages={totalPages}
         limit={limit}
         onPageChange={(newPage) => setPage(newPage)}
+        downloadOrderPdf={downloadOrderPdf}
       />
     </div>
   );

@@ -6,8 +6,12 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUp,
+  Download,
 } from "lucide-react";
 import sortImg from "../../assets/sorting.png";
+import { useSelector } from "react-redux";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCaretDown, faCaretUp } from "@fortawesome/free-solid-svg-icons";
 
 export default function OrderCardMobile({
   orders,
@@ -16,9 +20,10 @@ export default function OrderCardMobile({
   limit,
   onPageChange,
   totalPages,
+  downloadOrderPdf
 }) {
   const [openRow, setOpenRow] = useState(null);
-
+  const reviews = useSelector((state) => state.reviews.reviews);
   const toggleRow = (id) => {
     setOpenRow(openRow === id ? null : id);
   };
@@ -41,7 +46,7 @@ export default function OrderCardMobile({
   return (
     <div className="block custom-lg:hidden [box-shadow:0_2px_4px_rgba(0,0,0,25%)] rounded-[10px] overflow-hidden">
       <div className="block">
-        <div className="flex items-center gap-10 light-color text-20px text-dark font-normal p-2 px-[12px]">
+        <div className="flex items-center gap-6 sm:gap-10 light-color text-20px text-dark font-normal p-2 px-[12px]">
           <span className="text-black text-p ">#</span>
           <span className="text-black text-p flex gap-[5px] items-center">
             Order Id
@@ -51,27 +56,29 @@ export default function OrderCardMobile({
       </div>
 
       {orders.map((order, index) => (
-        <div key={order._id} className="border-b">
+        <div key={order._id} className="border-b last:border-0">
           <div
             className="flex justify-between items-center px-[12px] py-[15px]"
             onClick={() => toggleRow(order._id)}
           >
-            <div className="flex items-center gap-10">
+            <div className="flex items-center gap-6 sm:gap-10">
               <span className="sec-text-color text-p ">{index + 1}</span>
-              <span className="sec-text-color text-p ">
+              <span className="sec-text-color text-p break">
                 {order.order_id || order._id}
               </span>
             </div>
             {openRow === order._id ? (
-              <ChevronUp className="w-5 h-5 sec-text-color" />
+              <FontAwesomeIcon icon={faCaretUp} className="sec-text-color"/>
             ) : (
-              <ChevronDown className="w-5 h-5 sec-text-color" />
+              <FontAwesomeIcon icon={faCaretDown} className="sec-text-color"/>
             )}
           </div>
 
           {/* Expanded Details */}
           {openRow === order._id && (
-            <div className="flex flex-col gap-[8px] px-[60px] pb-[20px] text-14 sec-text-color">
+            // <div className="flex flex-col gap-[10px] px-[46px] sm:px-[60px] pb-[20px] text-14 sec-text-color">
+            <div className="px-[46px] sm:px-[60px] pb-[20px] text-14 sec-text-color mt-2 sm:mt-4">
+            <div className="flex flex-col gap-[10px]">
               <p className="flex items-center gap-2">
                 <span className="text-black w-[80px] inline-block">Date:</span>
                 <span>{formatDate(order.createdAt)}</span>
@@ -84,14 +91,13 @@ export default function OrderCardMobile({
               <p className="flex items-center gap-2">
                 <span className="text-black w-[80px] inline-block">Paid:</span>{" "}
                 <span
-                  className={`  px-2 py-1 text-[12px]  font-medium rounded-[3px] w-[60px] text-center  items-center ${
-                    order.is_paid
-                      ? "bg-[rgba(62,232,99,10%)] text-[#3EE878]"
-                      : "bg-[rgba(235,23,36,10%)] text-[#EB1724]"
-                  }`}
-                >
-                  {order.is_paid ? "Yes" : "No"}
-                </span>
+                    className={`flex justify-center items-center px-2 py-1 text-[12px] font-medium rounded-[3px] w-[60px] ${order.payment_method === "Online"
+                        ? "bg-[rgba(62,232,99,10%)] text-[#3EE878]"
+                        : "bg-[rgba(235,23,36,10%)] text-[#EB1724]"
+                      }`}
+                  >
+                    {order.payment_method}
+                  </span>
               </p>
               <p className="flex items-center gap-2">
                 <span className="text-black w-[80px] inline-block">
@@ -104,23 +110,50 @@ export default function OrderCardMobile({
                   Status:
                 </span>{" "}
                 <span
-                  className={`px-2 py-1 text-[12px]  font-medium rounded-[3px] w-[80px] lg:w-[98px] text-center items-center ${
-                    order.status === "completed"
-                      ? "bg-[rgba(62,232,99,10%)] text-[#3EE878]"
-                      : order.status === "pending"
-                        ? "bg-[rgba(235,23,36,10%)] text-[#EB1724]"
-                        : "bg-yellow-100 text-yellow-600"
-                  }`}
-                >
-                  {order.status}
-                </span>
+                    className={`flex justify-center items-center px-2 py-1 text-[12px] font-medium rounded-[3px] w-[98px] ${order.status === "completed"
+                        ? "bg-[rgba(62,232,99,10%)] text-[#3EE878]"
+                        : order.status === "pending"
+                          ? "bg-[rgba(235,23,36,10%)] text-[#EB1724]"
+                          : order.status === "cancelled"
+                            ? "bg-[rgba(239,68,68,10%)] text-red-500"
+                            : order.status === "shipped"
+                              ? " bg-purple-100 text-purple-700"
+                              : order.status === "ready_to_ship"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-yellow-100 text-yellow-600"
+                      }`}
+                  >
+                    {order.status}
+                  </span>
               </p>
               <p className="flex items-center gap-2">
                 <span className="text-black w-[80px] inline-block">
                   Comments:
                 </span>
-                <span>1 Comments</span>
+                <span>
+                  {/* 1 Comments */}
+                  {reviews?.length || 0} Comments
+                </span>
               </p>
+              <p className="flex items-center gap-2">
+                <span className="text-black w-[80px] inline-block">
+                    Order PDF:
+                </span>
+                <span>
+                <button 
+                    type="button"
+                    onClick={() => downloadOrderPdf(order)}
+                    className="flex w-full items-center text-left gap-2"
+                  >
+                    <Download size={17} strokeWidth={1.8}
+                    />
+                    <span>
+                      Download PDF
+                    </span>
+                  </button>
+                </span>
+              </p>
+            </div>
             </div>
           )}
         </div>

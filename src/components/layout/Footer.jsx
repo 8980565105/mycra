@@ -44,7 +44,7 @@ export default function Footer() {
   const { footers = [], loading } = useSelector((state) => state.footer);
   // const { info: storeInfo } = useSelector((state) => state.store);
   const settings = useSelector((state) => state.settings.data);
-
+  const currentYear = new Date().getFullYear();
   const socialLinks = settings?.social_links || [];
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -54,8 +54,7 @@ export default function Footer() {
   const footertext =
     settings?.footer_text ||
     "Become a MYcra member and get 10% off your next purchase!";
-  const copyright =
-    settings?.copyright_text || "2026 MYcra Fashion Ltd. All Rights Reserved";
+  const copyright = `${currentYear} MYcra Fashion Ltd. All Rights Reserved`;
   const contactAddress =
     [
       settings?.address?.street,
@@ -335,7 +334,8 @@ export default function Footer() {
             </Row>
           </Section>
           <div className="w-full p-[10px] text-center text-white bg-color">
-            <span>©</span> <span>{copyright}</span>
+            <span>©</span>{" "}
+            <span>{copyright}</span>
           </div>
         </div>
       </div>

@@ -692,7 +692,7 @@ const Header = () => {
       </Row>
       {isMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
