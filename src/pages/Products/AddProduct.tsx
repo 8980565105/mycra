@@ -96,20 +96,37 @@ export default function ProductFormPage() {
     return types.find((t: any) => (t._id || t) === typeId) || null;
   }, [selectedTypeDetails, types, typeId]);
   const availableBrands = useMemo(() => {
-    if (!activeTypeObject) return [];
-    const rawTypeBrands = Array.isArray(activeTypeObject.brandIds)
-      ? activeTypeObject.brandIds
-      : Array.isArray(activeTypeObject.brands)
-        ? activeTypeObject.brands
-        : Array.isArray(activeTypeObject.brandId)
-          ? activeTypeObject.brandId
-          : activeTypeObject.brandId
-            ? [activeTypeObject.brandId]
-            : [];
-    if (rawTypeBrands.length === 0) return [];
-    const typeBrandIds = rawTypeBrands.map((b: any) => (typeof b === "object" ? b._id : b));
-    return brands.filter((brand: any) => typeBrandIds.includes(brand._id));
-  }, [activeTypeObject, brands]);
+    if (!activeTypeObject) {
+      return brands;
+    }
+
+    const brandIds = [
+      ...(activeTypeObject.brandIds || []),
+      ...(activeTypeObject.brands || []),
+      ...(activeTypeObject.brandId
+        ? [activeTypeObject.brandId]
+        : []),
+    ]
+      .map((item: any) =>
+        String(item?._id || item?.id || item)
+      );
+
+    const filtered = brands.filter((brand: any) => brandIds.includes(String(brand._id)));
+    if (brandId) {
+      const selectedBrand = brands.find(
+        (brand: any) => String(brand._id) === String(brandId)
+      );
+
+      if (selectedBrand && !filtered.some(
+          (brand: any) => String(brand._id) === String(brandId)
+        )
+      ) {
+        return [selectedBrand, ...filtered];
+      }
+    }
+
+    return filtered;
+  }, [activeTypeObject, brands, brandId]);
   const allAttributePool = useMemo(() => {
     const map = new Map<string, any>();
     (attributes || []).forEach((a: any) => map.set(a._id, a));
@@ -175,9 +192,33 @@ export default function ProductFormPage() {
           setShippingValue(p.shipping_value != null ? String(p.shipping_value) : "");
           if (Array.isArray(p.variants) && p.variants.length > 0) {
             const firstV = p.variants[0];
-            if (firstV.brand_id) setBrandId(firstV.brand_id._id || firstV.brand_id);
-            if (firstV.type_id) setTypeId(firstV.type_id._id || firstV.type_id);
-            if (firstV.fabric_id) setFabricId(firstV.fabric_id._id || firstV.fabric_id);
+            // if (firstV.brand_id) setBrandId(firstV.brand_id._id || firstV.brand_id);
+            if (firstV.brand_id) {
+              const loadedBrandId =
+                typeof firstV.brand_id === "object"
+                  ? firstV.brand_id?._id
+                  : firstV.brand_id;
+
+              setBrandId(loadedBrandId ? String(loadedBrandId) : "");
+            }
+            // if (firstV.type_id) setTypeId(firstV.type_id._id || firstV.type_id);
+            // if (firstV.fabric_id) setFabricId(firstV.fabric_id._id || firstV.fabric_id);
+            if (firstV.type_id) {
+              const loadedTypeId =
+                typeof firstV.type_id === "object"
+                  ? firstV.type_id?._id
+                  : firstV.type_id;
+
+              setTypeId(loadedTypeId ? String(loadedTypeId) : "");
+            }
+            if (firstV.fabric_id) {
+              const loadedFabricId =
+                typeof firstV.fabric_id === "object"
+                  ? firstV.fabric_id?._id
+                  : firstV.fabric_id;
+
+              setFabricId(loadedFabricId ? String(loadedFabricId) : "");
+            }
             const dynAttrsUnion: { [attrId: string]: Set<string> } = {};
             const loadedSpecAttrs: { [attrId: string]: string } = {};
             const mappedVariants = p.variants.map((v: any, idx: number) => {
@@ -411,16 +452,16 @@ export default function ProductFormPage() {
 
     const processedVariants = variants.map((v) => {
       const dynAttrsObj = { ...selectedSpecAttrs, ...(v.dynamicAttributes || {}) };
-      const formattedAttributes = Object.entries(dynAttrsObj).map(([attributeId, valueId]) => ({
+      const formattedAttributes = Object.entries(dynAttrsObj).filter(([_, valueId]) => valueId).map(([attributeId, valueId]) => ({
         attributeId,
         valueId,
       }));
 
       return {
         ...v,
-        brand_id: v.brand_id || brandId || undefined,
-        fabric_id: v.fabric_id || fabricId || undefined,
-        type_id: v.type_id || typeId || undefined,
+        brand_id: brandId || v.brand_id || undefined,
+        type_id: typeId || v.type_id || undefined,
+        fabric_id: fabricId || v.fabric_id || undefined,
         attributes: formattedAttributes,
       };
     });
