@@ -208,7 +208,7 @@ import {
   Check,
 } from "lucide-react";
 
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import { fetchWallet } from "../../features/wallet/walletThunk";
@@ -1131,28 +1131,19 @@ const { user } = useSelector(
 
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  navigate("/my-account/wallets")
-                }
-                className="text-left border border-gray-200 rounded-md p-4 hover:border-[var(--primary-color)] transition"
-              >
-
-                <div className="flex items-center gap-2 mb-3">
-
-                  <History size={20} className="text-[var(--primary-color)]" />
-
-                  <h3 className="text-dark text-[20px] font-semibold leading">
-                    Gift Card History
-                  </h3>
-
-                </div>
-
-                <p className="text-[#989696] text-[14px] break leading-6">
-                  View your gift card transactions and wallet activity.
-                </p>
-              </button>
+              <div className="text-left border border-gray-200 rounded-md p-4 hover:border-[var(--primary-color)] transition">
+                <Link to="/my-account/wallets" className="block w-full h-full" >
+                  <div className="flex items-center gap-2 mb-3">
+                    <History size={20} className="text-[var(--primary-color)]" />
+                    <h3 className="text-dark text-[20px] font-semibold leading">
+                      Gift Card History
+                    </h3>
+                  </div>
+                  <p className="text-[#989696] text-[14px] break leading-6">
+                    View your gift card transactions and wallet activity.
+                  </p>
+                </Link>
+              </div>
             </div>
         </div>
       </Row>

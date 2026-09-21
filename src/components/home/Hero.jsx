@@ -73,11 +73,11 @@ export default function Hero() {
 
   return (
     <div className="relative w-full mx-auto">
-      <div className="hidden lg:flex absolute items-center left-0 top-0 bottom-0 flex-col justify-between z-20 py-8 w-[50px]">
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-[1px] h-[50px] bg-[#D2AF9F]" />
+      <div className="hidden lg:flex absolute items-center left-0 top-0 bottom-0 flex-col justify-between z-20 pb-8 w-[50px]">
+        <div className="flex flex-col items-center gap-5">
+          <div className="w-[1px] h-[100px] bg-[#D2AF9F]" />
           <span className="rotate-[-90deg] text-[#D2AF9F] text-xs tracking-widest mt-[60px] whitespace-nowrap">
-            Winter Collection
+            Trending Collection
           </span>
         </div>
         <span className="rotate-[-90deg] text-[#D2AF9F] text-xs mb-[30px]">
@@ -119,27 +119,38 @@ export default function Hero() {
               >
                 <div className="absolute inset-0 bg-black/25" />
                 <div className="relative z-10 w-full h-full min-h-[220px] lg:min-h-[680px] flex items-center px-6 sm:px-12 lg:px-20 py-10 lg:py-0">
-                  <div className="flex-1 flex flex-col items-start justify-center gap-3 lg:gap-6 max-w-[250px] sm:max-w-[400px] lg:max-w-[600px]">
-                    <h1 className="text-stroke text-shadow-custom py-2 lg:py-5">
+                  {/* <div className="flex-1 flex flex-col items-start justify-center gap-3 lg:gap-6 max-w-[250px] sm:max-w-[400px] lg:max-w-[600px]"> */}
+                  <div className=" max-w-[250px] sm:max-w-[400px] lg:max-w-[600px] text-left">
+                    <div className="relative">
+                    <h1 className="mb-10">
                       <span
-                        className="font-sans italic font-bold  sm:text-[26px] lg:text-[80px] text-black "
+                        className="font-sans italic sm:text-[26px] lg:text-[80px] text-black  tracking-normal"
+                        dangerouslySetInnerHTML={{ __html: slide.title }}
+                      />
+                      <span
+                        className=" absolute top-0 left-[4px] [text-shadow:1px_4px_4px_0px_rgba(0,0,0,0.50)] tracking-normal
+                          font-sans italic sm:text-[26px] lg:text-[80px] text-transparent w-full -z-[10] [-webkit-text-stroke:1.5px_white] "
                         dangerouslySetInnerHTML={{ __html: slide.title }}
                       />
                     </h1>
-                    <span className="text-black text-[8px] md:text-[8px] lg:text-[24px] leading-[19px] relative">
+                    </div>
+                    <div>
+                    <span className="relative text-black text-[8px] md:text-[8px] lg:text-[24px] leading-[19px] block">
                       {slide.description}
-                      <span className="absolute left-0 bottom-0 sm:translate-y-[0px] md:translate-y-[0px] lg:translate-y-[10px]  w-[56px] sm:w-[56px] md:w-[90px] lg:w-[225px] h-[0.5px] bg-black"></span>
+                      <span className="absolute left-0 bottom-0 lg:translate-y-[10px] w-[60%] h-[0.5px] bg-black"></span>
                     </span>
-
+                    </div>
+                    <div>
                     {slide.is_button !== false && (
                       <Button
                         onClick={() => navigate(slide.button_link)}
                         variant="common"
-                        className="lg:w-[160px] w-[72px]"
+                        className="lg:w-[160px] w-[72px] mt-14"
                       >
                         {slide.button_name}
                       </Button>
                     )}
+                    </div>
                   </div>
                 </div>
               </div>

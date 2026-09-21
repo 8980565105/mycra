@@ -506,15 +506,12 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                               e.stopPropagation();
                               handleAddToCart(p);
                             }}
-                            className={`w-[20px] h-[20px] md:w-[20px] md:h-[20px]
-  lg:w-[40px] lg:h-[40px]
-  flex items-center justify-center rounded-full border
-  transition-all duration-200
-  ${
-    isInCart(p._id, currentVariant?._id)
-      ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
-      : "bg-white text-black hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] hover:text-white"
-  }`}
+                            className={`w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center rounded-full border transition-all duration-200
+                            ${
+                              isInCart(p._id, currentVariant?._id)
+                                ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
+                                : "bg-white text-black hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)] hover:text-white"
+                            }`}
                           >
                             <FontAwesomeIcon
                               icon={faCartShopping}
@@ -574,7 +571,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                         )}
                       </div>
                       {uniqueColors.length > 0 && (
-                      <div className="flex gap-1.5 py-1 justify-center">
+                      <div className="flex gap-1.5 pt-2 justify-center">
                         {uniqueColors.map((clr, idx) => {
                           const clrVariant = getVariantForColor(p, clr.code);
                           const clrOutOfStock =
@@ -597,9 +594,7 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                                   [p._id]: clr.code,
                                 }));
                               }}
-                              className={`w-4 h-4 rounded-full border-2 transition-transform hover:scale-110
-                                ${isSelected ? "border-black scale-110" : ""}
-                              `}
+                              className="w-4 h-4 rounded-full shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)] "
                               style={{ backgroundColor: clr.code }}
                             />
                           );

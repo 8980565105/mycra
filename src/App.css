@@ -61,6 +61,7 @@
 
 :root {
   /* Theme Colors */
+  --light-bg: #D2AF9F4D;
    --primary-color: #F43297; /* your pink color */
   --theme-color: #F43297;  
   --sec-theme-color-30: rgba(210, 175, 159, 0.3); /* 30% opacity */
@@ -112,7 +113,9 @@
 .button {
   transition: all 0.3s ease;
 }
-
+.light-bg {
+  background-color: var(--light-bg);
+}
 .button:hover {
   background-color: var(--theme-hover-color);
   color: white !important;
@@ -376,14 +379,6 @@
 .prose td, .prose th {
   border: 1px solid #e2e8f0;
   padding: 8px 12px;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
 
 .discount-badge {

@@ -43,7 +43,7 @@ export default function UserProfile() {
   };
 
   return (
-    <Section className="bg-theme !pt-[75px]">
+    <Section className="light-bg !pt-[75px] ">
       <Row className="flex flex-col md:flex-row justify-between items-center md:items-start gap-y-[30px] md:gap-x-[30px] !max-w-[1122px] pb-[57px]">
         <div className="text-center md:text-left flex-1">
           <h1 className="text-[40px] font-medium text-dark mb-[24px] leading">

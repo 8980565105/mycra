@@ -13,17 +13,21 @@ import Button from "../components/ui/Button";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { addMoneyToWallet, fetchWallet } from "../features/wallet/walletThunk";
+import { getMyGiftCards } from "../features/giftCards/giftCardThunk";
 
 export default function Wallets() {
   const navigation = useNavigate();
   const dispatch = useDispatch();
   const { wallet, loading, error } = useSelector((state) => state.wallet);
+  const { giftCards } = useSelector((state) => state.giftCards);
   const [amount, setAmount] = useState(1000);
   const [addingMoney, setAddingMoney] = useState(false);
+  const isKycVerified = wallet?.isKycVerified;
   useEffect(() => {
     dispatch(fetchWallet());
+    dispatch(getMyGiftCards());
   }, [dispatch]);
-  const isKycVerified = wallet?.isKycVerified;
+  
   const handleAddMoney = async () => {
     if (!amount || amount <= 0) return;
     setAddingMoney(true);
@@ -50,41 +54,57 @@ export default function Wallets() {
     setAmount(currentAmount + val);
   };
 
+const walletBalance = Number(wallet?.balance || 0);
+const voucherBalance = Number(wallet?.voucherBalance || 0);
+
+const activeGiftCards = giftCards?.filter(
+    (card) =>
+      String(card.status).toLowerCase() === "active" &&
+      Number(card.remainingBalance || 0) > 0
+  ) || [];
+
+const totalGiftCardBalance = activeGiftCards.reduce(
+  (total, card) => total + Number(card.remainingBalance || 0),
+  0
+);
+
+const totalBalance = walletBalance + totalGiftCardBalance + voucherBalance;
+
   return (
     <>
       <h1 className="text-[28px] font-bold text-gray-900 mb-4">
         Mycra Pay balance
       </h1>
-      <div className="flex flex-col lg:flex-row gap-4 max-w-6xl">
+      <div className="flex flex-col lg:flex-row gap-[30px] max-w-6xl">
         <div className="flex-1 space-y-4">
           <div className="bg-gray-50 rounded-lg shadow-sm p-2 md:p-4">
             <div className="flex justify-between items-center py-4 border-b border-dashed border-gray-300">
               <span className="font-bold text-gray-900">Total balance</span>
-              <span className="font-bold text-teal-700 text-xl">
-                ₹{wallet?.totalBalance?.toFixed(2) || "0.00"}
+              <span className="font-bold text-theme text-xl">
+                ₹{totalBalance.toLocaleString("en-IN")}
               </span>
             </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-gray-600">Wallet</span>
               <span className="text-gray-600">
-                ₹{wallet?.balance?.toFixed(2) || "0.00"}
+                ₹{wallet?.balance.toLocaleString("en-IN")}
               </span>
             </div>
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <div>
                 <div className="text-gray-600">Gift Cards</div>
-                <div className="text-xs text-gray-400">
+                <div className="text-xs sec-text-color">
                   Includes Cashback & Refunds
                 </div>
               </div>
               <span className="text-gray-600">
-                ₹{wallet?.giftCardBalance?.toFixed(2) || "0.00"}
+                ₹{totalGiftCardBalance.toLocaleString("en-IN")}
               </span>
             </div>
             <div className="flex justify-between items-center py-3">
               <span className="text-gray-600">Vouchers</span>
               <span className="text-gray-600">
-                ₹{wallet?.voucherBalance?.toFixed(2) || "0.00"}
+                ₹{wallet?.voucherBalance.toLocaleString("en-IN")}
               </span>
             </div>
           </div>

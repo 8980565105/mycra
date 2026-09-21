@@ -10,6 +10,7 @@ import {
 import { clearAddressStatus } from "../../features/address/addressSlice";
 import Button from "../ui/Button";
 import toast, { Toaster } from "react-hot-toast";
+import { Edit, Plus, X } from "lucide-react";
 
 const emptyForm = {
   full_name: "",
@@ -246,14 +247,14 @@ function Address() {
   return (
     <div>
       <Toaster />
-      <h2 className="text-xl font-semibold mb-4">Your Addresses</h2>
+      <h2 className="text-[28px] font-bold text-gray-900 mb-4">Your Addresses</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <button
           onClick={openAddForm}
           className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-48 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition"
         >
-          <span className="text-3xl mb-2">+</span>
+          <span className="text-3xl mb-2"><Plus size={18}/></span>
           <span className="font-medium">Add address</span>
         </button>
 
@@ -283,21 +284,23 @@ function Address() {
 
             <button
               onClick={() => openInstructions(addr)}
-              className="text-sm text-blue-600 mt-1 block"
+              className="text-sm sec-text-color mt-1 block underline hover:text-[var(--primary-color)] "
             >
               {addr.delivery_instruction
                 ? "Edit delivery instructions"
                 : "Add delivery instructions"}
             </button>
 
-            <div className="mt-3 flex gap-3 text-sm text-blue-600">
-              <button onClick={() => openEditForm(addr)}>Edit</button>
+            <div className="mt-3 flex gap-3 text-sm ">
+              <button onClick={() => openEditForm(addr)} className="sec-text-color hover:text-[var(--primary-color)] flex gap-2 items-center ">
+                <Edit size={18}/>
+                Edit</button>
               <span className="text-gray-300">|</span>
-              <button onClick={() => openRemoveConfirm(addr)}>Remove</button>
+              <button onClick={() => openRemoveConfirm(addr)} className="text-red-500">Remove</button>
               {!addr.is_default && (
                 <>
                   <span className="text-gray-300">|</span>
-                  <button onClick={() => handleSetDefault(addr._id)}>
+                  <button onClick={() => handleSetDefault(addr._id)} className="sec-text-color hover:text-[var(--primary-color)]">
                     Set as Default
                   </button>
                 </>
@@ -308,14 +311,23 @@ function Address() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto no-scrollbar">
+            <div className="flex items-center justify-between border-b pb-5 mb-5">
+            <h3 className="text-20px font-semibold text-black ">
               {editingId ? "Edit your address" : "Add a new address"}
             </h3>
+            <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="rounded-full text-gray-500 transition hover:text-black"
+              >
+                <X size={22} />
+              </button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1">
                   Country/Region
                 </label>
                 <select
@@ -323,7 +335,7 @@ function Address() {
                   value={formData.country}
                   onChange={handleCountryChange}
                   required
-                  className={`w-full p-3 border border-gray-300 rounded-md appearance-none ${
+                  className={`w-full p-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)] ${
                     !formData.country ? "text-gray-400" : "text-black"
                   }`}
                 >
@@ -339,7 +351,7 @@ function Address() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1">
                   Full name (First and Last name)
                 </label>
                 <input
@@ -347,12 +359,12 @@ function Address() {
                   value={formData.full_name}
                   onChange={handleChange}
                   required
-                  className="w-full p-3 border border-gray-300 rounded-md"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1">
                   Mobile number
                 </label>
                 <input
@@ -360,12 +372,12 @@ function Address() {
                   value={formData.phone_number}
                   onChange={handleChange}
                   required
-                  className="w-full p-3 border border-gray-300 rounded-md"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1">
                   Pincode
                 </label>
                 <input
@@ -373,36 +385,36 @@ function Address() {
                   value={formData.zip_code}
                   onChange={handleChange}
                   placeholder="6 digits [0-9] PIN code"
-                  className="w-full p-3 border border-gray-300 rounded-md"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1">
                   Flat, House no., Building, Company, Apartment
                 </label>
                 <input
                   name="house_no"
                   value={formData.house_no}
                   onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-md"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1">
                   Area, Street, Sector, Village
                 </label>
                 <input
                   name="street"
                   value={formData.street}
                   onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-md"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-[14px] font-semibold text-gray-700 mb-1">
                   Landmark
                 </label>
                 <input
@@ -410,13 +422,13 @@ function Address() {
                   value={formData.landmark}
                   onChange={handleChange}
                   placeholder="E.g. near apollo hospital"
-                  className="w-full p-3 border border-gray-300 rounded-md"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-[14px] font-semibold text-gray-700 mb-1">
                     State
                   </label>
                   <select
@@ -424,7 +436,7 @@ function Address() {
                     value={formData.state}
                     onChange={handleStateChange}
                     disabled={!formData.country || states.length === 0}
-                    className={`w-full p-3 border border-gray-300 rounded-md appearance-none ${
+                    className={`w-full p-3 border border-gray-300 rounded-md appearance-none focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)] ${
                       !formData.state ? "text-gray-400" : "text-black"
                     }`}
                   >
@@ -437,7 +449,7 @@ function Address() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="block text-[14px] font-semibold text-gray-700 mb-1">
                     Town/City
                   </label>
                   <select
@@ -445,7 +457,7 @@ function Address() {
                     value={formData.city}
                     onChange={handleChange}
                     disabled={!formData.state || cities.length === 0}
-                    className={`w-full p-3 border border-gray-300 rounded-md appearance-none ${
+                    className={`w-full p-3 border border-gray-300 rounded-md appearance-none  focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)] ${
                       !formData.city ? "text-gray-400" : "text-black"
                     }`}
                   >
@@ -465,18 +477,12 @@ function Address() {
                   name="is_default"
                   checked={formData.is_default}
                   onChange={handleChange}
+                   className="accent-[var(--primary-color)]"
                 />
                 Make this my default address
               </label>
 
-              <div className="flex justify-center sm:justify-end flex-wrap gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancel
-                </Button>
+              <div className="text-right pt-2">
                 <Button type="submit" variant="common" disabled={loading}>
                   {loading
                     ? "Saving..."
@@ -492,16 +498,18 @@ function Address() {
 
       {showInstructions && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
+          <div className="p-6 w-full max-w-[600px] max-h-[85vh] overflow-hidden rounded-xl bg-white shadow-2xl max-h-[65vh] overflow-y-auto no-scrollbar ">
+            {/* <div className="flex justify-between items-center mb-4"> */}
+            <div className="flex items-center justify-between border-b pb-5 mb-5">
+              <h3 className="text-20px font-semibold text-black ">
                 Add delivery instructions
               </h3>
               <button
+                type="button"
                 onClick={() => setShowInstructions(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl leading-none"
+                className="rounded-full text-gray-500 transition hover:text-black"
               >
-                &times;
+                <X size={22} />
               </button>
             </div>
 
@@ -512,10 +520,10 @@ function Address() {
                   key={type}
                   type="button"
                   onClick={() => setAddressType(type)}
-                  className={`text-sm py-2 rounded-md border ${
+                  className={`text-[12px] sm:text-[16px] py-2 px-1 rounded-md border break ${
                     addressType === type
-                      ? "border-blue-600 text-blue-600 font-medium"
-                      : "border-gray-300 text-gray-700"
+                      ? "border-[var(--primary-color)] text-theme font-medium"
+                      : "light-border sec-text-color"
                   }`}
                 >
                   {type}
@@ -523,7 +531,7 @@ function Address() {
               ))}
             </div>
 
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+            <label className="block text-[14px] font-semibold text-gray-700 mb-1">
               Delivery instructions
             </label>
             <textarea
@@ -531,10 +539,10 @@ function Address() {
               onChange={(e) => setInstructionText(e.target.value)}
               rows={4}
               placeholder="Provide details such as building description, a nearby landmark, or other navigation instructions."
-              className="w-full p-3 border border-gray-300 rounded-md resize-none"
+              className="w-full p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:border-[var(--primary-color)] focus:ring-[0.5] focus:ring-[var(--primary-color)]"
             />
 
-            <div className="flex justify-end pt-4">
+            <div className="text-right pt-4">
               <Button
                 variant="common"
                 onClick={saveInstructions}

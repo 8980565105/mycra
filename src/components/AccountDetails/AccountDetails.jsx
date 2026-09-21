@@ -76,9 +76,9 @@ function AccountDetails({ onSwitchForget }) {
 
       {loading && <p className="text-sm text-gray-400 mb-2">Loading...</p>}
 
-      <div className="space-y-4 mt-4">
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="flex flex-col mb-4">
+      <div className="space-y-4 ">
+        <form className="space-y-[15px] md:space-y-[28px]" onSubmit={handleSubmit}>
+          <div className="flex flex-col ">
             <input
               type="text"
               name="name"
@@ -90,7 +90,7 @@ function AccountDetails({ onSwitchForget }) {
             />
           </div>
 
-          <div>
+          <div className="flex flex-col sm:flex-row gap-[15px] md:gap-[28px]">
             <input
               type="email"
               name="email"
@@ -100,9 +100,9 @@ function AccountDetails({ onSwitchForget }) {
               required
               className="input-common"
             />
-          </div>
+          {/* </div>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col"> */}
             <input
               type="text"
               name="mobile_number"

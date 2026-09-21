@@ -45,7 +45,7 @@ function CountdownTimer({ endDate }) {
     </span>
   );
 }
-export default function ProductCard({ product, setShowLoginPopup }) {
+export default function ProductCard({productVariant, product, setShowLoginPopup }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { token } = useSelector((state) => state.auth);
@@ -369,15 +369,15 @@ export default function ProductCard({ product, setShowLoginPopup }) {
               )}
             </div>
 
-            <p className="sec-text-color text-14 mb-2 lowercasex line-clamp-1">
-              {product.storeId?.name || "Store"}
+            <p className="text-black text-[16px] mb-1 lowercasex line-clamp-1 font-regular">
+              {currentVariant?.brand_id?.name || productVariant?.brand_id?.name || "No Brand"}
             </p>
 
             <p className="sec-text-color text-14 mb-2 lowercase  line-clamp-1">
               {product.name}
             </p>
             <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className="text-[20px] font-regular text-black">
+              <span className="text-[16px] font-regular text-black">
                 ₹{price.discountedPrice.toLocaleString("en-IN")}
               </span>
               {price.hasOffer && (
@@ -407,9 +407,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
                       e.stopPropagation();
                       setSelectedColor(clr.code);
                     }}
-                    className={`w-[10px] h-[10px] sm:w-[16px] sm:h-[16px] rounded-full border transition-transform hover:scale-110
-          ${isSelected ? "border-black scale-110" : ""}
-        `}
+                  className="w-[10px] h-[10px] sm:w-[16px] sm:h-[16px] rounded-full shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)] "
                     style={{ backgroundColor: clr.code }}
                   />
                 );
@@ -419,7 +417,7 @@ export default function ProductCard({ product, setShowLoginPopup }) {
               <p className="text-theme text-[11px] mt-1">Out of Stock</p>
             )}
             {reviewData.total > 0 && (
-              <div className="flex gap-[3px] mt-1">
+              <div className="flex gap-[3px] mt-2">
                 {Array(5)
                   .fill()
                   .map((_, i) => {

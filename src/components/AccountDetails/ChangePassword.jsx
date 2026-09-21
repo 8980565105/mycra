@@ -50,8 +50,9 @@ function ChangePassword() {
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-[15px] md:space-y-[28px] pt-6" onSubmit={handleSubmit}>
       {/* Current Password */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-[15px] md:gap-[28px]">
       <div className="relative">
         <input
           type={showPassword.currentPassword ? "text" : "password"}
@@ -104,7 +105,7 @@ function ChangePassword() {
           )}
         </button>
       </div>
-
+      </div>
       <div className="relative">
         <input
           type={showPassword.confirmNewPassword ? "text" : "password"}

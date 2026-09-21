@@ -274,10 +274,10 @@ const Header = () => {
 
   return (
     <header
-      className={`w-full bg-theme box-shadow sticky top-0 z-50 ${
+      className={`w-full light-bg box-shadow sticky top-0 z-50 ${
         isLoginOpen || isRegisterOpen || isForgetOpen
-          ? "bg-theme"
-          : "bg-theme backdrop-blur-md"
+          ? "light-bg"
+          : "light-bg backdrop-blur-md"
       }`}
     >
       <Row className="h-[70px] custom-lg:h-[100px] flex items-center justify-between gap-[10px] mb-[10px]">
@@ -692,11 +692,10 @@ const Header = () => {
       </Row>
       {isMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="fixed inset-0 bg-black bg-opacity-50 z-[1] w-full h-screen"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
-
       <div
         className={`fixed top-0 left-0 w-3/4 max-w-[430px] h-screen bg-white box-shadow z-50 transform transition-transform duration-300 ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
