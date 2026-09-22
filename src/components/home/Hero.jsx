@@ -60,11 +60,12 @@ export default function Hero() {
   const settings = {
     dots: heroSlides.length > 1,
     infinite: heroSlides.length > 1,
-    speed: 1000,
+    speed: 800,
     slidesToShow: 1,
     slidesToScroll: 1,
+    fade: true,
     autoplay: heroSlides.length > 1,
-    autoplaySpeed: 4000,
+    autoplaySpeed: 5000,
     pauseOnHover: false,
     arrows: false,
     swipe: true,
@@ -99,12 +100,12 @@ export default function Hero() {
         </div>
       </div>
 
-      <section className="relative lg:ml-[50px] mt-4 mx-2 lg:mx-0 overflow-hidden rounded-lg hero-slider">
+      <section className="relative lg:ml-[50px] lg:mx-0 overflow-hidden lg:rounded-tl-[10px] lg:rounded-bl-[10px] hero-slider">
         <Slider {...settings} className="w-full">
           {heroSlides.map((slide, index) => (
-            <div key={index}>
+            <div key={index} className="h-[220px] md:h-[400px] lg:h-[680px]">
               <div
-                className="relative w-full min-h-[220px] lg:min-h-[680px]"
+                className="relative w-full h-full"
                 style={{
                   backgroundImage: slide.background_image_url
                     ? `url(${getImageUrl(slide.background_image_url)})`
@@ -117,35 +118,34 @@ export default function Hero() {
                   backgroundRepeat: "no-repeat",
                 }}
               >
-                <div className="absolute inset-0 bg-black/25" />
-                <div className="relative z-10 w-full h-full min-h-[220px] lg:min-h-[680px] flex items-center px-6 sm:px-12 lg:px-20 py-10 lg:py-0">
-                  {/* <div className="flex-1 flex flex-col items-start justify-center gap-3 lg:gap-6 max-w-[250px] sm:max-w-[400px] lg:max-w-[600px]"> */}
-                  <div className=" max-w-[250px] sm:max-w-[400px] lg:max-w-[600px] text-left">
+                {/* <div className="absolute inset-0 bg-black/25" /> */}
+                <div className="relative z-10 w-full h-full flex items-center px-6 sm:px-12 lg:px-20 py-10 lg:py-0 lg:pl-40 xl:pl-60">
+                  <div className="max-w-[250px] sm:max-w-[400px] lg:max-w-[600px] text-left break">
                     <div className="relative">
-                    <h1 className="mb-10">
+                    <h1 className="mb-4 md:mb-6 lg:mb-10">
                       <span
-                        className="font-sans italic sm:text-[26px] lg:text-[80px] text-black  tracking-normal"
+                        className="font-sans italic text-[30px] md:text-[40px] lg:text-[80px] leading-[34px] md:leading-[44px] lg:leading-[84px] text-black tracking-normal"
                         dangerouslySetInnerHTML={{ __html: slide.title }}
                       />
                       <span
-                        className=" absolute top-0 left-[4px] [text-shadow:1px_4px_4px_0px_rgba(0,0,0,0.50)] tracking-normal
-                          font-sans italic sm:text-[26px] lg:text-[80px] text-transparent w-full -z-[10] [-webkit-text-stroke:1.5px_white] "
+                        className="absolute top-0 left-[2px] lg:left-[4px] tracking-normal font-sans italic text-[30px] md:text-[40px] lg:text-[80px] leading-[34px] md:leading-[44px] lg:leading-[84px] text-transparent w-full -z-[10] [-webkit-text-stroke:1px_white] lg:[-webkit-text-stroke:1.5px_white]"
                         dangerouslySetInnerHTML={{ __html: slide.title }}
                       />
                     </h1>
                     </div>
                     <div>
-                    <span className="relative text-black text-[8px] md:text-[8px] lg:text-[24px] leading-[19px] block">
+                    <span className="relative text-black text-[12px] md:text-[16px] lg:text-[24px] leading-[19px] block">
                       {slide.description}
-                      <span className="absolute left-0 bottom-0 lg:translate-y-[10px] w-[60%] h-[0.5px] bg-black"></span>
+                      <span className="absolute left-0 bottom-0 lg:translate-y-[10px] w-[35%] h-[0.5px] bg-black" />
                     </span>
                     </div>
+
                     <div>
                     {slide.is_button !== false && (
                       <Button
                         onClick={() => navigate(slide.button_link)}
                         variant="common"
-                        className="lg:w-[160px] w-[72px] mt-14"
+                        className="w-auto  lg:w-[160px] md:text-[16px] lg:text-[20px] w-[72px] mt-6 md:mt-10 lg:mt-14"
                       >
                         {slide.button_name}
                       </Button>
@@ -158,7 +158,6 @@ export default function Hero() {
           ))}
         </Slider>
       </section>
-
       <style>{`
         .hero-slider .slick-dots {
           bottom: 20px !important;
@@ -186,6 +185,25 @@ export default function Hero() {
         .hero-slider .slick-dots li.slick-active button {
           background: #F43297 !important;
         }
+
+       @media (max-width: 767px) {
+        .hero-slider .slick-dots {
+          bottom: 12px !important;
+          gap: 5px !important;
+          padding: 0 12px !important;
+        }
+
+        .hero-slider .slick-dots li,
+        .hero-slider .slick-dots li button {
+          width: 28px !important;
+          flex-basis: 28px !important;
+          height: 3px !important;
+        }
+
+        .hero-slider .slick-dots li button {
+          height: 3px !important;
+        }
+      }
       `}</style>
     </div>
   );

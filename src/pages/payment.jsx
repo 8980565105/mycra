@@ -19,7 +19,11 @@ import {
   QrCode,
 } from "lucide-react";
 // const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
-const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+// const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+const stripePublishableKey =
+  process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+
+const stripePromise = loadStripe(stripePublishableKey);
 
 const PAYMENT_METHODS = [
   {
@@ -492,7 +496,7 @@ export default function Payment() {
       <CartProgress currentStep={3} />
       <div className="py-[50px]">
         <div className="max-w-[1100px] mx-auto px-5">
-          <h2 className="text-[28px] font-normal mb-[40px] hidden md:block">
+          <h2 className="text-[28px] font-normal mb-[50px] hidden md:block">
             <Link to="/home">Home</Link> /{" "}
             <span className="font-light">Payment</span>
           </h2>
@@ -500,7 +504,7 @@ export default function Payment() {
             <div className="bg-[#f8f8f8] p-5 md:p-8">
               <h1 className="text-[24px] text-black mb-6">Payment Method</h1>
 
-              <div className="bg-white border border-gray-200 rounded-[4px] mb-[24px]">
+              <div className="bg-white border border-gray-200 rounded-[4px]">
                 {PAYMENT_METHODS.map((method, idx) => {
                   const Icon = method.icon;
                   const isSelected = selectedMethod === method.key;

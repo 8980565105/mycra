@@ -74,6 +74,8 @@ export default function SimilarProducts({
         : windowWidth <= 767
           ? 2
           : windowWidth <= 980
+            ? 2
+            : windowWidth <= 1280
             ? 3
             : 4,
     slidesToScroll: 1,
