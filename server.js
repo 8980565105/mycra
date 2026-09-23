@@ -44,6 +44,7 @@ const pageVisitRoutes = require("./src/routes/pageRoutes");
 const policypageRoutes = require("./src/routes/policypageRoutes");
 const emailRoutes = require("./src/routes/emailRoute");
 const giftCardRoutes = require( "./src/routes/giftCardRoutes");
+// const voucherRoutes = require("./src/routes/voucherRoutes");
 const {
   handleStripeWebhook,
 } = require("./src/controllers/stripeWebhookController");
@@ -180,6 +181,7 @@ app.use("/api/seller", sellerRoutes);
 app.use("/api/policypages", policypageRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/gift-cards", giftCardRoutes);
+// app.use("/api/voucher", voucherRoutes);
 app.use(errorHandler);
 
 // ═══════════════════════════════════════════════════════

@@ -39,6 +39,10 @@ const productSchema = new mongoose.Schema(
     is_featured: { type: Boolean, default: false },
     is_best_seller: { type: Boolean, default: false },
     is_trending: { type: Boolean, default: false },
+    is_new_arrival: { 
+      type: Boolean, 
+      default: false 
+    },
     shipping_type: {
       type: String,
       enum: ["free", "flat", "percentage"],

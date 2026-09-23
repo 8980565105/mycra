@@ -166,6 +166,7 @@ const buildPipeline = ({
               labelsInfo: { $first: "$labelsInfo" },
               is_trending: { $first: "$is_trending" },
               is_best_seller: { $first: "$is_best_seller" },
+              is_new_arrival: {$first: "$is_new_arrival"},
               createdAt: { $first: "$createdAt" },
               updatedAt: { $first: "$updatedAt" },
               attributes: {
@@ -661,6 +662,7 @@ const createProduct = async (req, res) => {
       is_featured: !!req.body.is_featured,
       is_best_seller: !!req.body.is_best_seller,
       is_trending: !!req.body.is_trending,
+      is_new_arrival: !!req.body.is_new_arrival,
       shipping_type: shipping_type || "free",
       shipping_value: Number(shipping_value) || 0,
       images: productImages,
@@ -713,6 +715,7 @@ const createProduct = async (req, res) => {
           is_featured: !!v.is_featured,
           is_best_seller: !!v.is_best_seller,
           is_trending: !!v.is_trending,
+          is_new_arrival: !!v.is_new_arrival
         };
       });
       savedVariants = await ProductVariant.insertMany(variantDocs);
@@ -802,6 +805,7 @@ const updateProduct = async (req, res) => {
           is_featured: !!v.is_featured,
           is_best_seller: !!v.is_best_seller,
           is_trending: !!v.is_trending,
+          is_new_arrival: !!v.is_new_arrival,
           variantLabel: v.variantLabel || "",
         };
         if (v._id) {
