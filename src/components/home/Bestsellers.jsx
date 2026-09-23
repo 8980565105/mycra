@@ -56,13 +56,11 @@ const Bestsellers = () => {
                 <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
                   <div className="absolute inset-3 bg-black bg-opacity-40 rounded-[5px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-400">
                     <div className="bg-white px-4 py-2 rounded-[5px] text-center mx-[10px]">
-                      <p className="text-black text-[10px] lg:text-[18px] font-medium line-clamp-2">
+                      <p className="text-black text-[14px] lg:text-[18px] font-medium line-clamp-2">
                         {product.name}
                       </p>
-                      <p className="text-black text-[8px] lg:text-[16px]">
-                        <span className="text-p">
-                          Rs {price.discountedPrice.toFixed(0)}
-                        </span>
+                      <p className="text-black text-[12px] lg:text-[16px]">
+                          Rs {price.discountedPrice.toFixed(2)}
                       </p>
                     </div>
                   </div>

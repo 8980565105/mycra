@@ -19,7 +19,7 @@ const heroBannerItem = {
 const DiscountBadge = () => {
   return (
     <>
-      <div className="absolute top-3 left-3 w-[70px] h-[70px] sm:w-[90px] sm:h-[90px] md:w-[130px] md:h-[130px] z-30 flex items-center justify-center">
+      <div className="absolute top-3 md:top-10 left-3  md:left-5 w-[70px] h-[70px] sm:w-[90px] sm:h-[90px] md:w-[130px] md:h-[130px] z-30 flex items-center justify-center">
         <div
           className="absolute inset-0 bg-[var(--primary-color)] shadow-md"
           style={{
@@ -52,20 +52,20 @@ export default function HeroBanner() {
 
   return (
     <Section className="bg-theme relative overflow-hidden !pb-0">
-      <div className="absolute top-0 left-0 w-[23%] h-full bg-white/10 backdrop-blur-sm z-20 pointer-events-none"></div>
+      <div className="absolute top-0 left-0 w-[25%] xl:w-[22.5%] h-full bg-[#FFFFFF1A] backdrop-blur-[10px] z-20 pointer-events-none"></div>
       <DiscountBadge />
-      <div className="flex gap-[10px] justify-center items-center h-auto min-h-[150px] md:h-[544px] relative z-10">
+      <div className="grid grid-cols-2 gap-[10px] justify-center items-center h-auto min-h-[200px] md:h-[544px] relative z-10">
         <div className="relative flex-1">
           <img
             src={getImageUrl(flashbanner.image_url)}
             alt="image alt"
-            className="w-[400px] sm:w-[850px] h-auto min-h-[150px] md:h-[544px] object-cover"
+            className="w-[400px] sm:w-[850px] h-auto min-h-[200px] md:h-[544px] object-fit"
           />
         </div>
-        <div className="flex-1 text-left flex flex-col z-30 px-[20px]">
+        <div className="flex-1 text-left flex flex-col z-30 pr-[20px]">
           <div className="max-w-[460px] flex flex-col">
             <h2
-              className="text-[20px] md:text-[50px] font-sans text-black mb-[10px] md:mb-[30px] relative leading"
+              className="text-[20px] md:text-[50px] font-sans text-black mb-[10px] md:mb-[40px] relative leading"
               style={{ filter: "drop-shadow(5px 2px 4px rgba(0,0,0,0.25))" }}
             >
               {flashbanner.title}
@@ -74,12 +74,12 @@ export default function HeroBanner() {
             <p className="text-[10px] md:text-[24px] text-[#989696] mb-[5px] md:mb-[10px] font-regular">
               {flashbanner.description}
             </p>
-            <p className="text-[10px] md:text-[18px] font-regular text-black mb-[17px] md:mb-[50px] inline-block w-[51px] md:w-[94px] pb-1 border-b md:border-b-2 border-black">
-              Rs {flashbanner.rs}
+            <p className="text-[10px] md:text-[18px] font-regular text-black mb-[17px] md:mb-[50px] inline-block w-fit pb-1 border-b md:border-b-2 border-black">
+              Rs {Number(flashbanner?.rs || 0).toFixed(2)}
             </p>
             <Button
               variant="common"
-              className=" px-[10px] lg:max-w-[200px] sm:max-w-[100px] mb-[10px]"
+              className=" px-[10px]  max-w-[130px] lg:max-w-[200px] mb-[10px]"
               onClick={() => (window.location.href = flashbanner.button_link)}
             >
               {flashbanner.button_name}

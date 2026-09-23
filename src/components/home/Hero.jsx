@@ -60,12 +60,12 @@ export default function Hero() {
   const settings = {
     dots: heroSlides.length > 1,
     infinite: heroSlides.length > 1,
-    speed: 800,
+    // speed: 800,
     slidesToShow: 1,
     slidesToScroll: 1,
     fade: true,
-    autoplay: heroSlides.length > 1,
-    autoplaySpeed: 5000,
+    // autoplay: heroSlides.length > 1,
+    // autoplaySpeed: 5000,
     pauseOnHover: false,
     arrows: false,
     swipe: true,
@@ -128,7 +128,7 @@ export default function Hero() {
                         dangerouslySetInnerHTML={{ __html: slide.title }}
                       />
                       <span
-                        className="absolute top-0 left-[2px] lg:left-[4px] tracking-normal font-sans italic text-[30px] md:text-[40px] lg:text-[80px] leading-[34px] md:leading-[44px] lg:leading-[84px] text-transparent w-full -z-[10] [-webkit-text-stroke:1px_white] lg:[-webkit-text-stroke:1.5px_white]"
+                        className="absolute top-0 left-[2px] lg:left-[4px] tracking-normal  [filter:drop-shadow(1px_5px_4px_#00000080)] font-sans italic text-[30px] md:text-[40px] lg:text-[80px] leading-[34px] md:leading-[44px] lg:leading-[84px] text-transparent w-full -z-[10] [-webkit-text-stroke:1px_white] lg:[-webkit-text-stroke:1.5px_white]"
                         dangerouslySetInnerHTML={{ __html: slide.title }}
                       />
                     </h1>

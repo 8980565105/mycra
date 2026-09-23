@@ -195,7 +195,7 @@
   font-family:'Italianno', cursive !important;;
   font-style: italic; 
   font-weight: 500;    
-  font-size: var(--font-size-h5);
+  /* font-size: var(--font-size-h5); */
   
 }
 .new-arrival-title {
