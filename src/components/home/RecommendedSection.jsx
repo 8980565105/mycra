@@ -47,7 +47,7 @@ const RecommendedSection = () => {
     arrows: true,
     prevArrow: <PrevArrow />,
     nextArrow: <NextArrow />,
-    infinite: true,
+    infinite: false,
     speed: 600,
     slidesToShow: windowWidth <= 767 ? 1 : windowWidth <= 980 ? 2 : 3,
     slidesToScroll: 1,
@@ -67,7 +67,7 @@ const RecommendedSection = () => {
 
         <div className="w-[18px] md:w-[50px] border-t border-black"></div>
       </div>
-      <Row className="!max-w-[1179px] mx-auto mb-[50px] md:mb-[90px] overflow-visible relative px-11 ">
+      <Row className="!max-w-[1179px] mx-auto mb-[25px] md:mb-[50px] overflow-visible relative px-11 ">
         <Slider {...settings}>
           {products.map((item) => (
             <div key={item._id} className="px-[5px] sm:px-[12.5px]">
@@ -110,9 +110,11 @@ const ProductCard = ({ item }) => {
           className="w-[90%] h-[92%] object-fit"
         />
       </div>
-      <div className="absolute bottom-8 left-6 text-white z-20">
-        <h2 className="font-h5 max-w-[200px] leading">{title}</h2>
-        <p className="font-sans font-medium text-[16px] line-clamp-3">
+      <div className="absolute bottom-8 left-6 text-white z-20 text-left">
+        <h2 className="font-h5 max-w-[200px] text-[30px] sm:text-[45px] md:text-[55px] lg:text-[70px] leading-none">
+          {title}
+        </h2>
+        <p className="font-sans font-medium text-[16px] max-w-[100px] sm:max-w-[200px] truncate">
           {description}
         </p>
       </div>

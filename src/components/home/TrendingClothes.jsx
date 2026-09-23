@@ -101,13 +101,33 @@ const TrendingClothes = () => {
 };
 
 const TrendingCloth = ({ product, desktop }) => {
-  const mainVariant = product?.variants?.[0];
-  const discount = product?.discount?.value || 0;
-  const originalPrice = mainVariant?.price || 0;
-  const discountedPrice =
-    discount > 0
-      ? originalPrice - (originalPrice * discount) / 100
-      : originalPrice;
+  const variants = product?.variants || [];
+
+  const variantPrices = variants.map((variant) => {
+    const price = Number(variant?.price || 0);
+    const offerPrice = Number(variant?.pfferprice || 0);
+
+    return offerPrice > 0 && offerPrice < price
+      ? offerPrice
+      : price;
+  }).filter((price) => price > 0);
+
+  const minPrice =
+    variantPrices.length > 0
+      ? Math.min(...variantPrices)
+      : 0;
+
+  const maxPrice =
+    variantPrices.length > 0
+      ? Math.max(...variantPrices)
+      : 0;
+
+  const mainVariant = variants[0];
+
+  const originalPrice = Number(mainVariant?.price || 0);
+  const offerPrice = Number(mainVariant?.offerprice || 0);
+
+  const isSale = originalPrice > 0 && offerPrice > 0 && offerPrice < originalPrice;
 
   return (
     <Link to={`/products/${product.slug}`}>
@@ -128,31 +148,32 @@ const TrendingCloth = ({ product, desktop }) => {
             className=" w-full h-full rounded-[5px]"
           />
 
-          {product.sale && (
-            <span className="absolute top-3 right-3 bg-color text-white text-xs px-3 py-1 rounded-[2px]">
+          {isSale && (
+            <span className="absolute top-5 right-[15px] bg-color text-white text-xs px-3 py-1 rounded-[5px]">
               Sale
             </span>
           )}
         </div>
 
-        <div className="p-2 text-left">
-          <h3 className="font-medium text-[13px] custom-lg:text-[20px] custom-lg:text-[20px] mb-[8px] leading line-clamp-3">
+        <div className="p-2 pt-[20px] text-left">
+          <h3 className="font-medium text-[16px] md:text-[20px]  mb-[5px] leading line-clamp-1">
             {product.name}
           </h3>
-          <p className="sec-text-color mb-[8px]">
-            <span className="text-[10px] custom-lg:text-[14px] mr-2">
-              Rs {discountedPrice.toFixed(0)}
+          <p className="sec-text-color mb-[5px]">
+            <span className="text-[12px] md:text-[14px]">
+                {minPrice === maxPrice
+                ? `Rs ${minPrice.toFixed(2)}`
+                : `Rs ${minPrice.toFixed(2) } - Rs ${maxPrice.toFixed(2)}`}
             </span>
           </p>
-          <p className="text-black mb-2">★★★★★</p>
-          <button className="text-black relative transition">
+          <p className="text-black mb-[5px]">★★★★★</p>
+          <button className="text-black text-[12px] md:text-[14px] relative transition">
             Select Option
-            <span className="theme-border-block w-7"></span>
+            <span className="theme-border-block w-8 bg-color " />
           </button>
         </div>
       </div>
     </Link>
   );
 };
-
 export default TrendingClothes;
