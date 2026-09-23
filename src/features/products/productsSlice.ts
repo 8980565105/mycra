@@ -28,6 +28,7 @@ interface ProductVariant {
   is_featured: boolean;
   is_best_seller: boolean;
   is_trending: boolean;
+  is_new_arrival: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -59,6 +59,7 @@ export default function ProductFormPage() {
   const [isFeatured, setIsFeatured] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
+  const [isNewArrival, setIsNewArrival] = useState(false);
   const [selectedTypeDetails, setSelectedTypeDetails] = useState<any>(null);
   const [selectedSpecAttrs, setSelectedSpecAttrs] = useState<{ [attrId: string]: string }>({});
   const [selectedDynAttrs, setSelectedDynAttrs] = useState<{ [attrId: string]: string[] }>({});
@@ -188,6 +189,7 @@ export default function ProductFormPage() {
           setIsFeatured(!!p.is_featured);
           setIsBestSeller(!!p.is_best_seller);
           setIsTrending(!!p.is_trending);
+          setIsNewArrival(!!p.is_new_arrival);
           setShippingType(p.shipping_type || "");
           setShippingValue(p.shipping_value != null ? String(p.shipping_value) : "");
           if (Array.isArray(p.variants) && p.variants.length > 0) {
@@ -253,6 +255,7 @@ export default function ProductFormPage() {
                 is_featured: !!v.is_featured,
                 is_best_seller: !!v.is_best_seller,
                 is_trending: !!v.is_trending,
+                is_new_arrival: !!v.is_new_arrival,
                 description: v.description || "",
                 variantLabel: v.variantLabel || "",
               };
@@ -389,6 +392,7 @@ export default function ProductFormPage() {
         is_featured: false,
         is_best_seller: false,
         is_trending: false,
+        is_new_arrival: false,
         description: "",
       };
     });
@@ -478,6 +482,7 @@ export default function ProductFormPage() {
       is_featured: isFeatured,
       is_best_seller: isBestSeller,
       is_trending: isTrending,
+      is_new_arrival: isNewArrival,
       shipping_type: shippingType || "free",
       shipping_value: shippingType === "free" ? 0 : Number(shippingValue) || 0,
       variants: processedVariants,
@@ -667,6 +672,10 @@ export default function ProductFormPage() {
                 <label className="flex items-center gap-2">
                   <Switch checked={isTrending} onCheckedChange={setIsTrending} />
                   Trending
+                </label>
+                <label className="flex items-center gap-2">
+                  <Switch checked={isNewArrival} onCheckedChange={setIsNewArrival} />
+                  New Arrival
                 </label>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
