@@ -37,7 +37,7 @@ function FAQItem({ question, answer }) {
       </button>
 
       {open && (
-        <div className="px-4 pb-4 pt-3 text-sm text-gray-600 leading-relaxed bg-gray-50 border-t border-gray-100">
+        <div className="px-4 pb-4 pt-3 text-sm sec-text-color leading-relaxed ">
           {answer}
         </div>
       )}
@@ -279,13 +279,13 @@ function Faqs() {
       </Section>
 
       <Section>
-        <Row className="py-[25px] md:py-[50px]">
-          <div className="flex flex-col md:flex-row md:items-start gap-8">
-            <div className="md:w-1/4 md:shadow-[0_0_4px_0_rgba(0,0,0,0.25)] md:py-8 md:px-6 rounded-[10px] md:sticky  md:top-[120px] relative">
+        <Row className="py-[25px] md:py-[50px] !max-w-[1280px]">
+          <div className="w-full grid grid-cols-1 custom-lg:grid-cols-[1.2fr_2.8fr] gap-[40px] bg-white  ">
+            <div className="w-full lg:sticky lg:top-[110px] self-start md:shadow-[0_0_4px_0_rgba(0,0,0,0.25)] md:py-8 md:px-6 rounded-[10px] relative">
               <div className="hidden md:block">
-                <p className="text-[20px] font-medium text-black uppercase tracking-wider pb-5 mb-5 px-2 border-b border-gray-200">
-                  Categories
-                </p>
+                <p className="text-[20px] font-medium text-black uppercase tracking-wider pb-5 mb-5  border-b border-gray-200">
+                  Faq Categories
+                </p>  
                 {categories.map((cat) => (
                   <button
                     key={cat.key}
@@ -293,10 +293,14 @@ function Faqs() {
                     onClick={() =>
                       handleCategorySelect(cat.key)
                     }
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 last:mb-0 transition-colors ${activeCat === cat.key
-                      ? "bg-theme text-[var(--theme-color)] font-medium"
-                      : "text-[rgba(0,0,0,0.7)] hover:bg-gray-100 hover:text-[var(--theme-color)]"
-                      }`}
+                    // className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 last:mb-0 transition-colors ${activeCat === cat.key
+                    //   ? "bg-theme text-[var(--theme-color)] font-medium"
+                    //   : "text-[rgba(0,0,0,0.7)] hover:bg-gray-100 hover:text-[var(--theme-color)]"
+                    //   }`}
+                    className={`block capitalize text-left text-gray-800 text-[20px] leading-[1.55] last:mb-0 mb-[24px] font-medium no-underline border-b-[2px] border-transparent 
+                      cursor-pointer transition-colors duration-200 hover:text-[var(--primary-color)] ${
+                        activeCat === cat.key ? " border-b-[var(--primary-color)] w-full pb-[8px]" : ""}
+                      `}
                   >
                     {cat.label}
                   </button>
@@ -322,7 +326,7 @@ function Faqs() {
               </div>
             </div>
 
-            <div className="w-full md:w-3/4">
+            <div>
               <p className="font-medium text-gray-800 mb-6 capitalize text-[24px]">
                 {activeLabel}
               </p>

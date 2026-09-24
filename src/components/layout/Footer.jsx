@@ -245,7 +245,7 @@ export default function Footer() {
 
                   <FaPaperPlane
                     onClick={handleEmailSubmit}
-                    className="text-theme text-xl -rotate-12 absolute right-4 top-1/2 h-[18px] w-[18px] transform -translate-y-1/2 cursor-pointer"
+                    className="text-theme text-xl -rotate-18 absolute right-4 top-1/2 h-[18px] w-[18px] transform -translate-y-1/2 cursor-pointer"
                   />
                 </div>
               </div>

@@ -8,6 +8,7 @@ import { ArrowRight } from "lucide-react";
 import FlowerIcon from "../icons/FlowerIcon.jsx";
 import Button from "../ui/Button.jsx";
 // import Button from "../ui/Button.jsx";
+import sellerBg from "../../assets/seller_bg.png"
 
 const Bestsellers = () => {
   const navigate = useNavigate();
@@ -27,7 +28,11 @@ const Bestsellers = () => {
     return { discount, originalPrice, discountedPrice };
   };
   return (
-    <Section>
+    <Section className="bg-contain bg-center bg-no-repeat mt-[25px] md:mt-[50px]"
+      style={{
+        backgroundImage: `url(${sellerBg})`,
+      }}
+    >
       <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
         <div className="w-[18px] md:w-[50px] border-t border-black"></div>
         <div className="relative mx-2 md:mx-4 flex flex-col items-center justify-center">
@@ -38,7 +43,7 @@ const Bestsellers = () => {
         </div>
         <div className="w-[18px] md:w-[50px] border-t border-black"></div>
       </div>
-      <Row className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] lg:gap-[30px]">
+      <Row className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] lg:gap-[30px] ">
         {bestSellersLimited.map((product) => {
           const price = getDiscountedPrice(product);
           return (
@@ -75,7 +80,7 @@ const Bestsellers = () => {
         <Button
           onClick={() => navigate("/shop?filter=bestseller")}
           variant="outline"
-          className=""
+          className="border-[#000000] rounded-[5px]"
         >
           View all Best Seller's <ArrowRight size={20} />
         </Button>

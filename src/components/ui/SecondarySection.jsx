@@ -6,7 +6,8 @@ import Row from "./Row";
 const SecondarySection = ({ title, description, backgroundImage }) => {
   return (
     <Section
-      className="bg-cover bg-center relative"
+      // className="bg-cover bg-center relative"
+      className="relative bg-top bg-no-repeat bg-cover"
       style={{
         backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url(${backgroundImage})`,
       }}
@@ -15,7 +16,12 @@ const SecondarySection = ({ title, description, backgroundImage }) => {
         <h1 className="text-[40px] sm:text-[60px] text-white font-semibold mb-[15px] leading">
           {title}
         </h1>
-        <p className="text-lg text-white">{description}</p>
+         {description && (
+          <div
+            className="text-lg text-white"
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
+        )}
         <img src={underlineImg} className="mt-[20px] md:mt-[30px]" />
       </Row>
     </Section>

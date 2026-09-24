@@ -52,7 +52,7 @@ const BannerClothes = () => {
           </p>
           <Button
             variant="white"
-            className="mt-[50px] !text-[18px] md:!text-[24px]"
+            className="mt-[50px] !text-[18px] md:!text-[24px] py-[8px] md:py-[12px] "
             onClick={() => (window.location.href = bannerSection.button_link)}
           >
             {bannerSection.button_name}

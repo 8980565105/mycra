@@ -197,12 +197,12 @@ export default function SearchBar({ onNavigate }) {
                     onClick={() => handleSelect(product)}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 text-left"
                   >
-                    <div className="w-[48px] h-[48px] rounded-lg overflow-hidden border border-gray-100 flex-shrink-0 bg-gray-50">
+                    <div className="w-[30px] h-[34px] overflow-hidden flex-shrink-0 ">
                       {img ? (
                         <img
                           src={img}
                           alt={product.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -215,7 +215,7 @@ export default function SearchBar({ onNavigate }) {
                       <p className="text-[14px] font-medium text-gray-800 line-clamp-1 leading-snug">
                         {product.name}
                       </p>
-                      {price && (
+                      {/* {price && (
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[13px] font-semibold text-primary">
                             ₹{price}
@@ -226,13 +226,13 @@ export default function SearchBar({ onNavigate }) {
                             </span>
                           )}
                         </div>
-                      )}
+                      )} */}
                     </div>
-
+{/* 
                     <ChevronRight
                       size={16}
                       className="text-gray-300 flex-shrink-0"
-                    />
+                    /> */}
                   </button>
                 );
               })}
