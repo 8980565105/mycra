@@ -30,7 +30,7 @@ const productSchema = new mongoose.Schema(
       default: null,
     },
     images: [{ type: String }],
-    slug: { type: String, required: true },
+    slug: { type: String, required: true, trim: true},
     status: {
       type: String,
       enum: ["active", "inactive"],
@@ -66,8 +66,9 @@ const productSchema = new mongoose.Schema(
 
 productSchema.pre("save", function (next) {
   if (this.isModified("name") || !this.slug) {
-    this.slug = slugify(this.name, { lower: true, strict: true });
+    this.slug = slugify(this.name, { lower: true, strict: true, trim: true });
   }
+  next();
 });
 productSchema.index({ name: 1, storeId: 1 }, { unique: true });
 

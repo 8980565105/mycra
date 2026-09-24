@@ -744,6 +744,25 @@ const updateProduct = async (req, res) => {
       return sendResponse(res, false, null, "Forbidden: Not your product");
     }
 
+    if (productData.name) {
+      const baseSlug = slugify(productData.name, {
+        lower: true, strict: true, trim: true,
+      });
+
+      let finalSlug = baseSlug;
+      let counter = 1;
+
+      while (await Product.exists({
+          slug: finalSlug,
+          _id: { $ne: id },
+        })
+      ) {
+        finalSlug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+      productData.slug = finalSlug;
+    }
+
     if (productData.type_id) {
       const typeDoc = await Type.findById(productData.type_id).select(
         "childCategoryId",
@@ -753,9 +772,21 @@ const updateProduct = async (req, res) => {
       }
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, productData, {
-      new: true,
-    });
+    // const updatedProduct = await Product.findByIdAndUpdate(id, productData, {
+    //   new: true,
+    // });
+
+    const updatedProduct = await Product.findByIdAndUpdate(id, {
+          $set: productData,
+        },
+        {
+          new: true, runValidators: true,
+        }
+    );
+    
+    if (!updatedProduct) {
+      return sendResponse(res, false, null, "Product update failed");
+    }
 
     if (Array.isArray(variants)) {
       const incomingIds = variants.filter((v) => v._id).map((v) => v._id);
