@@ -1,6 +1,29 @@
 ﻿const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+const policySectionSchema = new Schema(
+  {
+    title: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    description: {
+      type: String,
+      default: "",
+    },
+
+    background_image_url: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  {
+    _id: true,
+  }
+);
 const PolicyPageSchema = new Schema(
   {
     page_name: {
@@ -19,6 +42,9 @@ const PolicyPageSchema = new Schema(
     description: {
       type: String,
       default: "",
+    },
+    section: {
+      type: policySectionSchema,
     },
     meta_title: {
       type: String,

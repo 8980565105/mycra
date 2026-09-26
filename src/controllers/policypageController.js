@@ -48,6 +48,7 @@ const createpolicypage = async (req, res) => {
       page_name,
       slug,
       description,
+      section,
       meta_title,
       meta_description,
       meta_keyphrase,
@@ -70,10 +71,26 @@ const createpolicypage = async (req, res) => {
       );
     }
 
+    if (
+      section !== undefined &&
+      section !== null &&
+      typeof section !== "object"
+    ) {
+      return sendResponse(res, 400, false, "Section must be an object");
+    }
+    const formattedSection = section ? {
+        ...(section._id ? { _id: section._id } : {}),
+        title: section.title || "",
+        description: section.description || "",
+        background_image_url: section.background_image_url || "",
+      }
+    : undefined;
+
     const policyPage = new PolicyPage({
       page_name,
       slug,
       description,
+      section: formattedSection,
       meta_title,
       meta_description,
       meta_keyphrase,
@@ -183,6 +200,7 @@ const updatepolicypage = async (req, res) => {
       page_name,
       slug,
       description,
+      section,
       meta_title,
       meta_description,
       meta_keyphrase,
@@ -203,6 +221,18 @@ const updatepolicypage = async (req, res) => {
       }
     }
 
+     if (
+      section !== undefined &&
+      section !== null &&
+      typeof section !== "object"
+    ) {
+      return sendResponse(
+        res,
+        400,
+        false,
+        "Section must be an object"
+      );
+    }
     const query = { _id: id, ...(req.ownershipQuery || {}) };
 
     const policyPage = await PolicyPage.findOneAndUpdate(
@@ -212,6 +242,15 @@ const updatepolicypage = async (req, res) => {
           ...(page_name !== undefined && { page_name }),
           ...(slug !== undefined && { slug }),
           ...(description !== undefined && { description }),
+          ...(section !== undefined && { section: section ? {
+              ...(section._id ? { _id: section._id } : {}),
+
+              title: section.title || "",
+              description: section.description || "",
+              background_image_url: section.background_image_url || "",
+            }
+          : null,
+          }),
           ...(meta_title !== undefined && { meta_title }),
           ...(meta_description !== undefined && { meta_description }),
           ...(meta_keyphrase !== undefined && { meta_keyphrase }),
