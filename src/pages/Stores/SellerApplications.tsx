@@ -10,7 +10,7 @@ export default function SellerApplications() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [filterStatus, setFilterStatus] = useState("submitted");
+  const [filterStatus, setFilterStatus] = useState("");
   useEffect(() => {
     fetchApplications();
   }, [filterStatus]);
@@ -80,7 +80,7 @@ export default function SellerApplications() {
           <p className="text-sm text-slate-500">Review seller applications and approve store creation.</p>
         </div>
         <div className="flex bg-slate-100 p-1 rounded-xl">
-          {["submitted", "approved", "rejected", ""].map((st) => (
+          {["", "submitted", "approved", "rejected"].map((st) => (
             <button
               key={st}
               onClick={() => setFilterStatus(st)}

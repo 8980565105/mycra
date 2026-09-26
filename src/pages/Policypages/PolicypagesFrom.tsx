@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PolicySection } from "@/features/Policypages/policypagesslice";
 
 
 function slugify(text: string = "") {
@@ -42,6 +43,9 @@ export default function PolicyPageFormPage() {
     const [slugTouched, setSlugTouched] = useState(false);
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState("active");
+    const [section, setSection] = useState<PolicySection>({
+        title: "", description: "", background_image_url: ""
+    });
     const [order, setOrder] = useState<number | "">("");
     const [metaTitle, setMetaTitle] = useState("");
     const [metaDescription, setMetaDescription] = useState("");
@@ -56,6 +60,20 @@ export default function PolicyPageFormPage() {
                     setSlug(page.slug || "");
                     setSlugTouched(true);
                     setDescription(page.description || "");
+                    if (page.section) {
+                        setSection({
+                            _id: page.section._id,
+                            title: page.section.title || "",
+                            description: page.section.description || "",
+                            background_image_url: page.section.background_image_url || "",
+                        });
+                        } else {
+                        setSection({
+                            title: "",
+                            description: "",
+                            background_image_url: "",
+                        });
+                        }
                     setMetaTitle(page.meta_title || "");
                     setMetaDescription(page.meta_description || "");
                     setMetaKeyphrase(page.meta_keyphrase || "");
@@ -77,6 +95,12 @@ export default function PolicyPageFormPage() {
             page_name: pageName,
             slug: slug || slugify(pageName),
             description,
+            section: {
+                ...(section._id ? { _id: section._id } : {}),
+                title: section.title.trim(),
+                description: section.description || "",
+                background_image_url: section.background_image_url || "",
+            },
             meta_title: metaTitle,
             meta_description: metaDescription,
             meta_keyphrase: metaKeyphrase,
@@ -166,6 +190,55 @@ export default function PolicyPageFormPage() {
                                 <TiptapEditor
                                     value={description}
                                     onChange={(val) => setDescription(val)}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="shadow-md border border-gray-200">
+                        <CardHeader>
+                            <CardTitle className="text-lg font-semibold">
+                            Page Section
+                            </CardTitle>
+                        </CardHeader>
+
+                        <CardContent className="space-y-5">
+                            <div>
+                                <Label>Title</Label>
+                                <Input
+                                    value={section.title}
+                                    onChange={(e) =>
+                                    setSection((prev) => ({
+                                        ...prev,
+                                        title: e.target.value,
+                                    }))
+                                    }
+                                    placeholder="Enter section title"
+                                />
+                            </div>
+
+                            <div>
+                                <Label>Description</Label>
+                                <TiptapEditor
+                                    value={section.description}
+                                    onChange={(value) =>
+                                    setSection((prev) => ({
+                                        ...prev,
+                                        description: value,
+                                    }))
+                                    }
+                                />
+                            </div>
+
+                            <div>
+                                <Label>Background Image</Label>
+                                <ImageUpload
+                                    value={section.background_image_url}
+                                    onChange={(url) =>
+                                    setSection((prev) => ({
+                                        ...prev,
+                                        background_image_url: url as string,
+                                    }))
+                                    }
                                 />
                             </div>
                         </CardContent>

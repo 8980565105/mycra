@@ -8,11 +8,19 @@ import {
   updatePolicyPageStatus,
 } from "./policypagesThunk";
 
+export interface PolicySection {
+  _id?: string;
+  title: string;
+  description: string;
+  background_image_url: string;
+}
+
 export interface PolicyPage {
   _id: string;
   page_name: string;
   slug: string;
   description?: string;
+  sections?: PolicySection;
   meta_title?: string;
   meta_description?: string;
   meta_keyphrase?: string;
