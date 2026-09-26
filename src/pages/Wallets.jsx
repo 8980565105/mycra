@@ -84,12 +84,15 @@ const totalBalance = walletBalance + totalGiftCardBalance + voucherBalance;
                 ₹{totalBalance.toLocaleString("en-IN")}
               </span>
             </div>
+            {walletBalance > 0 && (
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-gray-600">Wallet</span>
               <span className="text-gray-600">
                 ₹{wallet?.balance.toLocaleString("en-IN")}
               </span>
             </div>
+            )}
+            {totalGiftCardBalance > 0 && (
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <div>
                 <div className="text-gray-600">Gift Cards</div>
@@ -101,12 +104,15 @@ const totalBalance = walletBalance + totalGiftCardBalance + voucherBalance;
                 ₹{totalGiftCardBalance.toLocaleString("en-IN")}
               </span>
             </div>
+            )}
+            {voucherBalance > 0 && (
             <div className="flex justify-between items-center py-3">
               <span className="text-gray-600">Vouchers</span>
               <span className="text-gray-600">
                 ₹{wallet?.voucherBalance.toLocaleString("en-IN")}
               </span>
             </div>
+            )}
           </div>
 
           <div className="bg-gray-50 rounded-lg shadow-sm p-2 md:p-4">

@@ -1,6 +1,9 @@
 ﻿import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchPolicyPageBySlug } from "../features/Policypages/policypagesThunk";
+import { getImageUrl } from "../components/utils/helper";
+import SecondarySection from "../components/ui/SecondarySection";
+import PolicyContentLayout from "../components/ui/PolicyContentLayout";
 
 function PolicyPage({ slug }) {
     const dispatch = useDispatch();
@@ -49,8 +52,29 @@ function PolicyPage({ slug }) {
         );
     }
 
+    const section = currentPage.section;
+
+    const backgroundImage = section?.background_image_url
+        ? getImageUrl(section.background_image_url)
+        : "";
+
     return (
-        <section className="py-16">
+        <>
+        <div>
+            {section && (
+                <div className="w-full relative">
+                    <SecondarySection
+                        title={ section.title ||
+                            currentPage.page_name ||
+                            "Policy"
+                        }
+                        description={section.description || ""}
+                        backgroundImage={backgroundImage}
+                    />
+                </div>
+            )}
+        </div>
+        {/* <section className="py-16">
             <div className="container mx-auto max-w-5xl px-4">
                 <h1 className="mb-8 text-3xl font-bold">
                     {currentPage.page_name}
@@ -62,7 +86,11 @@ function PolicyPage({ slug }) {
                     }}
                 />
             </div>
-        </section>
+        </section> */}
+        <PolicyContentLayout 
+            description={currentPage.description || "" }
+        />
+        </>
     );
 }
 

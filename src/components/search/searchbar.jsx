@@ -1,53 +1,54 @@
 import { ChevronRight, Search, XCircleIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProducts } from "../../features/products/productsThunk";
 
 export default function SearchBar({ onNavigate }) {
-  const { products } = useSelector((state) => state.products);
+  const dispatch = useDispatch();
+  const { products = [] } = useSelector((state) => state.products);
 
+  useEffect(() => {
+    if (!products || products.length === 0) {
+      dispatch(fetchProducts());
+    }
+  }, [dispatch, products]);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
   const containerRef = useRef(null);
 
-  // const filtered =
-  //   query.trim().length > 0
-  //     ? (products || [])
-  //         .filter((p) => p.name?.toLowerCase().includes(query.toLowerCase()))
-  //         .slice(0, 8)
-  //     : [];
   const filtered =
     query.trim().length > 0
       ? (products || [])
           .filter((product) => {
-            const search = query.toLowerCase().trim();
+            const search = query.trim().toLowerCase();
 
-            const variant = product.variants?.[0] || {};
-
-            const fields = [
+            const productFields = [
               product.name,
               product.tag,
               product.slug,
               product.sku,
-
               product.category?.name,
+            ];
 
+          const variantFields = (product.variants || []).flatMap(
+            (variant) => [
               variant.sku,
 
-              ...(variant.brand || []).map((b) => b.name),
-              ...(variant.fabric || []).map((f) => f.name),
-              ...(variant.type || []).map((t) => t.name),
-              ...(variant.color || []).map((c) => c.name),
-              ...(variant.size || []).map((s) => s.name),
-
-              ...(variant.labelsInfo || []).map((l) => l.name),
+              ...(variant.brand || []).map((item) => item.name),
+              ...(variant.fabric || []).map((item) => item.name),
+              ...(variant.type || []).map((item) => item.name),
+              ...(variant.color || []).map((item) => item.name),
+              ...(variant.size || []).map((item) => item.name),
+              ...(variant.labelsInfo || []).map((item) => item.name),
             ]
-              .flat()
+          );
+          const searchableText = [ ...productFields, ...variantFields ]
               .filter(Boolean)
               .join(" ")
               .toLowerCase();
 
-            return fields.includes(search);
+            return searchableText.includes(search);
           })
           .slice(0, 8)
       : [];
@@ -112,7 +113,7 @@ export default function SearchBar({ onNavigate }) {
       <button
         onClick={handleOpen}
         aria-label="search"
-        className="flex items-center justify-center text-black hover:text-[var(--primary-color)]"
+        className="flex items-center justify-center text-[rgba(0,0,0,0.70)] hover:text-[var(--primary-color)]"
       >
         <Search size={22} />
       </button>
@@ -137,7 +138,7 @@ export default function SearchBar({ onNavigate }) {
               md:top-12
               w-full md:w-[420px]
               bg-white
-              md:rounded-xl
+              md:rounded-[5px]
               z-50
               shadow-2xl
               border-0 md:border border-gray-200

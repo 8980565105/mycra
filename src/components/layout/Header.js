@@ -46,6 +46,7 @@ import toast from "react-hot-toast";
 import SearchBar from "../search/searchbar";
 import { fetchWishlistByUser } from "../../features/wishlist/wishlistThunk";
 import { fetchChildCategory } from "../../features/childcategory/childcategoryThunk";
+import { fetchProducts } from "../../features/products/productsThunk";
 
 const STATIC_CATEGORIES = [
   { _id: "static-1", name: "Saree", image_url: shoppingImg, isStatic: true },
@@ -158,13 +159,20 @@ const Header = () => {
     setMegaMenuPage(1);
     setMobileMenuPage(1);
   };
+  const { products = [], loading: productsLoading } = useSelector((state) => state.products);
 
   useEffect(() => {
     dispatch(fetchNavbar({ status: "active" }));
     dispatch(fetchCategories());
     dispatch(fetchsubCategories());
     dispatch(fetchChildCategory());
+    dispatch(fetchProducts());
   }, [dispatch]);
+  useEffect(() => {
+    if (!productsLoading && products.length === 0) {
+      dispatch(fetchProducts());
+    }
+  }, [dispatch, products.length, productsLoading]);
 
   useEffect(() => {
     if (userId) {
@@ -573,22 +581,22 @@ const Header = () => {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative hidden custom-lg:block group">
+        <div className="flex items-center gap-[12px]">
+          <div className="relative hidden custom-lg:block group shrink-0">
             <Button
               variant="common"
-              className="!min-w-[113px] !py-[7px] !px-[8px] flex items-center"
+              className="!min-w-[113px] !py-[7px] !px-[8px] flex items-center justify-center shrink-0"
               onClick={() => {
                 if (!token) setIsLoginOpen(true);
               }}
             >
-              <img src={WhiteLogin} alt="Login" className="w-5 h-5 mr-2" />
+              <img src={WhiteLogin} alt="Login" className="w-5 h-5 mr-2 shrink-0" />
               {!token ? (
                 <>
                   Login
                   <ChevronDown
                     size={16}
-                    className="ml-1 transition-transform duration-300 group-hover:rotate-180"
+                    className="ml-1 transition-transform duration-300 group-hover:rotate-180 shrink-0"
                   />
                 </>
               ) : (
@@ -601,7 +609,7 @@ const Header = () => {
                   </span>
                   <ChevronDown
                     size={16}
-                    className="ml-1 transition-transform duration-300 group-hover:rotate-180"
+                    className="ml-1 transition-transform duration-300 group-hover:rotate-180 shrink-0"
                   />
                 </>
               )}
@@ -664,26 +672,28 @@ const Header = () => {
             </div>
           </div>
 
+          <div className="shrink-0 text-[rgba(0,0,0,0.70)]">
           <SearchBar onNavigate={navigate} />
+          </div>
           <button
             onClick={() => openProtectedLink("/wishlist")}
-            className="relative text-black hover:text-[var(--primary-color)]"
+            className="relative w-6 h-6 flex items-center justify-center text-[rgba(0,0,0,0.70)] hover:text-[var(--primary-color)]"
           >
             <Heart className="w-5 h-5" />
             {wishlistCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-[var(--secondary-color)] text-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -top-[7px] -right-[6px] w-4 h-4 px-[3px] bg-[var(--secondary-color)] text-black text-[10px] rounded-full flex items-center justify-center">
                 {wishlistCount}
               </span>
             )}
           </button>
 
           <button
-            className="relative text-black hover:text-[var(--primary-color)]"
+            className="relative w-6 h-6 flex items-center justify-center text-[rgba(0,0,0,0.70)] hover:text-[var(--primary-color)]"
             onClick={() => openProtectedLink("/cart")}
           >
             <FontAwesomeIcon icon={faCartShopping} className="w-5 h-5" />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-[var(--secondary-color)] text-black text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -top-[7px] -right-[6px] w-4 h-4 px-[3px] bg-[var(--secondary-color)] text-black text-[10px] rounded-full flex items-center justify-center">
                 {cartCount}
               </span>
             )}
