@@ -230,3 +230,80 @@ export const verifyOtp = createAsyncThunk(
   }
 );
 
+
+export const adminAddVoucher = createAsyncThunk(
+  "wallet/adminAddVoucher",
+  async ({ userId, amount, status, expiresAt, }: {
+      userId: string;
+      amount: number;
+      status: boolean;
+      expiresAt: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.post(ROUTES.wallet.createVoucher, {
+          userId,
+          amount,
+          status,
+          expiresAt,
+        },
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error("adminAddVoucher API error:", error.response?.data || error);
+
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to add voucher"
+      );
+    }
+  }
+);
+
+export const adminUpdateVoucher = createAsyncThunk(
+  "wallet/adminUpdateVoucher",
+
+  async (
+    {
+      userId,
+      amount,
+      status,
+      expiresAt,
+    }: {
+      userId: string;
+      amount: number;
+      status: boolean;
+      expiresAt: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.put(
+        ROUTES.wallet.updateVoucher(userId),
+        {
+          amount,
+          status,
+          expiresAt,
+        }
+      );
+
+      console.log(
+        "UPDATE VOUCHER API RESPONSE:",
+        response.data
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error(
+        "UPDATE VOUCHER API ERROR:",
+        error.response?.data || error
+      );
+
+      return rejectWithValue(
+        error.response?.data?.message ||
+          "Failed to update voucher"
+      );
+    }
+  }
+);

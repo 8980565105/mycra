@@ -1,7 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
   addMoneyToWallet,
+  adminAddVoucher,
   adminAdjustBalance,
+  adminUpdateVoucher,
   adminVerifyKyc,
   fetchAllWallets,
   fetchWallet,
@@ -96,6 +98,37 @@ const walletSlice = createSlice({
         const updated = action.payload;
         const idx = state.adminWallets.findIndex((w) => w._id === updated._id);
         if (idx !== -1) state.adminWallets[idx] = updated;
+      })
+      
+      .addCase(adminAddVoucher.fulfilled, (state, action) => {
+        const updated =  action.payload;
+        const index = state.adminWallets.findIndex((wallet) => wallet._id ===updated._id);
+        if (index !== -1) state.adminWallets[index] = updated;
+      })
+
+      .addCase(adminAddVoucher.rejected, (state, action) => {
+        state.adminError = action.payload as string;
+      })
+
+      .addCase(adminUpdateVoucher.fulfilled, (state, action) => {
+        const updated = action.payload?.data?.wallet;
+
+        if (!updated) return;
+
+        const index = state.adminWallets.findIndex(
+          (wallet) =>
+            String(wallet._id) === String(updated._id)
+        );
+
+        if (index !== -1) {
+          state.adminWallets[index] = {
+            ...state.adminWallets[index],
+            ...updated,
+          };
+        }
+      })
+      .addCase(adminUpdateVoucher.rejected, (state, action) => {
+        state.adminError = action.payload as string;
       });
   },
 });
