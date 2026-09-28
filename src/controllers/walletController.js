@@ -125,59 +125,6 @@ const adminVerifyKyc = async (req, res) => {
   }
 };
 
-// const getAllWallets = async (req, res) => {
-//   try {
-//     const { page = 1, limit = 20, search } = req.query;
-//     const skip = (Number(page) - 1) * Number(limit);
-
-//     const User = require("../models/User");
-
-    // const userFilter = { role: "store_user" };
-    // if (req.user.role === "store_owner") {
-    //   userFilter.storeId = req.user.storeId;
-    // }
-
-//     if (search) {
-//       const searchRegex = new RegExp(search, "i");
-//       userFilter.$or = [
-        // { name: searchRegex },
-        // { email: searchRegex },
-        // { mobile_number: searchRegex }
-//       ];
-//     }
-
-//     const users = await User.find(userFilter)
-      // .sort({ createdAt: -1 })
-      // .skip(skip)
-      // .limit(Number(limit));
-
-//     const total = await User.countDocuments(userFilter);
-
-//     const wallets = [];
-//     for (const user of users) {
-//       let wallet = await Wallet.findOne({ user: user._id });
-//       if (!wallet) {
-//         wallet = await Wallet.create({ user: user._id });
-//       }
-//       const walletObj = wallet.toObject();
-//       const userObj = user.toObject();
-//       userObj.phone = user.mobile_number; 
-//       walletObj.user = userObj;
-//       wallets.push(walletObj);
-//     }
-
-//     return res.status(200).json({
-//       success: true,
-//       wallets,
-//       total,
-//       page: Number(page),
-//       totalPages: Math.ceil(total / Number(limit)),
-//     });
-//   } catch (error) {
-//     return res.status(500).json({ success: false, message: error.message });
-//   }
-// };
-
 const getAllWallets = async (req, res) => {
   try {
     const { page = 1, limit = 20, search = "", } = req.query;
@@ -241,6 +188,12 @@ const getAllWallets = async (req, res) => {
           giftCards,
           giftCardBalance,
           voucherBalance,
+          voucherStatus: wallet.voucherStatus ?? true,
+          expiresAt: wallet.expiresAt ?? null,
+          isVoucherActive:
+            wallet.voucherStatus === true &&
+            wallet.expiresAt &&
+            new Date() <= new Date(wallet.expiresAt),
           balance,
           totalBalance,
         };
@@ -306,6 +259,188 @@ const adminAdjustBalance = async (req, res) => {
   }
 };
 
+const adminAddVoucher = async (req, res) => {
+  try {
+    const { userId, amount, status, expiresAt, } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    const voucherAmount = Number(amount);
+
+    if (!voucherAmount || voucherAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid voucher amount is required",
+      });
+    }
+    if (typeof status !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "Voucher status must be true or false",
+      });
+    }
+
+    if (!expiresAt) {
+      return res.status(400).json({
+        success: false,
+        message: "Voucher expiry date is required",
+      });
+    }
+
+    const voucherExpiryDate = new Date(expiresAt);
+
+    if (Number.isNaN(voucherExpiryDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid voucher expiry date",
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expiryDate = new Date(voucherExpiryDate);
+    expiryDate.setHours(0, 0, 0, 0);
+
+    if (expiryDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: "Voucher expiry date cannot be in the past",
+      });
+    }
+
+    let wallet = await Wallet.findOne({ user: userId });
+
+    if (!wallet) {
+      wallet = await Wallet.create({
+        user: userId,
+        balance: 0,
+        giftCardBalance: 0,
+        voucherBalance: voucherAmount,
+        expiresAt: voucherExpiryDate,
+        voucherStatus: status,
+      });
+    } else {
+      const oldVoucherBalance = Number(
+        wallet.voucherBalance || 0
+      );
+
+      wallet.voucherBalance = oldVoucherBalance + voucherAmount;
+      wallet.expiresAt = voucherExpiryDate;
+      wallet.voucherStatus = status;
+
+      await wallet.save();
+    } 
+    return res.status(200).json({
+      success: true,
+      message: "Voucher amount added successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Admin Add Voucher Error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add voucher amount",
+      error: error.message,
+    });
+  }
+};
+
+const adminUpdateVoucher = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { amount, status, expiresAt } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    const voucherAmount = Number(amount);
+
+    if (!voucherAmount || voucherAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid voucher amount is required",
+      });
+    }
+
+    if (typeof status !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "Voucher status must be true or false",
+      });
+    }
+
+    if (!expiresAt) {
+      return res.status(400).json({
+        success: false,
+        message: "Voucher expiry date is required",
+      });
+    }
+
+    const voucherExpiryDate = new Date(expiresAt);
+
+    if (Number.isNaN(voucherExpiryDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid voucher expiry date",
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expiryDate = new Date(voucherExpiryDate);
+    expiryDate.setHours(0, 0, 0, 0);
+
+    if (expiryDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: "Voucher expiry date cannot be in the past",
+      });
+    }
+
+    const wallet = await Wallet.findOne({
+      user: userId,
+    });
+
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message: "Wallet not found",
+      });
+    }
+
+    wallet.voucherBalance = voucherAmount;
+    wallet.voucherStatus = status;
+    wallet.expiresAt = voucherExpiryDate;
+
+    await wallet.save();
+    return res.status(200).json({
+      success: true,
+      message: "Voucher updated successfully",
+    });
+  } catch (error) {
+    console.error("Admin Update Voucher Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update voucher",
+      error: error.message,
+    });
+  }
+};
 module.exports = {
   getBalance,
   addMoney,
@@ -313,4 +448,6 @@ module.exports = {
   adminAdjustBalance,
   getAllWallets,
   adminVerifyKyc,
+  adminAddVoucher,
+  adminUpdateVoucher
 };

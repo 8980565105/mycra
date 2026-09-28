@@ -20,6 +20,14 @@ const walletSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    expiresAt: {
+      type: Date,
+      default: null,
+    },
+    voucherStatus: {
+      type: Boolean,
+      default: true,
+    },
     isKycVerified: {
       type: Boolean,
       default: false,
