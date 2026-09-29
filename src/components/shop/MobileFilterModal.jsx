@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { X, XCircleIcon } from "lucide-react";
 import {
   CollapsibleFilter,
   FilterItemCheckbox,
@@ -262,32 +262,32 @@ const MobileFilterModal = ({
     }, {})
     : {};
 
-  if (!isOpen) return null;
+  // if (!isOpen) return null;
 
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/60 lg:hidden transition-opacity duration-300"
+        className={`fixed inset-0 z-40 bg-black/40 lg:hidden transition-opacity duration-500 ease-in-out ${
+          isOpen
+            ? "opacity-100"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={onClose}
-      ></div>
+      />
+
       <div
-        className={`
-              fixed top-0 left-0 z-50 bg-white lg:hidden overflow-y-auto w-4/5 h-full max-w-md
-              transition-transform duration-500 ease-in-out
-              ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          `}
+        className={`fixed top-0 left-0 z-50 bg-white lg:hidden w-5/6 max-w-[430px] h-full overflow-y-auto transform transition-transform duration-500 ease-in-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         <div className="w-full h-full">
-          <div className="sticky top-0 bg-white px-2 py-4 flex justify-start items-center z-10 border-b">
-            <button
+          <div className="sticky top-0 bg-white px-2 py-4 flex justify-start items-center z-10 border-b gap-3">
+            <button className="transition-colors text-light border rounded-[3px] p-[5px] border-[#D2AF9F]"
               onClick={onClose}
-              className="flex items-center space-x-1 p-1 font-inter text-base sm:text-lg font-semibold text-black/70 hover:text-black gap-3"
             >
-              <X className="w-5 h-5 text-black" />
-              CLOSE
-            </button>
+              <XCircleIcon size={22} />
+            </button>CLOSE
           </div>
-
           <div className="space-y-4 py-[10px]">
             <CollapsibleFilter
               title="Categories"

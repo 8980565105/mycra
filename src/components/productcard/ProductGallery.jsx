@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { cloneElement, useEffect, useMemo, useState } from "react";
 import Slider from "react-slick";
 import { getImageUrl } from "../utils/helper";
 export default function ProductGallery({
@@ -86,18 +86,43 @@ export default function ProductGallery({
     slidesToShow: 1,
     slidesToScroll: 1,
     arrows: false,
+    customPaging: () => (
+      <button
+        type="button"
+        className="!block !relative !shrink-0 !w-[9px] !h-[9px] !min-w-0 !min-h-0 !m-0 !p-0 !rounded-full !border !border-solid !border-[#D2AF9F] !bg-transparent !opacity-100 !text-[0px] !leading-none !outline-none [&::before]:!hidden [&::before]:!content-none [&::before]:!w-0 [&::before]:!h-0 [&::before]:!m-0 [&::before]:!p-0 [&::before]:!opacity-0"
+      />
+    ),
+
     appendDots: (dots) => (
-      <div className="w-full relative">
-        <ul className="absolute left-1/2 transform -translate-x-1/2 flex justify-center rounded-full">
-          {dots}
+      <div className="absolute bottom-[15px] left-0 w-full z-20">
+        <ul className="!flex !items-center !justify-center !gap-[7px] !m-0 !p-0 !list-none">
+          {dots.map((dot, index) => {
+            const isActive = dot.props.className?.includes("slick-active");
+            const button = dot.props.children;
+
+            return cloneElement(
+              dot,
+              {
+                key: index,
+                className: `!flex !items-center !justify-center !relative !shrink-0 !m-0 !p-0 !list-none ${
+                  isActive
+                    ? "!w-[9px] !h-[9px]"
+                    : "!w-[9px] !h-[9px]"
+                }`,
+              },
+              cloneElement(button, {
+                className: `!block !relative !shrink-0 !min-w-0 !min-h-0 !m-0 !p-0 !rounded-full !border !border-solid !opacity-100 !text-[0px] !leading-none !outline-none [&::before]:!hidden [&::before]:!content-none [&::before]:!w-0 [&::before]:!h-0 [&::before]:!m-0 [&::before]:!p-0 [&::before]:!opacity-0 ${
+                  isActive
+                    ? "!w-[9px] !h-[9px] !bg-[var(--primary-color)] !border-[var(--primary-color)]"
+                    : "!w-[9px] !h-[9px] !bg-transparent !border-[#D2AF9F]"
+                }`,
+              })
+            );
+          })}
         </ul>
       </div>
     ),
-    customPaging: () => (
-      <div className="w-[10px] h-[10px] rounded-full border border-[#D2AF9F] transition-all duration-300"></div>
-    ),
-  };
-
+};
   return (
     <div className="flex flex-col md:flex-row gap-[30px] items-start">
     <div className="w-full hidden md:flex md:sticky md:top-[110px] self-start gap-[20px] z-10">
@@ -143,12 +168,7 @@ export default function ProductGallery({
             <span
               key={color.id}
               onClick={() => setSelectedColor(color.id)}
-              className={`w-[24px] h-[24px] rounded-full border-2 transition-all cursor-pointer
-                ${
-                  selectedColor === color.id
-                    ? "border-black scale-110"
-                    : "border-gray-300 hover:border-gray-500"
-                }`}
+              className="w-[24px] h-[24px] rounded-full shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)] transition-all cursor-pointer"
               style={{ backgroundColor: color.code }}
               title={color.name}
             />

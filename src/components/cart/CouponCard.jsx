@@ -127,25 +127,30 @@ export default function CouponCard({
       {/* =====================================================
           DRAWER
       ====================================================== */}
-          {isDrawerOpen && (
-            <>
-              <div className=" fixed inset-0 bg-black/40 z-[9999] "
+          {/* {isDrawerOpen && (
+            <> */}
+              <div className={`fixed inset-0 bg-black/40 z-[9998] transition-opacity duration-500 ${
+                    isDrawerOpen
+                      ? "opacity-100"
+                      : "opacity-0 pointer-events-none"
+                  }
+                `} 
                 onClick={() => setIsDrawerOpen(false)} 
               />
 
               {/* Right Drawer */}
-              <div className={`fixed top-0 right-0 h-screen w-full w-3/4 max-w-[430px] bg-white z-[9999] transform transition-transform duration-300 flex flex-col ${
-                  isDrawerOpen ? "translate-x-0" : "-translate-x-full"
+              <div className={`fixed top-0 right-0 h-screen w-full  max-w-[430px] bg-white z-[9999] flex flex-col transform transition-transform duration-500 ease-in-out ${
+                  isDrawerOpen ? "translate-x-0" : "translate-x-full"
                 }`}
               > 
-            <div className=" flex items-center justify-between px-5 py-4 border-b border-theme shrink-0 " >
+            <div className="relative flex items-start justify-between px-5 py-4 border-b border-theme shrink-0 gap-2" >
               <div>
                 <h2 className="text-[20px] font-semibold text-black"> Coupons </h2>
                 <p className="text-[12px] text-gray-500"> Save more on your order </p>
               </div>
 
               {/* Close */}
-              <button className="absolute top-4 right-2 transition-colors text-light border rounded-[3px] p-[5px] border-[#D2AF9F]"
+              <button className="transition-colors text-light border rounded-[3px] p-[5px] border-[#D2AF9F]"
                 onClick={() => setIsDrawerOpen(false)}
               >
                 <XCircleIcon size={22} />
@@ -271,7 +276,7 @@ export default function CouponCard({
             </div>
           </div>
         </>
-      )}
-    </>
+    //   )}
+    // </>
   );
 }

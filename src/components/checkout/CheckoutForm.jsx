@@ -445,9 +445,14 @@ export default function CheckoutForm({
       </Link>
 
       {/* Address Drawer */}
-      {showDrawer && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-[9999]"
+      {/* {showDrawer && (
+        <> */}
+          <div className={`fixed inset-0 bg-black/40 z-[9998] transition-opacity duration-500 ${
+                    showDrawer
+                      ? "opacity-100"
+                      : "opacity-0 pointer-events-none"
+                  }
+                `} 
             onClick={() => {
               setShowDrawer(false);
               setActiveDropdown(null);
@@ -455,18 +460,18 @@ export default function CheckoutForm({
           />
 
           {/* Right Drawer */}
-          <div className={`fixed top-0 right-0 h-screen w-full w-3/4 max-w-[430px] bg-white z-[9999] transform transition-transform duration-300 flex flex-col ${
-              showDrawer ? "translate-x-0" : "-translate-x-full"
+          <div className={`fixed top-0 right-0 h-screen w-5/6 max-w-[430px] bg-white z-[9999] transform transition-transform duration-500 flex flex-col ease-in-out ${
+              showDrawer ? "translate-x-0" : "translate-x-full"
             }`}
           > 
-            <div className="flex items-center justify-between px-5 py-4 border-b border-theme shrink-0">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-theme shrink-0 gap-2">
               <div>
                 <h2 className="text-[20px] font-semibold text-black">Select delivery address</h2>
                 <p className="text-[12px] text-gray-500">Choose where we should deliver your order</p>
               </div>
 
               {/* Close */}
-              <button className="absolute top-4 right-2 transition-colors text-light border rounded-[3px] p-[5px] border-[#D2AF9F]"
+              <button className=" transition-colors text-light border rounded-[3px] p-[5px] border-[#D2AF9F]"
                 onClick={() => {
                   setShowDrawer(false);
                   setActiveDropdown(null);
@@ -502,7 +507,7 @@ export default function CheckoutForm({
                     }}
                     className={`border rounded-[5px] p-4 cursor-pointer relative transition-all bg-white ${
                       selectedAddressId === addr._id
-                        ? "border-blue-500 shadow-sm"
+                        ? "border-[var(--primary-color)] shadow-sm"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -511,7 +516,7 @@ export default function CheckoutForm({
                         <div
                           className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
                             selectedAddressId === addr._id
-                              ? "border-blue-500 bg-blue-500"
+                              ? "border-[var(--primary-color)] bg-[var(--primary-color)]"
                               : "border-gray-300"
                           }`}
                         >
@@ -525,7 +530,7 @@ export default function CheckoutForm({
                               {addr.full_name}
                             </p>
                             {selectedAddressId === addr._id && (
-                              <span className="inline-block text-[10px] bg-blue-100 text-blue-700 px-2 py-[1px] font-medium rounded-sm">
+                              <span className="inline-block text-[10px] light-color text-[var(--primary-color)] px-2 py-[1px] font-medium rounded-sm">
                                 Selected
                               </span>
                             )}
@@ -586,8 +591,8 @@ export default function CheckoutForm({
               </div>
             </div>
           </div>
-        </>
-      )}
+        {/* </>
+      )} */}
 
       {/* Add / Edit Address Modal */}
       {showForm && (

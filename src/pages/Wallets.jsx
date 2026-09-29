@@ -105,11 +105,11 @@ const totalBalance = walletBalance + totalGiftCardBalance + voucherBalance;
               </span>
             </div>
             )}
-            {voucherBalance > 0 && (
+            {voucherBalance > 0 && wallet?.voucherStatus === true && (
             <div className="flex justify-between items-center py-3">
               <span className="text-gray-600">Vouchers</span>
               <span className="text-gray-600">
-                ₹{wallet?.voucherBalance.toLocaleString("en-IN")}
+                ₹{Number(wallet?.voucherBalance || 0).toLocaleString("en-IN")}
               </span>
             </div>
             )}

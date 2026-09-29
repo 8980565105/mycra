@@ -206,7 +206,7 @@ const Header = () => {
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, []);
-
+  const firstName = user?.name?.trim().split(/\s+/)[0] || "User";
   const dynamicItems = navbars
     .filter(
       (item) =>
@@ -600,12 +600,13 @@ const Header = () => {
                   />
                 </>
               ) : (
+                
                 <>
                   <span
-                    className="inline-block max-w-[40px] overflow-hidden text-ellipsis whitespace-nowrap"
-                    title={user?.name || "User"}
+                    className="inline-block overflow-hidden text-ellipsis whitespace-nowrap"
+                    title={firstName}
                   >
-                    {user?.name || "User"}
+                    {firstName}
                   </span>
                   <ChevronDown
                     size={16}
@@ -702,12 +703,12 @@ const Header = () => {
       </Row>
       {isMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-[1] w-full h-screen"
+          className="fixed inset-0 bg-black/40 z-[1] w-full h-screen"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
       <div
-        className={`fixed top-0 left-0 w-3/4 max-w-[430px] h-screen bg-white box-shadow z-50 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 w-3/4 max-w-[430px] h-screen bg-white box-shadow z-50 transform transition-transform duration-500 ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

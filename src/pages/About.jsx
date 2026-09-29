@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchPageBySlug } from "../features/pages/pagesThunk";
 import Section from "../components/ui/Section";
 import Row from "../components/ui/Row";
-import AboutBanner from "../components/aboutbanner/aboutbanner";
+// import AboutBanner from "../components/aboutbanner/aboutbanner";
 import AboutContent from "../components/aboutbanner/aboutcontent";
 import { getImageUrl } from "../components/utils/helper";
 import SEO from "../components/Seo/seo";
@@ -50,7 +50,7 @@ export default function AboutPage() {
         image={getImageUrl(aboutPage?.seo_image)}
       />
 
-      <AboutBanner />
+      {/* <AboutBanner /> */}
       <AboutContent />
 
       {/* {sortedFeatures.length > 0 && (

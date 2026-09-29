@@ -9,7 +9,7 @@ import DiscountIcon from "../icons/DiscountIcon";
 const LatestIcon = FaRegStar;
 
 const SortByPage = ({ isOpen, onClose, selectedSort, onSelectSort }) => {
-  if (!isOpen) return null;
+  // if (!isOpen) return null;
   const sortOptions = [
     { label: "Popularity", value: "popularity", icon: PopularityIcon },
     { label: "Latest", value: "latest", icon: LatestIcon },
@@ -18,24 +18,21 @@ const SortByPage = ({ isOpen, onClose, selectedSort, onSelectSort }) => {
     { label: "Price High to Low", value: "price_desc", icon: PriceHigh },
   ];
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-end justify-center transition-opacity duration-500 
-                ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"} 
-                bg-black/60 overflow-y-hidden scrollbar-none`}
+    <div className={`fixed inset-0 z-50 flex items-end justify-center bg-black/60 overflow-hidden transition-opacity duration-500 ${
+        isOpen
+          ? "opacity-100"
+          : "opacity-0 pointer-events-none"
+      }`}
     >
-      <div
-        className={`w-full  flex flex-col items-center justify-center transform transition-transform duration-1000 ease-in-out`}
-        style={{
-          transform: isOpen ? "translateY(0)" : "translateY(100%)",
-
-          transition: "transform 500ms ease-in-out",
-        }}
+      <div className={`w-full flex flex-col items-center justify-center transform transition-transform duration-500 ease-in-out ${
+          isOpen ? "translate-y-0" : "translate-y-full"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          aria-label="Close sort options"
-          className="flex items-center justify-center w-[20px] h-[20px] mb-4 rounded-full border-[1.5px] border-white text-gray-700  transition duration-150"
+          aria-label="Close sort options" 
+          className="flex items-center justify-center w-[20px] h-[20px] mb-4 rounded-full border-[1.5px] border-white text-gray-700"
         >
           <CloseIcon width={8} height={8} />
         </button>

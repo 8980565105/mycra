@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Star, } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Star, X, XCircleIcon, } from "lucide-react";
 import { fetchProductReviews } from "../../features/reivews/reviewsThunk";
 import cod from "../../assets/cod.png";
 import exchange from "../../assets/exchange.png";
@@ -16,6 +16,15 @@ const deliveryOptions = [
     title: (
       <>COD<span className="font-regular"> available </span></>
     ),
+    popupTitle: "Cash on Delivery",
+    popupDescription:
+      "Pay for your order conveniently when it is delivered to your doorstep.",
+    details: [
+      "Cash on Delivery is available on eligible products and locations.",
+      "You can pay the delivery partner when your order arrives.",
+      "Availability may depend on your delivery pincode.",
+      "Additional COD charges may apply to some orders.",
+    ],
   },
   {
     id: 2,
@@ -23,6 +32,16 @@ const deliveryOptions = [
     title: (
       <>7-day return <span className="font-regular">&</span> size exchange</>
     ),
+    popupTitle: "7-Day Return & Size Exchange",
+    popupDescription:
+      "You can request a return or size exchange within 7 days of receiving your order, subject to the product's eligibility.",
+    details: [
+      "Return or exchange requests must be submitted within 7 days.",
+      "The product should be unused and in its original condition.",
+      "Original tags, packaging and accessories should be retained.",
+      "Some products may not be eligible for return or exchange.",
+      "Size exchange is subject to product availability.",
+    ],
   },
   {
     id: 3,
@@ -30,13 +49,32 @@ const deliveryOptions = [
     title: (
       <>Usually ships in <span className="font-regular"> 1 day </span></>
     ),
+    popupTitle: "Fast Shipping",
+    popupDescription:
+      "Your order is generally prepared and shipped within one working day.",
+    details: [
+      "Orders are normally processed within 1 working day.",
+      "Delivery time depends on your location and courier service.",
+      "You can check availability by entering your pincode.",
+      "Delivery may take longer during holidays or unexpected delays.",
+      "Tracking information will be shared after the order is shipped.",
+    ],
   },
   {
     id: 4,
     icon: cod,
     title: (
-      <>abcd</>
+      <>Secure <span className="font-regular">Packaging</span></>
     ),
+    popupTitle: "Secure Packaging",
+    popupDescription:
+      "Your product is carefully packed to help protect it during transportation.",
+    details: [
+      "Products are packed carefully before dispatch.",
+      "Packaging is designed to reduce the risk of damage during transit.",
+      "Please check the package condition when receiving your order.",
+      "If the package appears damaged, contact customer support.",
+    ],
   },
 ];
 
@@ -49,7 +87,21 @@ export default function ProductTabs({ product, selectedVariant }) {
   const [deliveryMessage, setDeliveryMessage] = useState("");
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [selectedDeliveryOption, setSelectedDeliveryOption] = useState(null);
+  const [delieveryPopupOpen, setDelieveryPopupOpen] = useState(false);
 
+  const openDeliveryPopup = (item) => {
+    setSelectedDeliveryOption(item);
+    requestAnimationFrame(() => {
+      setDelieveryPopupOpen(true);
+    });
+  };
+  const closeDeliveryPopup = () => {
+    setDelieveryPopupOpen(false);
+    setTimeout(() => {
+      setSelectedDeliveryOption(null);
+    }, 300);
+  };
   const dispatch = useDispatch();
   const { loading, error, productReviews } = useSelector(
     (state) => state.reviews,
@@ -263,6 +315,7 @@ export default function ProductTabs({ product, selectedVariant }) {
                   </div>
                   <button
                     type="button"
+                    onClick={() => openDeliveryPopup(item)}
                     className="mt-auto text-sm text-[var(--primary-color)] hover:underline font-medium"
                   >
                     Know More
@@ -524,6 +577,120 @@ export default function ProductTabs({ product, selectedVariant }) {
           </div>
         ))}
       </div>
+      {selectedDeliveryOption && (
+        <>
+          <div
+            className={`fixed inset-0 bg-black/40 z-[9998] transition-opacity duration-500 ${
+              delieveryPopupOpen
+                ? "opacity-100"
+                : "opacity-0"
+            }`}
+            onClick={closeDeliveryPopup}
+          />
+          <div
+            className={`fixed top-0 right-0 h-screen w-5/6 max-w-[430px] bg-white z-[9999] flex flex-col shadow-2xl transform transition-transform duration-500 ease-in-out ${
+              delieveryPopupOpen
+                ? "translate-x-0"
+                : "translate-x-full"
+            }`}
+          >
+            <div className="flex items-start justify-between px-5 py-4 border-b border-theme shrink-0 gap-2">
+              <div className="flex items-center gap-3 min-w-0">
+
+                <div className="w-[42px] h-[42px] rounded-full bg-[var(--primary-color)]/10 flex items-center justify-center flex-shrink-0">
+                  <img
+                    src={selectedDeliveryOption.icon}
+                    alt={selectedDeliveryOption.popupTitle}
+                    className="w-[25px] h-[25px] object-contain"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm md:text-xs sec-text-color uppercase tracking-[0.12em]">
+                    Delivery Information
+                  </p>
+                  <h3 className="text-[20px] font-medium text-black truncate">
+                    {selectedDeliveryOption.popupTitle}
+                  </h3>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeDeliveryPopup}
+                className="transition-colors text-light border rounded-[3px] p-[5px] border-[#D2AF9F]"
+              >
+                <XCircleIcon size={22} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-5">
+              <div className="mb-7">
+                <h4 className="text-[18px] font-medium text-black mb-3">
+                  {selectedDeliveryOption.popupTitle}
+                </h4>
+                <p className="text-[15px] leading-7 sec-text-color">
+                  {selectedDeliveryOption.popupDescription}
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-[17px] font-medium text-black mb-4">
+                  Important Details
+                </h4>
+                <div className="space-y-4">
+                  {selectedDeliveryOption.details?.map(
+                    (detail, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start gap-3"
+                      >
+                        <span className="mt-[7px] w-[7px] h-[7px] rounded-full bg-[var(--primary-color)] flex-shrink-0" />
+                        <p className="text-[14px] leading-6 sec-text-color">
+                          {detail}
+                        </p>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {(selectedDeliveryOption.id === 1 ||
+                selectedDeliveryOption.id === 3) && (
+                <div className="mt-8 rounded-xl bg-[#9896961A] p-5">
+                  <h4 className="text-[16px] font-medium text-black mb-2">
+                    Check Delivery Availability
+                  </h4>
+                  <p className="text-[13px] leading-5 text-gray-500">
+                    Enter your delivery pincode above to check whether
+                    this service is available in your area.
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-8 border-t border-gray-200 pt-6">
+                <h4 className="text-[16px] font-medium text-black mb-2">
+                  Need Help?
+                </h4>
+                <p className="text-[13px] leading-5 sec-text-color">
+                  If you have any questions regarding this service,
+                  please contact our customer support team.
+                </p>
+              </div>
+
+            </div>
+
+            <div className="border-t border-gray-200 px-6 py-4 bg-white shrink-0">
+              <button
+                type="button"
+                onClick={closeDeliveryPopup}
+                className="w-full h-[48px] rounded-md bg-[var(--primary-color)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

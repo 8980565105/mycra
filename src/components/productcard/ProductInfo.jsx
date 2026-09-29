@@ -469,17 +469,22 @@ export default function ProductInfo({
           )}
 
 
-          {hasProductSizes && sizeGuideOpen && (
-            <>
-              <div className=" fixed inset-0 bg-black/40 z-[9999] "
+          {/* {hasProductSizes && sizeGuideOpen && (
+            <> */}
+              <div className={`fixed inset-0 bg-black/40 z-[9998] transition-opacity duration-500 ${
+                    sizeGuideOpen
+                      ? "opacity-100"
+                      : "opacity-0 pointer-events-none"
+                  }
+                `}  
                 onClick={() => setSizeGuideOpen(false)} 
               />
 
-              <div className={`fixed top-0 right-0 h-screen w-full w-3/4 max-w-[430px] bg-white z-[9999] transform transition-transform duration-300 flex flex-col ${
-                  sizeGuideOpen ? "translate-x-0" : "-translate-x-full"
+              <div className={`fixed top-0 right-0 h-screen w-5/6 max-w-[430px] bg-white z-[9999] transform transition-transform duration-500 flex flex-col ease-in-out ${
+                  sizeGuideOpen ? "translate-x-0" : "translate-x-full"
                 }`}
               > 
-                <div className=" flex items-center justify-between px-5 py-4 border-b border-theme shrink-0 " >
+                <div className=" flex items-start justify-between px-5 py-4 border-b border-theme shrink-0 gap-2 " >
                   <div>
                     <h2 className="text-[20px] font-semibold text-black"> Sizes </h2>
                     <span className="text-[12px] text-gray-500 ">
@@ -488,7 +493,7 @@ export default function ProductInfo({
 
                   </div>
 
-                  <button className="absolute top-4 right-2 transition-colors text-light border rounded-[3px] p-[5px] border-[#D2AF9F]"
+                  <button className="transition-colors text-light border rounded-[3px] p-[5px] border-[#D2AF9F]"
                     onClick={() => setSizeGuideOpen(false)}
                   >
                     <XCircleIcon size={22} />
@@ -574,8 +579,8 @@ export default function ProductInfo({
                   </p>
                 </div>
               </div>
-            </>
-          )}
+            {/* </>
+          )} */}
 
         </div>
         )}
