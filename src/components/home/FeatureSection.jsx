@@ -24,7 +24,7 @@ const staticFeatures = [
       "Security is a priority at MYcra.in and we make every effort to...",
   },
 ];
-export default function FeatureSection() {
+export default function FeatureSection({ className = "" }) {
   const { pages } = useSelector((state) => state.pages);
   const homepage = pages?.find((page) => page.slug === "home");
   const featureSectionFromApi = homepage?.sections?.find(
@@ -36,7 +36,7 @@ export default function FeatureSection() {
       : staticFeatures;
 
   return (
-    <Section>
+    <Section className={className}>
       <Row className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[40px] pt-[25px] md:pt-[50px] !max-w-[935px] mx-auto">
         {features.map((feature, index) => (
           <div key={index} className="flex items-start gap-[22px]">

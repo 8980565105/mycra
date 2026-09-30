@@ -13,7 +13,7 @@ const SecondarySection = ({ title, description, backgroundImage }) => {
       }}
     >
       <Row className="flex flex-col items-center justify-center text-center py-[50px] sm:py-[82px]">
-        <h1 className="text-[40px] sm:text-[60px] text-white font-semibold mb-[15px] leading">
+        <h1 className="text-[40px] md:text-[50px] lg:text-[60px] text-white font-semibold mb-[15px] leading">
           {title}
         </h1>
          {description && (
