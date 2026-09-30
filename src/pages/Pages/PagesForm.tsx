@@ -738,6 +738,31 @@ export default function PageFormPage() {
                     )}
 
                     {section.type === "feature" && (
+                      <>
+                      <div className="relative border border-gray-200 rounded p-4 mb-3">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Title</Label>
+                            <Input
+                              value={section.title || ""}
+                              placeholder="Enter item title"
+                              onChange={(e) => updateSection(
+                                sectionIndex, "title", e.target.value
+                              )}
+                            />
+                          </div>
+                          <div className="space-y-2 ">
+                            <Label>Description</Label>
+                            <Textarea
+                              value={section.description || ""}
+                              placeholder="Enter item description"
+                              onChange={(e) => updateSection(
+                                sectionIndex, "description", e.target.value
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </div>
                       <div className="mt-4">
                         <div className="flex items-center justify-between mb-2">
                           <Label>Feature Items</Label>
@@ -802,6 +827,7 @@ export default function PageFormPage() {
                           </Button>
                         </div>
                       </div>
+                      </>
                     )}
 
                     {section.type === "faqs" && (
@@ -1006,7 +1032,7 @@ export default function PageFormPage() {
                             {section.faqs1?.map((faq, faqIndex) => (
                               <div
                                 key={faqIndex}
-                                className="relative border border-gray-200 rounded-xl p-5 bg-gray-50"
+                                className="relative border border-gray-200 rounded-xl p-5 "
                               >
                                 <button
                                   type="button"
