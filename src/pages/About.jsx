@@ -3,11 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchPageBySlug } from "../features/pages/pagesThunk";
 import Section from "../components/ui/Section";
 import Row from "../components/ui/Row";
-// import AboutBanner from "../components/aboutbanner/aboutbanner";
 import AboutContent from "../components/aboutbanner/aboutcontent";
 import { getImageUrl } from "../components/utils/helper";
 import SEO from "../components/Seo/seo";
 import FeatureSection from "../components/home/FeatureSection";
+import SecondarySection from "../components/ui/SecondarySection";
 
 const STATIC_FEATURES = [
   { _id: "static-f1", icon: "🚚", title: "Free Shipping", desc: "On all orders above ₹999", order: 1 },
@@ -26,20 +26,21 @@ export default function AboutPage() {
 
   const aboutPage = pages?.find((page) => page.slug === "about");
 
-  const featureSection = aboutPage?.sections?.find(
-    (section) =>
-      section.type === "feature" &&
-      section.status === "active"
+  const heroSection = aboutPage?.sections?.find(
+    (section) => section.type === "hero_slider",
   );
-  const apiFeatures = featureSection?.items || [];
-  const features =
-    apiFeatures.length > 0
-      ? apiFeatures
-      : STATIC_FEATURES;
 
-  const sortedFeatures = [...features].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0),
-  );
+  const getBgImage = (section) => {
+    const firstSlide = section.slides?.[0];
+    if (section.isStatic) {
+      return section.image_url;
+    }
+    return getImageUrl(
+      firstSlide?.background_image_url ||
+      section.background_image_url ||
+      section.image_url,
+    );
+  };
 
   return (
     <>
@@ -49,40 +50,22 @@ export default function AboutPage() {
         description={aboutPage?.meta_description}
         image={getImageUrl(aboutPage?.seo_image)}
       />
-
-      {/* <AboutBanner /> */}
-      <AboutContent />
-
-      {/* {sortedFeatures.length > 0 && (
-        <Section>
-          <Row className="py-[25px] md:py-[50px]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              {sortedFeatures.map((item, i) => (
-                <div key={item._id || i} className="flex items-center gap-3">
-                  <div className="text-2xl shrink-0">
-                    {item.image_url ? (
-                      <img
-                        src={getImageUrl(item.image_url)}
-                        alt={item.title}
-                        className="w-8 h-8 object-contain"
-                      />
-                    ) : (
-                      <span>{item.icon}</span>
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold">{item.title}</h4>
-                    <p className="text-xs text-gray-500">
-                      {item.description || item.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Row>
-        </Section>
-      )} */}
-      <FeatureSection/>
+      {heroSection && (
+          <SecondarySection
+            key={heroSection._id}
+            title={
+              heroSection.slides?.[0]?.title || heroSection.title || "Contact Us"
+            }
+            description={
+              heroSection.slides?.[0]?.description ||
+              heroSection.description ||
+              "We are here to help you."
+            }
+            backgroundImage={getBgImage(heroSection)}
+          />
+        )}
+      <AboutContent aboutPage={aboutPage} />
+      <FeatureSection className="!pt-0"/>
     </>
   );
 }
