@@ -64,6 +64,8 @@ import Policypages from "./pages/Policypages/Policypages";
 import Emails from "./pages/Emails/Emails";
 import EmailsForm from "./pages/Emails/EmailsFrom";
 import Settlement from "./pages/Settlement/Settlement";
+import FestivalOfferForm from "./pages/festival-offers/FestivalOfferForm";
+import FestivalOffersPage from "./pages/festival-offers/FestivalOffersPage";
 
 const queryClient = new QueryClient();
 
@@ -120,6 +122,9 @@ const App = () => (
               <Route path="coupons" element={<CouponsPage />} />
               <Route path="coupons/add" element={<CouponFormPage />} />
               <Route path="coupons/:id/edit" element={<CouponFormPage />} />
+              <Route path="festival-offers" element={<FestivalOffersPage />} />
+              <Route path="festival-offers/add" element={<FestivalOfferForm />} />
+              <Route path="festival-offers/:id/edit" element={<FestivalOfferForm />} />
               <Route path="orders" element={<Orders />} />
               <Route path="payments" element={<Payments />} />
               <Route path="warehouse" element={<Warehouse />} />

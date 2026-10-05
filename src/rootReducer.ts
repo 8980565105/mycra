@@ -4,6 +4,7 @@ import categoriesReducer from "./features/categories/categoriesSlice";
 import typesReducer from "./features/types/typesSlice";
 import productLabelsReducer from "./features/productLabels/productLabelsSlice";
 import couponsReducer from "./features/coupons/couponsSlice";
+import festivalOffersReducer from "./features/festival-offers/festivalOffersSlice";
 import ordersReducer from "./features/orders/ordersSlice";
 import paymentsReducer from "./features/payments/paymentsSlice";
 import usersReducer from "./features/users/usersSlice";
@@ -42,6 +43,7 @@ export const rootReducer = {
   productLabels: productLabelsReducer,
   attributes: attributesReducer,
   coupons: couponsReducer,
+  festivalOffers: festivalOffersReducer,
   orders: ordersReducer,
   payments: paymentsReducer,
   users: usersReducer,

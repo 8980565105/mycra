@@ -97,6 +97,13 @@ export const ROUTES = {
     delete: (id: string) => `/coupons/${id}`,
     bulkDelete: "/coupons/bulk-delete",
   },
+  festivalOffers: {
+      getAll: "/festival-offers",
+      getById: (id: string) => `/festival-offers/${id}`,
+      create: "/festival-offers",
+      update: (id: string) => `/festival-offers/${id}`,
+      delete: (id: string) => `/festival-offers/${id}`,
+  },
   orders: {
     getAll: "/orders",
     getById: (id: string) => `/orders/${id}`,

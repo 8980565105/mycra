@@ -24,6 +24,7 @@ import {
   TicketPercent,
   Wallet,
   Tag,
+  PartyPopper,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -68,6 +69,7 @@ const adminSections = [
     label: "Promotions",
     items: [
       { title: "Coupons", url: "/admin/coupons", icon: TicketPercent },
+      { title: "Festival Offers", url: "/admin/festival-offers", icon: PartyPopper },
     ],
   },
   {
