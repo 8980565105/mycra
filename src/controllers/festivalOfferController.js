@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
 
@@ -68,45 +69,70 @@ const getFestivalOfferById = async (req, res) => {
 
 const createFestivalOffer = async (req, res) => {
   try {
-    const {name, image, description, start_date, end_date} = req.body;
-    const offer = await FestivalOffer.create({
+    const { name, banners, description, display_on, start_date, end_date, status} = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required",
+      });
+    }
+
+    const festivalOfferData = {
       name,
-      image: image || null,
-      description,
+      banners: Array.isArray(banners) ? banners : [],
+      description: description || "",
+      display_on: display_on || "shop",
       start_date,
       end_date,
-    });
+      status: status || "active",
+    };
 
-    return sendResponse(res, true, offer, "Festival offer created successfully");
-  } catch (error) {
+    const festivalOffer = new FestivalOffer(festivalOfferData);
+    const savedFestivalOffer = await festivalOffer.save();
 
-    return sendResponse(res, false, null, error.message || "Failed to create festival offer");
+    sendResponse(res, true, savedFestivalOffer, "Festival offer created successfully" );
+  } catch (err) {
+    sendResponse(res, false, null, err.message || "Failed to create festival offer" );
   }
 };
-
 const updateFestivalOffer = async (req, res) => {
   try {
-    const {name, image, description, start_date, end_date} = req.body;
-    const updateData = {name, description, start_date, end_date};
-
-    if (image !== undefined) {
-      updateData.image = image || null;
-    }
+    const updateData = { ...req.body };
 
     const updatedFestivalOffer = await FestivalOffer.findByIdAndUpdate(
         req.params.id,
         updateData,
-        { new: true, runValidators: true }
+        {
+          new: true, runValidators: true,
+        }
       );
 
     if (!updatedFestivalOffer) {
-      return sendResponse(res, false, null, "Festival offer not found");
+      return sendResponse(res, false, null,  "Festival offer not found" );
     }
 
-    return sendResponse(res, true, updatedFestivalOffer, "Festival offer updated successfully");
-  } catch (error) {
+    sendResponse(res, true, updatedFestivalOffer,  "Festival offer updated successfully" );
+  } catch (err) {
+    sendResponse(res, false, null,  err.message || "Failed to update festival offer" );
+  }
+};
 
-    return sendResponse(res, false, null, err.message || "Failed to update festival offer");
+const updateFestivalOfferStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+    if (!["active", "inactive"].includes(status))
+      return sendResponse(res, false, null, "Invalid status value");
+    const festivalOffer = await FestivalOffer.findByIdAndUpdate(
+      id,
+      { status },
+      { returnDocument: "after" },
+    );
+    if (!festivalOffer) return sendResponse(res, false, null, "Festival offer not found");
+    sendResponse(res, true, festivalOffer, "Festival offer status updated successfully");
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
   }
 };
 
@@ -121,6 +147,23 @@ const deleteFestivalOffer = async (req, res) => {
   }
 };
 
+const bulkDeleteFestivalOffers = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0)
+      return sendResponse(res, false, null, "No IDs provided");
+
+    const result = await FestivalOffer.deleteMany({ _id: { $in: ids } });
+    sendResponse(
+      res,
+      true,
+      { deletedCount: result.deletedCount },
+      "Festival offers deleted successfully",
+    );
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
 
 module.exports = {
   getAllFestivalOffers,
@@ -128,5 +171,7 @@ module.exports = {
   createFestivalOffer,
   updateFestivalOffer,
   deleteFestivalOffer,
+  bulkDeleteFestivalOffers,
+  updateFestivalOfferStatus
 };
 
