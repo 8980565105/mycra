@@ -1,21 +1,24 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useDispatch } from "react-redux";
-import type { AppDispatch } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/store";
 import { GenericTable } from "@/components/ui/adminTable";
 import {
   deleteFestivalOffer,
   fetchFestivalOffers,
+  bulkDeleteFestivalOffers,
+  updateFestivalOfferStatus
 } from "@/features/festival-offers/festivalOffersThunk";
 
 import { useBasePath } from "@/hooks/useBasePath";
+import { fetchUsers } from "@/features/users/usersThunk";
 
 export default function FestivalOffersPage() {
   const dispatch = useDispatch<AppDispatch>();
   const basePath = useBasePath();
-
- const formatDate = (value?: string) => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const formatDate = (value?: string) => {
     if (!value) return "-";
 
     const date = new Date(value);
@@ -27,17 +30,22 @@ export default function FestivalOffersPage() {
         month: "short",
         year: "numeric",
       });
-  };
+    };
 
   const columns = [
     {
       key: "image",
       label: "Image",
       render: (item: any) => {
-        const firstImage = Array.isArray(item?.image)
+        const firstBannerImage = Array.isArray(item?.banners)
+          ? item.banners.find((banner: any) => banner?.image)?.image
+          : "";
+
+        const firstOldImage = Array.isArray(item?.image)
           ? item.image.find(Boolean)
           : item?.image;
 
+        const firstImage = firstBannerImage || firstOldImage;
         return firstImage ? (
           <img
             src={`${import.meta.env.VITE_API_URL_IMAGE}${firstImage}`}
@@ -95,6 +103,12 @@ export default function FestivalOffersPage() {
       rowKey="_id"
       searchEnabled
 
+      statusToggleEnabled
+      statusKey="status"
+      filters={[
+        { label: "Active", value: "active" },
+        { label: "Inactive", value: "inactive" },
+      ]}
 
       fetchData={async ({ page, limit, search, status, role }) => {
         try {
@@ -114,6 +128,28 @@ export default function FestivalOffersPage() {
           throw new Error(err?.message || "Failed to delete festival offer");
         }
       }}
+
+      bulkDeleteItems={async (ids) => {
+        try {
+          await dispatch(bulkDeleteFestivalOffers(ids)).unwrap();
+        } catch (err: any) {
+          throw new Error(err?.message || "Failed to delete festival offer");
+        }
+      }}
+
+      onStatusToggle={async (id, newStatus) => {
+        try {
+          await dispatch(
+            updateFestivalOfferStatus({
+              id, 
+              status: newStatus ? "active" : "inactive",
+            })
+          ).unwrap();
+        } catch (err: any) {
+          throw new Error(err?.message || "Failed to update festival offer status");
+        }
+      }}
+
       headerActions={
         <Link to={`${basePath}/festival-offers/add`}>
           <Button className="flex items-center gap-2">

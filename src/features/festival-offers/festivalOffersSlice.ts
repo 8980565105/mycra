@@ -1,20 +1,49 @@
 
 import { createSlice } from "@reduxjs/toolkit";
-import { createFestivalOffer, deleteFestivalOffer, fetchFestivalOffers, updateFestivalOffer } from "./festivalOffersThunk";
+import { bulkDeleteFestivalOffers, createFestivalOffer, deleteFestivalOffer, fetchFestivalOffers, updateFestivalOffer, updateFestivalOfferStatus } from "./festivalOffersThunk";
 
-interface Festivaloffer {
+export type BannerLinkType =
+  | "none"
+  | "category"
+  | "subcategory"
+  | "childcategory"
+  | "product"
+  | "shop"
+  | "custom";
+
+export interface FestivalBanner {
+  _id?: string;
+  image: string;
+  title: string;
+  description: string;
+  link_type: BannerLinkType;
+  link_id: string;
+  link_slug: string;
+  link_url: string;
+}
+
+
+export interface FestivalOffer {
   _id: string;
   name: string;
-  image: string[];
+  banners: FestivalBanner[];
   description: string;
+  display_on: 
+    | "shop" 
+    | "collection" 
+    | "home";
   start_date: string;
   end_date: string;
+  status:
+    | "active"
+    | "inactive";
+
   createdAt?: string;
   updatedAt?: string;
 }
 
 interface FestivaloffersState {
-  festivalOffers: Festivaloffer[];
+  festivalOffers: FestivalOffer[];
   total: number;
   loading: boolean;
   error: string | null;
@@ -61,11 +90,26 @@ const festivalOfferSlice = createSlice({
         }
       })
 
+      .addCase(updateFestivalOfferStatus.fulfilled, (state, action) => {
+        const index = state.festivalOffers.findIndex(
+          (f) => f._id === action.payload._id,
+        );
+        if (index !== -1) {
+          state.festivalOffers[index] = action.payload;
+        }
+      })
+
       .addCase(deleteFestivalOffer.fulfilled, (state, action) => {
         state.festivalOffers = state.festivalOffers.filter((fo) => fo._id !== action.payload);
         state.total -= 1;
       })
 
+      .addCase(bulkDeleteFestivalOffers.fulfilled, (state, action) => {
+        state.festivalOffers = state.festivalOffers.filter(
+          (fo) => !action.payload.includes(fo._id),
+        );
+        state.total -= action.payload.length;
+      }); 
          
   },
 });

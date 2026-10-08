@@ -102,7 +102,9 @@ export const ROUTES = {
       getById: (id: string) => `/festival-offers/${id}`,
       create: "/festival-offers",
       update: (id: string) => `/festival-offers/${id}`,
+      updateStatus: (id: string) => `/festival-offers/${id}/status`,
       delete: (id: string) => `/festival-offers/${id}`,
+      bulkDelete: "/festival-offers/bulk-delete",
   },
   orders: {
     getAll: "/orders",

@@ -75,6 +75,21 @@ export const updateFestivalOffer = createAsyncThunk(
 );
 
 
+export const updateFestivalOfferStatus = createAsyncThunk(
+  "festivalOffers/updateFestivalOfferStatus",
+  async (
+    { id, status }: { id: string; status: "active" | "inactive" },
+    { rejectWithValue },
+  ) => {
+    try {
+      const res = await api.put(ROUTES.festivalOffers.updateStatus(id), { status });
+      if (res.data.success) {return res.data.data};
+      return rejectWithValue(res.data.message || "Failed to update status");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
+    }
+  },
+);
 
 export const deleteFestivalOffer = createAsyncThunk(
   "festivalOffers/deleteFestivalOffer",
@@ -83,6 +98,19 @@ export const deleteFestivalOffer = createAsyncThunk(
       const res = await api.delete(ROUTES.festivalOffers.delete(id));
       if (res.data.success) return id;
       return rejectWithValue(res.data.message || "Failed to delete festival offer");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
+    }
+  },
+);
+
+export const bulkDeleteFestivalOffers = createAsyncThunk(
+  "festivalOffers/bulkDeleteFestivalOffers",
+  async (ids: string[], { rejectWithValue }) => {
+    try {
+      const res = await api.post(ROUTES.festivalOffers.bulkDelete, { ids });
+      if (res.data.success) return ids;
+      return rejectWithValue(res.data.message || "Failed to delete festival offers");
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Server Error");
     }
