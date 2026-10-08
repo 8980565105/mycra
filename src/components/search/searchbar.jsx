@@ -250,6 +250,7 @@ import { Search, XCircleIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts } from "../../features/products/productsThunk";
+import { getImageUrl } from "../utils/helper";
 
 export default function SearchBar({ onNavigate }) {
   const dispatch = useDispatch();
@@ -507,10 +508,6 @@ export default function SearchBar({ onNavigate }) {
     const queryString = params.toString();
     const finalUrl = queryString ? `/shop?${queryString}` : "/shop";
     onNavigate(finalUrl);
-  };
-  const getImageUrl = (url) => {
-    if (!url) return null;
-    return `${process.env.REACT_APP_API_URL_IMAGE}${url}`;
   };
 
   const getProductImage = (product) => {

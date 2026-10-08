@@ -7,6 +7,7 @@ import { getImageUrl } from "../components/utils/helper";
 import shopBg from "../assets/shopBannerImage.jpg";
 import { Toaster } from "react-hot-toast";
 import SEO from "../components/Seo/seo";
+import { useSearchParams } from "react-router-dom";
 
 const staticShopPage = {
   sections: [
@@ -37,6 +38,14 @@ export default function Shop() {
     if (section.isStatic) return section.image_url;
     return getImageUrl(section.background_image_url || section.image_url);
   };
+
+  const [searchParams] = useSearchParams();
+
+    const urlCategory = searchParams.get("category") || "";
+    const urlSubcategory = searchParams.get("subcategory") || "";
+    const urlChildCategory =
+      searchParams.get("childcategory") || "";
+    const urlBrand = searchParams.get("brand") || "";
 
   return (
     <>

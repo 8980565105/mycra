@@ -18,6 +18,7 @@ import { Toaster } from "react-hot-toast";
 import FlowerIcon from "../components/icons/FlowerIcon.jsx";
 import SEO from "../components/Seo/seo.js";
 import { getImageUrl } from "../components/utils/helper.js";
+import FestivalOfferBanner from "../components/shop/FestivalOfferBanner.jsx";
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -40,6 +41,9 @@ const Home = () => {
           image={getImageUrl(homePage?.seo_image)}
         />
         <Hero />
+        <Row className="pt-[20px]">
+          <FestivalOfferBanner pageType="home"/>
+        </Row>
         <Section>
           <div className="relative flex justify-center items-center w-full mb-[50px] md:mb-[90px]">
             <div className="w-[18px] md:w-[50px] border-t border-black"></div>

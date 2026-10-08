@@ -10,6 +10,7 @@ import CategoryNavigation from "../components/category/CategoryNavigation";
 import { fetchtypes } from "../features/types/typeThunk";
 import SEO from "../components/Seo/seo";
 import { fetchPageBySlug } from "../features/pages/pagesThunk";
+import FestivalOfferBanner from "../components/shop/FestivalOfferBanner";
 
 const createSlug = (name) => {
   return name
@@ -109,6 +110,9 @@ function Collections({ products = [] }) {
         description={collectionsPage?.meta_description}
         image={getImageUrl(collectionsPage?.seo_image)}
       />
+      <Row>
+        <FestivalOfferBanner pageType="collection" />
+      </Row>
       <Row className=" mt-5">
         <CategoryNavigation />
 

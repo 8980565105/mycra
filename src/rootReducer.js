@@ -19,6 +19,7 @@ import addressReducer from "./features/address/addressSlice";
 import offersReducer from "./features/offers/offersSlice";
 import settingReducer from "./features/setting/settingSlice";
 import walletReducer from "./features/wallet/walletSlice";
+import FestivalOfferReducer from "./features/FestivalOffer/FestivalOfferSlice"
 import transectionReducer from "./features/transection/transectionSlice";
 import attributeReducer from "./features/attribut/attributSlice";
 import childcategoryReducer from "./features/childcategory/childcategorySlice";
@@ -48,6 +49,7 @@ export const rootReducer = {
   offers: offersReducer,
   settings: settingReducer,
   wallet: walletReducer,
+  festivalOffers: FestivalOfferReducer,
   transection: transectionReducer,
   childcategory: childcategoryReducer,
   attributes: attributeReducer,

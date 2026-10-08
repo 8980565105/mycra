@@ -20,6 +20,7 @@ import { fetchProductLabels } from "../../features/productLabels/productlabelsTh
 import { fetchTypeAttributes, fetchAttributes } from "../../features/attribut/attributThunk";
 import { clearTypeAttributes } from "../../features/attribut/attributSlice";
 import { filterProductsByAttributes } from "../utils/attribut";
+import FestivalOfferBanner from "./FestivalOfferBanner";
 
 const SortByIcon = (props) => (
   <OriginalSortByIcon {...props} className="h-4 w-4 md:text-gray-500" />
@@ -878,6 +879,7 @@ export default function WomenCollections() {
               isCategorySelected={selectedCategories.length > 0}
             />
             <main className="w-full lg:w-3/4">
+            <FestivalOfferBanner pageType="shop"/>
               <div className="hidden lg:block w-full">
                 <div className="flex items-center py-2 space-x-2">
                   <div className="flex-1 mx-3 relative">
@@ -892,8 +894,8 @@ export default function WomenCollections() {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-between items-center mb-6">
-                <div className="hidden lg:block text-[16px] sec-text-color">
+              <div className="flex justify-between items-center mb-6 hidden lg:flex">
+                <div className=" text-[16px] sec-text-color">
                   Showing{" "}
                   <span className="font-medium text-black">
                     {showingResults}
@@ -913,7 +915,7 @@ export default function WomenCollections() {
                   />
                 </div>
               </div>
-              <div className="hidden sm:flex flex-wrap items-center gap-2 mb-6">
+              <div className="hidden lg:flex flex-wrap items-center gap-2 mb-6">
                 {currentFilters.length > 0 || isBestSeller ? (
                   <>
                     <button

@@ -399,3 +399,11 @@
 .text-secondary{
   color: var(--secondary-color);
 }
+
+.festival-offer-slider .slick-list {
+  margin: 0 -8px;
+}
+
+.festival-offer-slider .slick-slide {
+  padding: 0 8px;
+}

@@ -118,6 +118,9 @@
     adminAdjust: (userId) => `/wallet/admin/adjust/${userId}`,
     adminVerifyKyc: (userId) => `/wallet/admin/verify-kyc/${userId}`,
   },
+  festivalOffers: {
+      getAll: "/festival-offers",
+  },
   giftCards: {
     // adminCreate: "/gift-cards/admin/create",
     // adminAll: "/gift-cards/admin/all",
