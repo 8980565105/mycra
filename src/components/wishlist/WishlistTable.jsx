@@ -203,7 +203,7 @@ const Wishlist = ({ product }) => {
               {formattedItems.map((item, index) => (
                 <tr key={item._id} className="border-b light-border">
                   <td className="p-4 py-[40px] flex items-center gap-[25px] xl:gap-[40px]">
-                    <Link to={`/products/${item.product_id?._id}`}>
+                    <Link to={`/products/${item.product_id?.slug}`}>
                       <img
                         src={
                           item.variant_id?.images?.length > 0
@@ -275,7 +275,7 @@ const Wishlist = ({ product }) => {
                           size={30}
                           className="border light-border rounded-[3px] p-[4px]"
                           onClick={() =>
-                            navigate(`/products/${item?.product?._id}`)
+                            navigate(`/products/${item?.product?.slug}`)
                           }
                         />
                         <Button
@@ -319,6 +319,7 @@ const Wishlist = ({ product }) => {
             key={index}
             className="bg-white p-4 rounded-[5px] box-shadow flex sm:flex-nowrap gap-[20px] items-start"
           >
+            <Link to={`/products/${item.product_id?.slug}`}>
             <img
               src={
                 item.variant_id?.images?.length > 0
@@ -328,7 +329,7 @@ const Wishlist = ({ product }) => {
               alt={item.product_id?.name}
               className="w-[90px] h-[110px] p-[5px] box-shadow"
             />
-
+            </Link>
             <div className="flex-1 flex flex-col text-p">
               <h3 className="mb-[5px] break text-14 line-clamp-2">
                 {item.product?.name}
@@ -384,7 +385,7 @@ const Wishlist = ({ product }) => {
                   <Eye
                     size={24}
                     className="border p-1 rounded-md"
-                    onClick={() => navigate(`/products/${item?.product?._id}`)}
+                    onClick={() => navigate(`/products/${item?.product?.slug}`)}
                   />
                   <Trash2
                     size={24}

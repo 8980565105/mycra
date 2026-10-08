@@ -54,12 +54,12 @@ export default function HeroBanner() {
     <Section className="bg-theme relative overflow-hidden !pb-0">
       <div className="absolute top-0 left-0 w-[25%] xl:w-[22.5%] h-full bg-[#FFFFFF1A] backdrop-blur-[10px] z-20 pointer-events-none"></div>
       <DiscountBadge />
-      <div className="grid grid-cols-2 gap-[10px] justify-center items-center h-auto min-h-[200px] md:h-[544px] relative z-10">
+      <div className="grid grid-cols-2 gap-[10px] justify-center items-center h-auto min-h-[200px] md:h-[594px] relative z-10">
         <div className="relative flex-1">
           <img
             src={getImageUrl(flashbanner.image_url)}
             alt="image alt"
-            className="w-[400px] sm:w-[850px] h-auto min-h-[200px] md:h-[544px] object-fit"
+            className="w-[400px] sm:w-[850px] h-auto min-h-[200px] md:h-[594px] object-fit"
           />
         </div>
         <div className="flex-1 text-left flex flex-col z-30 pr-[20px]">
@@ -71,7 +71,7 @@ export default function HeroBanner() {
               {flashbanner.title}
               <span className="absolute theme-border-block w-[25px] md:w-[100px] !h-[3px]"></span>
             </h2>
-            <p className="text-[10px] md:text-[24px] text-[#989696] mb-[5px] md:mb-[10px] font-regular">
+            <p className="text-[10px] md:text-[24px] text-[#989696] mb-[5px] md:mb-[10px] font-regular max-md:whitespace-nowrap max-md:overflow-hidden max-md:text-ellipsis ">
               {flashbanner.description}
             </p>
             <p className="text-[10px] md:text-[18px] font-regular text-black mb-[17px] md:mb-[50px] inline-block w-fit pb-1 border-b md:border-b-2 border-black">

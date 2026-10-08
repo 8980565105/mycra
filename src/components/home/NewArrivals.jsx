@@ -11,9 +11,11 @@ import { getImageUrl } from "../utils/helper";
 import { useNavigate } from "react-router-dom";
 import FlowerIcon from "../icons/FlowerIcon";
 import { fetchtypes } from "../../features/types/typeThunk";
+import { fetchProducts } from "../../features/products/productsThunk";
 
 const ImageCard = ({
   name,
+  categoryName,
   typeName,
   img,
   description,
@@ -25,7 +27,21 @@ const ImageCard = ({
   const lineTop = isWhiteText ? "top-[30px]" : "top-[70px]";
 
   const handleClick = () => {
-    navigate("/shop");
+    const params = new URLSearchParams();
+
+    if (categoryName?.trim()) {
+      params.set("category", categoryName.trim().toUpperCase());
+    }
+
+    if (typeName?.trim() && typeName !== "Product Type") {
+      params.set("type", typeName.trim());
+    }
+    const queryString = params.toString();
+    if (queryString) {
+      navigate(`/shop?${queryString}`);
+    } else {
+      navigate("/shop");
+    }
   };
 
   return (
@@ -52,32 +68,6 @@ const ImageCard = ({
   );
 };
 
-const staticNewArrivals = [
-  {
-    name: "Earings",
-    img: earringsimg,
-    description: "Shop Now",
-    textColor: "text-black",
-  },
-  {
-    name: "Shoes",
-    img: shoesimg,
-    description: "Shop Now",
-    textColor: "text-white",
-  },
-  {
-    name: "Watch",
-    img: watchimg,
-    description: "shop Now",
-    textColor: "text-white",
-  },
-  {
-    name: "Winter Cloths",
-    img: winterimg,
-    description: "Shop Now",
-    textColor: "text-black",
-  },
-];
 
 export default function NewArrivals() {
   const dispatch = useDispatch();
@@ -92,6 +82,7 @@ export default function NewArrivals() {
 
     useEffect(() => {
       dispatch(fetchtypes());
+      dispatch(fetchProducts({force: true,}));
     }, [dispatch]);
     const typeMap = useMemo(() => {
     return types.reduce((acc, type) => {
@@ -107,10 +98,12 @@ export default function NewArrivals() {
   const newArrivalsItem = newarrivalProducts.map((p) => {
       const typeId = p?.type_id?._id ?? p?.type_id ?? null;
       const typeName = p?.type_id?.name ?? typeMap[String(typeId)] ?? "Product Type";
+      const categoryName = p?.category?.name ?? p?.category_id?.name ?? "";
 
       return {
         id: p._id,
         name: p?.category?.name ?? "Product",
+        categoryName,
         typeName,
         img: getImageUrl(p?.images),
       };
@@ -165,6 +158,7 @@ export default function NewArrivals() {
               <div key={item.id} className={`${item.height} overflow-hidden`}>
                 <ImageCard
                   name={item.name}
+                  categoryName={item.categoryName}
                   typeName={item.typeName}
                   description="Shop Now"
                   img={item.img}

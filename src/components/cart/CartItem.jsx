@@ -128,7 +128,7 @@ export default function CartItem() {
                         : getImageUrl(item.product_id?.images?.[0])
                     }
                     alt={item.product_id?.name}
-                    className="box-shadow object-contain p-[5px] w-[130px] h-[176px]"
+                    className="box-shadow object-fill p-[5px] w-[130px] h-[176px]"
                   />
                 </Link>
               </td>
@@ -212,7 +212,7 @@ export default function CartItem() {
                       : getImageUrl(item.product_id?.images?.[0])
                   }
                   alt={item.product_id?.name}
-                  className="box-shadow object-cover p-[5px] h-[110px] sm:h-[109px] w-[75px] sm:w-[87px]"
+                  className="box-shadow object-fill p-[5px] h-[110px] sm:h-[109px] w-[75px] sm:w-[87px]"
                 />
               </Link>
             </div>

@@ -1069,14 +1069,15 @@ const { user } = useSelector(
                     <p className="text-sm text-gray-600 leading-6">
                       For bulk gift card requirements, please contact our team.
                     </p>
-
+                  
                     <Button
                       variant="common"
                       className="mt-5"
                     >
+                      <Link to="/contact-us">
                       Contact Us
+                      </Link>
                     </Button>
-
                   </div>
 
                 </div>

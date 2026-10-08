@@ -223,7 +223,7 @@ export default function ShopProductCard({
         <img
           src={displayedImage}
           alt={product.name}
-          className="w-full h-full transition duration-300 object-cover"
+          className="w-full h-full transition duration-300 object-fit"
         />
         {price.hasOffer && (
           <span className="absolute left-2.5 top-2.5 rounded-full bg-[#E23E80] px-2.5 py-1 text-[11px] font-bold text-white">

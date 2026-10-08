@@ -61,14 +61,21 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
   const { handleAddToWishlist } = useAddToWishlist(setShowLoginPopup);
   const cartItems = useSelector((state) => state.cart.items) || [];
   const userId = useSelector((state) => state.auth.user?._id);
-  const { items: wishlistItems = [] } = useSelector((state) => state.wishlist);
+  // const { items: wishlistItems = [] } = useSelector((state) => state.wishlist);
+  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
+
   const isInWishlist = (productId, variantId) => {
     if (!productId || !variantId) return false;
-    return wishlistItems.some(
-      (w) =>
-        (w.product_id?._id || w.product_id) === productId &&
-        (w.variant_id?._id || w.variant_id) === variantId,
-    );
+
+    return wishlistItems.some((item) => {
+      const wishlistProductId = item?.product_id?._id || item?.product_id;
+      const wishlistVariantId = item?.variant_id?._id || item?.variant_id;
+
+      return (
+        String(wishlistProductId) === String(productId) &&
+        String(wishlistVariantId) === String(variantId)
+      );
+    });
   };
   const isInCart = (productId, variantId) => {
     if (!productId || !variantId) return false;
@@ -485,12 +492,11 @@ const FeaturedProducts = ({ setShowLoginPopup }) => {
                               e.stopPropagation();
                               handleAddToWishlist(p, currentVariant);
                             }}
-                            className={`w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center rounded-full border transition-all duration-200
-                ${
-                  wishlisted
-                    ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
-                    : "bg-white text-black hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)]"
-                }`}
+                            className={`w-[20px] h-[20px] md:w-[20px] md:h-[20px] lg:w-[40px] lg:h-[40px] flex items-center justify-center rounded-full border transition-all duration-200 ${
+                              wishlisted
+                                ? "bg-[var(--primary-color)] border-[var(--primary-color)] text-white"
+                                : "bg-white text-black hover:bg-[var(--primary-color)] hover:border-[var(--primary-color)]"
+                            }`}
                           >
                             <HeartIcon
                               className={`w-[12px] h-[12px] sm:w-[12px] sm:h-[12px] lg:w-[20px] lg:h-[20px] ${

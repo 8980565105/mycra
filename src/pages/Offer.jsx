@@ -36,11 +36,22 @@ export default function Offer() {
             <CategoriesSection />
           </Row>
         </Section>
-        <Section>
+        {/* <Section>
           <Row>
             <SectionHeading page="Offer" order="2" />
           </Row>
-          {/* <SizeSection /> */}
+          <SizeSection />
+        </Section> */}
+        <Section>
+          <Row className="!max-w-[1122px]">
+            <div className="border border-[var(--primary-color)] rounded-[5px] py-[24px] text-center">
+              <p className="w-full max-w-[973px] mx-auto text-light text-center text-[14px]">
+                Mykra Fashion will never contact their customers for cash prizes or request
+                passwords, PINs, or CVVs. Please refrain from sharing such confidential
+                information with anyone, as this can result in fraudulent transactions.
+              </p>
+            </div>
+          </Row>
         </Section>
       </div>
 
