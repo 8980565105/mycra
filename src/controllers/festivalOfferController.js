@@ -11,6 +11,7 @@ const getAllFestivalOffers = async (req, res) => {
       page = 1,
       limit = 10,
       search = "",
+      status ,
       isDownload = "false",
     } = req.query;
 
@@ -25,6 +26,10 @@ const getAllFestivalOffers = async (req, res) => {
         $regex: search,
         $options: "i",
       };
+    }
+
+    if (status === "active" || status === "inactive") {
+      query.status = status;
     }
 
     if (download) {
