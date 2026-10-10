@@ -52,7 +52,7 @@ const CategoryNavigation = () => {
 
   return (
     <nav
-      className={`sticky top-[100px] z-20 w-full border-y py-2 bg-white transition-all duration-300 ease-in-out 
+      className={`sticky top-[70px] custom-lg:top-[100px] z-20 w-full border-y py-2 bg-white transition-all duration-300 ease-in-out 
         ${
         isScrolled
           ? "border-color shadow-[0_2px_8px_rgba(0,0,0,0.08)]"

@@ -596,7 +596,7 @@ export default function CheckoutForm({
 
       {/* Add / Edit Address Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-[5px] p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="flex justify-between items-center mb-6 border-b pb-3">
               <h3 className="text-lg font-semibold text-black">

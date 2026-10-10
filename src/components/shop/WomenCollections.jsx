@@ -789,7 +789,7 @@ export default function WomenCollections() {
   return (
     <>
       <Section>
-        <Row className="pt-[25px] custom-lg:pt-[50px]">
+        <Row className="lg:pt-[50px]">
           <MobileFilterModal
             isOpen={isMobileFilterOpen}
             onClose={() => setIsMobileFilterOpen(false)}
@@ -814,10 +814,10 @@ export default function WomenCollections() {
             applyAllFilters={() => setIsMobileFilterOpen(false)}
             onClearAll={handleClearAllFilters}
           />
-          <div className="flex justify-between items-center py-2 mb-4 lg:hidden">
+          <div className="flex justify-between items-center lg:py-2 mb-4 lg:hidden">
             <div className="w-full">
               <div className="flex items-center py-2 space-x-2">
-                <div className="flex-1 mx-3 relative">
+                <div className="flex-1 lg:mx-3 relative">
                   <input
                     type="text"
                     value={searchQuery}
@@ -837,7 +837,7 @@ export default function WomenCollections() {
             <span className="text-black"> / </span>
             <span className="font-regular text-[#989696]">Shop</span>
           </p>
-          <div className="mb-3 lg:hidden">
+          <div className="mb-6 lg:hidden">
             <MobileFilterBar
               sortBy={currentSortLabel}
               filterCount={filterCount}

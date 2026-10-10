@@ -140,7 +140,7 @@ export default function ProductGallery({
             src={img}
             alt={`Thumbnail ${index}`}
             onClick={() => setCurrentImage(img)}
-            className={`w-[160px] h-[208px] object-cover rounded-[3px] cursor-pointer transition-all duration-200 ${
+            className={`w-[160px] h-[208px] object-fit rounded-[3px] cursor-pointer transition-all duration-200 ${
               currentImage === img
                 ? "ring-1 ring-[var(--primary-color)] scale-[1.02]"
                 : "opacity-50 hover:opacity-100"
@@ -178,13 +178,13 @@ export default function ProductGallery({
     </div>
       <div className="block md:hidden w-full rounded-[10px]">
         {fullImageUrls.length > 0 ? (
-          <Slider {...sliderSettings}>
+          <Slider {...sliderSettings} >
             {fullImageUrls.map((img, index) => (
-              <div key={index}>
+              <div key={index} className="rounded-[10px] overflow-hidden">
                 <img
                   src={img}
                   alt={`Slide ${index}`}
-                  className="w-full h-300px sm:h-[500px] object-cover"
+                  className="w-full h-[340px] sm:h-[500px] object-fit"
                 />
               </div>
             ))}

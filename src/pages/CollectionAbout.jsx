@@ -196,7 +196,7 @@ export default function CollectionAbout({ setShowLoginPopup }) {
         image={getImageUrl(matchedCategory?.image_url)}
       />
 
-      <Section className="!pt-5">
+      <Section className="!pt-0">
         <Row>
           <div className="relative overflow-hidden bg-theme rounded-[18px] px-6 py-10 md:px-12 md:py-12 flex items-center justify-between ">
             <div className="relative z-10">
@@ -238,7 +238,7 @@ export default function CollectionAbout({ setShowLoginPopup }) {
           <h2 className="mb-6 text-[22px] font-bold text-primary">
             Browse Categories
           </h2>
-          <div className="flex gap-7 overflow-x-auto pb-3">
+          <div className="flex gap-7 overflow-x-auto">
             {filteredChildCategoryData.map((category) => {
               const catId = category._id || category.id;
               const isActive = catId === activeCategory;
@@ -306,7 +306,7 @@ export default function CollectionAbout({ setShowLoginPopup }) {
                         src={getImageUrl(subcategory.image_url)}
                         alt={subcategory.name}
                         loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="h-full w-full object-fit transition-transform duration-300 group-hover:scale-105"
                         onError={handleImageError}
                       />
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />

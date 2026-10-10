@@ -264,7 +264,7 @@ function UpiQrPayment({
 export default function Payment() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  const [paymentInitError, setPaymentInitError] = useState("");
   const [checkoutInfo, setCheckoutInfo] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState("card");
   const [clientSecret, setClientSecret] = useState("");
@@ -349,79 +349,198 @@ export default function Payment() {
   //   createIntent();
   // }, [needsClientSecret, checkoutInfo, selectedMethod, fetchedForMethod]);
 
-  useEffect(() => {
-    if (!needsClientSecret || !checkoutInfo) return;
+  // useEffect(() => {
+  //   if (!needsClientSecret || !checkoutInfo) return;
 
-    const initPayment = async () => {
-      setInitializing(true);
-      try {
-        if (!paymentIntentId) {
-          // ==== First time: CREATE intent ====
-          const response = await fetch(
-            `${process.env.REACT_APP_API_URL}/payments/stripe/create-intent`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-              },
-              body: JSON.stringify({
-                cart_id: checkoutInfo.cart_id,
-                coupon_id: checkoutInfo.coupon_id,
-                shippingAddress: checkoutInfo.shippingAddress,
-                email: checkoutInfo.email,
-                method: selectedMethod,
-              }),
-            },
-          );
-          const data = await response.json();
-          if (!response.ok || !data?.success) {
-            throw new Error(data?.message || "Unable to initialize payment");
+  //   const initPayment = async () => {
+  //     setInitializing(true);
+  //     try {
+  //       if (!paymentIntentId) {
+  //         // ==== First time: CREATE intent ====
+  //         const response = await fetch(
+  //           `${process.env.REACT_APP_API_URL}/payments/stripe/create-intent`,
+  //           {
+  //             method: "POST",
+  //             headers: {
+  //               "Content-Type": "application/json",
+  //               Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+  //             },
+  //             body: JSON.stringify({
+  //               cart_id: checkoutInfo.cart_id,
+  //               coupon_id: checkoutInfo.coupon_id,
+  //               shippingAddress: checkoutInfo.shippingAddress,
+  //               email: checkoutInfo.email,
+  //               method: selectedMethod,
+  //             }),
+  //           },
+  //         );
+  //         const data = await response.json();
+  //         if (!response.ok || !data?.success) {
+  //           throw new Error(data?.message || "Unable to initialize payment");
+  //         }
+  //         setClientSecret(data.data.clientSecret);
+  //         setPaymentIntentId(data.data.paymentIntentId);
+  //         setStripeAmountData({ amount: data.data.amount });
+  //         sessionStorage.setItem(
+  //           "pendingPayment",
+  //           JSON.stringify({
+  //             paymentIntentId: data.data.paymentIntentId,
+  //             clientSecret: data.data.clientSecret,
+  //             amount: data.data.amount,
+  //           }),
+  //         );
+  //       } else {
+  //         // ==== Already have an intent: UPDATE method type only ====
+  //         const response = await fetch(
+  //           `${process.env.REACT_APP_API_URL}/payments/stripe/update-intent`,
+  //           {
+  //             method: "POST",
+  //             headers: {
+  //               "Content-Type": "application/json",
+  //               Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+  //             },
+  //             body: JSON.stringify({
+  //               paymentIntentId,
+  //               method: selectedMethod,
+  //             }),
+  //           },
+  //         );
+  //         const data = await response.json();
+  //         if (!response.ok || !data?.success) {
+  //           throw new Error(data?.message || "Unable to switch payment method");
+  //         }
+  //         setClientSecret(data.data.clientSecret);
+  //         setStripeAmountData({ amount: data.data.amount });
+  //       }
+  //     } catch (err) {
+  //       toast.error(err.message || "Unable to initialize payment");
+  //     } finally {
+  //       setInitializing(false);
+  //     }
+  //   };
+
+  //   initPayment();
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [needsClientSecret, checkoutInfo, selectedMethod]);
+  
+useEffect(() => {
+  if (!needsClientSecret || !checkoutInfo) return;
+
+  let cancelled = false;
+
+  const initPayment = async () => {
+    setInitializing(true);
+    setPaymentInitError("");
+
+    try {
+      const isNewIntent = !paymentIntentId;
+
+      const endpoint = isNewIntent
+        ? "/payments/stripe/create-intent"
+        : "/payments/stripe/update-intent";
+
+      const payload = isNewIntent
+        ? {
+            cart_id: checkoutInfo.cart_id,
+            coupon_id: checkoutInfo.coupon_id,
+            shippingAddress: checkoutInfo.shippingAddress,
+            email: checkoutInfo.email,
+            method: selectedMethod,
           }
-          setClientSecret(data.data.clientSecret);
-          setPaymentIntentId(data.data.paymentIntentId);
-          setStripeAmountData({ amount: data.data.amount });
-          sessionStorage.setItem(
-            "pendingPayment",
-            JSON.stringify({
-              paymentIntentId: data.data.paymentIntentId,
-              clientSecret: data.data.clientSecret,
-              amount: data.data.amount,
-            }),
-          );
-        } else {
-          // ==== Already have an intent: UPDATE method type only ====
-          const response = await fetch(
-            `${process.env.REACT_APP_API_URL}/payments/stripe/update-intent`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-              },
-              body: JSON.stringify({
-                paymentIntentId,
-                method: selectedMethod,
-              }),
-            },
-          );
-          const data = await response.json();
-          if (!response.ok || !data?.success) {
-            throw new Error(data?.message || "Unable to switch payment method");
-          }
-          setClientSecret(data.data.clientSecret);
-          setStripeAmountData({ amount: data.data.amount });
+        : {
+            paymentIntentId,
+            method: selectedMethod,
+          };
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}${endpoint}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          },
+          body: JSON.stringify(payload),
         }
-      } catch (err) {
-        toast.error(err.message || "Unable to initialize payment");
-      } finally {
+      );
+
+      const data = await response.json();
+
+      console.log("Payment initialization response:", {
+        httpStatus: response.status,
+        success: data?.success,
+        message: data?.message,
+        hasClientSecret: Boolean(data?.data?.clientSecret),
+        paymentIntentId: data?.data?.paymentIntentId,
+      });
+
+      if (!response.ok || !data?.success) {
+        throw new Error(
+          data?.message || `Payment API failed (${response.status})`
+        );
+      }
+
+      const nextClientSecret = data?.data?.clientSecret;
+      const nextPaymentIntentId =
+        data?.data?.paymentIntentId || paymentIntentId;
+
+      if (
+        !nextClientSecret ||
+        typeof nextClientSecret !== "string"
+      ) {
+        throw new Error(
+          "Backend response does not contain data.clientSecret"
+        );
+      }
+
+      if (cancelled) return;
+
+      setClientSecret(nextClientSecret);
+      setPaymentIntentId(nextPaymentIntentId);
+
+      if (data.data.amount != null) {
+        setStripeAmountData({ amount: data.data.amount });
+      }
+
+      if (isNewIntent) {
+        sessionStorage.setItem(
+          "pendingPayment",
+          JSON.stringify({
+            paymentIntentId: nextPaymentIntentId,
+            clientSecret: nextClientSecret,
+            amount: data.data.amount,
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Payment initialization error:", err);
+
+      if (!cancelled) {
+        setClientSecret("");
+        setPaymentInitError(
+          err instanceof Error
+            ? err.message
+            : "Unable to initialize payment."
+        );
+      }
+    } finally {
+      if (!cancelled) {
         setInitializing(false);
       }
-    };
+    }
+  };
 
-    initPayment();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [needsClientSecret, checkoutInfo, selectedMethod]);
+  initPayment();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  needsClientSecret,
+  checkoutInfo,
+  selectedMethod,
+  paymentIntentId,
+]);
 
   const handlePlaceOrder = async () => {
     if (!checkoutInfo) return;
@@ -534,7 +653,7 @@ export default function Payment() {
                 })}
               </div>
 
-              {selectedMethod === "card" && (
+              {/* {selectedMethod === "card" && (
                 <>
                   {initializing && (
                     <p className="text-light text-[14px]">
@@ -558,6 +677,54 @@ export default function Payment() {
                     </Elements>
                   )}
                 </>
+              )} */}
+              
+              {selectedMethod === "card" && (
+                <div className="mt-5 space-y-4">
+                  {initializing && (
+                    <p className="text-gray-500 text-sm">
+                      Preparing secure payment...
+                    </p>
+                  )}
+
+                  {!initializing && paymentInitError && (
+                    <div className="rounded border border-red-200 bg-red-50 p-4">
+                      <p className="text-sm text-red-600">
+                        {paymentInitError}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentInitError("");
+                          setPaymentIntentId("");
+                          setClientSecret("");
+                        }}
+                        className="mt-3 border border-red-400 px-4 py-2 text-sm"
+                      >
+                        Retry Payment
+                      </button>
+                    </div>
+                  )}
+
+                  {!initializing && !paymentInitError && clientSecret && (
+                    <Elements
+                      key={clientSecret}
+                      stripe={stripePromise}
+                      options={{
+                        clientSecret,
+                        appearance,
+                        paymentMethodOrder: ["card"],
+                      }}
+                    >
+                      <StripePaymentForm
+                        paymentData={{
+                          amount: stripeAmountData?.amount ?? displayTotal,
+                        }}
+                      />
+                    </Elements>
+                  )}
+                </div>
               )}
 
               {selectedMethod === "upi" && (

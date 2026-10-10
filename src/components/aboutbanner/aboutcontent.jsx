@@ -116,7 +116,7 @@
 // }
 
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Check, Heart, Sparkles, Truck, Users, ShoppingBag, Star, Search, CreditCard, PackageCheck, Headphones, Store, BadgeCheck, WalletCards, RefreshCcw, Boxes, Globe2,
         Clock3, LockKeyhole, CircleCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -186,7 +186,60 @@ const promises = [
   "Convenience",
   "Customer First",
 ];
+const NumberCounter = ({ targetNumber, duration = 2000, decimals = 0 }) => {
+  const [count, setCount] = useState(0);
 
+  useEffect(() => {
+    const target = Number(targetNumber);
+
+    if (!Number.isFinite(target)) {
+      setCount(0);
+      return;
+    }
+
+    let startTime = null;
+    let animationFrame;
+
+    const animate = (timestamp) => {
+      if (startTime === null) {
+        startTime = timestamp;
+      }
+
+      const progress = Math.min(
+        (timestamp - startTime) / duration,
+        1
+      );
+
+      // Smooth animation from 0 to the actual target
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const currentValue = target * easedProgress;
+
+      setCount(
+        progress === 1
+          ? target
+          : Number(currentValue.toFixed(decimals))
+      );
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    setCount(0);
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, [targetNumber, duration, decimals]);
+
+  return (
+    <>
+      {count.toLocaleString("en-IN", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })}
+    </>
+  );
+};
 export default function AboutContent({aboutPage}) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -259,26 +312,50 @@ export default function AboutContent({aboutPage}) {
   }, [users]);
 
 
+  // const formatNumber = (number) => {
+  //   if (!number || number <= 0) {
+  //     return "0";
+  //   }
+  //   if (number >= 1000000) {
+  //     return `${(number / 1000000).toFixed(1)}M+`;
+  //   }
+  //   if (number >= 1000) {
+  //     return `${(number / 1000).toFixed(1)}K+`;
+  //   }
+
+  //   return `${number}+`;
+  // };
+
+  // const stats = useMemo(() => {
+  //   return [
+  //     { number: formatNumber(totalProducts), label: "Products" },
+  //     { number: formatNumber(totalCategories), label: "Categories" },
+  //     { number: `${customerRating}/5`, label: "Customer Rating" },
+  //     { number: formatNumber(totalCustomers), label: "Happy Customers", },
+  //   ];
+  // }, [totalProducts, totalCategories, customerRating, totalCustomers]);
+
   const formatNumber = (number) => {
-    if (!number || number <= 0) {
-      return "0";
-    }
     if (number >= 1000000) {
-      return `${(number / 1000000).toFixed(1)}M+`;
+      return { targetNumber: number / 1000000, suffix: "M+", decimals: 1 };
     }
     if (number >= 1000) {
-      return `${(number / 1000).toFixed(1)}K+`;
+      return { targetNumber: number / 1000, suffix: "K+", decimals: 1 };
     }
 
-    return `${number}+`;
+    return { targetNumber: number, suffix: "+", decimals: 0 };
   };
 
   const stats = useMemo(() => {
     return [
-      { number: formatNumber(totalProducts), label: "Products" },
-      { number: formatNumber(totalCategories), label: "Categories" },
-      { number: `${customerRating}/5`, label: "Customer Rating" },
-      { number: formatNumber(totalCustomers), label: "Happy Customers", },
+      { ...formatNumber(totalProducts), label: "Products" },
+      { ...formatNumber(totalCategories), label: "Categories" },
+      { targetNumber: Number(customerRating) || 0,
+        suffix: "/5",
+        decimals: 1,
+        label: "Customer Rating",
+      },
+      { ...formatNumber(totalCustomers), label: "Happy Customers", },
     ];
   }, [totalProducts, totalCategories, customerRating, totalCustomers]);
 
@@ -399,7 +476,13 @@ export default function AboutContent({aboutPage}) {
           {stats.map((stat) => (
             <div key={stat.label} className="text-center" >
               <h3 className="text-[30px] sm:text-[40px] font-bold md:text-[50px]">
-                {stat.number}
+                {/* {stat.number} */}
+                <NumberCounter
+                  targetNumber={stat.targetNumber}
+                  duration={1000}
+                  decimals={stat.decimals}
+                />
+                {stat.suffix}
               </h3>
               <p className="mt-2 text-sm text-white/80 sm:text-base">
                 {stat.label}
