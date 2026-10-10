@@ -6,7 +6,7 @@ import {
   PriceRangeFilter,
 } from "./WomenCollections";
 import { useSelector } from "react-redux";
-import { getGroupedTypes, getEnrichedAttributes } from "../utils/attribut";
+import { getGroupedTypes, getEnrichedAttributes, productMatchesSelectedTypes, getGroupedBrands, normalizeFilterValue } from "../utils/attribut";
 
 const MobileFilterModal = ({
   isOpen,
@@ -17,6 +17,9 @@ const MobileFilterModal = ({
   selectedTypes,
   handleTypeChange,
   handleResetTypes,
+  selectedBrands = [],
+  handleBrandChange,
+  handleResetBrands,
   selectedAttributes = {},
   handleAttributeChange,
   handleResetAttributes,
@@ -44,6 +47,9 @@ const MobileFilterModal = ({
   const { types = [], loading: typesLoading } = useSelector(
     (state) => state.types
   );
+  const { brands = [], loading: brandLoading = false } = useSelector(
+      (state) => state.brands
+    );
   const { attributes = [], typeAttributes = [], loading: attrLoading } = useSelector(
     (state) => state.attributes
   );
@@ -253,6 +259,18 @@ const MobileFilterModal = ({
   
     return counts;
   }, [categoryProducts, types]);
+
+  const typeFilteredProducts = useMemo(() =>
+    categoryProducts.filter((product) =>
+      productMatchesSelectedTypes(product, selectedTypes, types)
+    ),
+    [categoryProducts, selectedTypes, types]
+  );
+
+  const groupedBrands = useMemo(
+    () => getGroupedBrands(typeFilteredProducts, brands, selectedTypes, types),
+    [typeFilteredProducts, brands, selectedTypes, types]
+  );
   
   const labelCounts = Array.isArray(products)
     ? products.reduce((acc, product) => {
@@ -404,6 +422,38 @@ const MobileFilterModal = ({
                   })
                 ) : (
                   <p className="text-sm text-gray-500">No types found.</p>
+                )}
+              </div>
+            </CollapsibleFilter>
+
+            <CollapsibleFilter
+              title="Brand"
+              isOpen={openFilter === "Brand"}
+              onToggle={() => toggleFilter("Brand")}
+              isSelected={selectedBrands.length > 0}
+              onReset={handleResetBrands}
+              showButtons={true}
+            >
+              <div className="space-y-2">
+                {brandLoading ? (
+                    <p className="text-sm text-gray-500">Loading brands...</p>
+                  ) : groupedBrands.length > 0 ? (
+                    groupedBrands.map((brand) => (
+                      <FilterItemCheckbox
+                        key={brand.key}
+                        name={brand.displayName}
+                        count={brand.count}
+                        isChecked={selectedBrands.some(
+                          (selected) =>
+                            normalizeFilterValue(selected) === brand.key
+                        )}
+                        onChange={() => handleBrandChange(brand.displayName)}
+                      />
+                    ))
+                  ) : (
+                  <p className="text-sm text-gray-500">
+                    No brands available for this type.
+                  </p>
                 )}
               </div>
             </CollapsibleFilter>

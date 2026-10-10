@@ -19,7 +19,7 @@ import { fetchtypes } from "../../features/types/typeThunk";
 import { fetchProductLabels } from "../../features/productLabels/productlabelsThunk";
 import { fetchTypeAttributes, fetchAttributes } from "../../features/attribut/attributThunk";
 import { clearTypeAttributes } from "../../features/attribut/attributSlice";
-import { filterProductsByAttributes } from "../utils/attribut";
+import { filterProductsByAttributes, normalizeFilterValue, resolveFilterBrandName } from "../utils/attribut";
 import FestivalOfferBanner from "./FestivalOfferBanner";
 
 const SortByIcon = (props) => (
@@ -369,8 +369,46 @@ const PriceRangeFilter = ({
   );
 };
 
+const productMatchesSelectedBrands = (
+  product,
+  selectedBrands = [],
+  brands = []
+) => {
+  if (!selectedBrands.length) return true;
+
+  const variants = Array.isArray(product?.variants)
+    ? product.variants
+    : [];
+
+  const values = [
+    product?.brand,
+    product?.brand_id,
+    product?.brandId,
+    product?.brand_name,
+    product?.brandName,
+    ...variants.flatMap((variant) => [
+      variant?.brand,
+      variant?.brand_id,
+      variant?.brandId,
+      variant?.brand_name,
+      variant?.brandName,
+    ]),
+  ];
+
+  const productBrandKeys = values
+    .map((value) =>
+      normalizeFilterValue(resolveFilterBrandName(value, brands))
+    )
+    .filter(Boolean);
+
+  return selectedBrands.some((selectedBrand) =>
+    productBrandKeys.includes(normalizeFilterValue(selectedBrand))
+  );
+};
+
 export default function WomenCollections() {
   const location = useLocation();
+  const syncingFromUrlRef = useRef(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState("");
@@ -392,6 +430,7 @@ export default function WomenCollections() {
     return {
       categories: params.get("category") ? params.get("category").split(",") : [],
       types: params.get("type") ? params.get("type").split(",") : [],
+       brands: params.get("brand") ? params.get("brand").split(",").filter(Boolean) : [],
       labels: params.get("label") ? params.get("label").split(",") : [],
       min: params.get("min") !== null ? Number(params.get("min")) : null,
       max: params.get("max") !== null ? Number(params.get("max")) : null,
@@ -419,6 +458,7 @@ export default function WomenCollections() {
   const hasSyncedMaxPrice = useRef(false);
   const [selectedCategories, setSelectedCategories] = useState(() => getInitialParams().categories);
   const [selectedTypes, setSelectedTypes] = useState(() => getInitialParams().types);
+  const [selectedBrands, setSelectedBrands] = useState(() => getInitialParams().brands);
   const [typeIdsToFetch, setTypeIdsToFetch] = useState([]);
   const [selectedAttributes, setSelectedAttributes] = useState({});
   const [selectedLabels, setSelectedLabels] = useState(() => {
@@ -437,7 +477,37 @@ export default function WomenCollections() {
   const [debouncedMinPrice, setDebouncedMinPrice] = useState(minPrice);
   const [debouncedMaxPrice, setDebouncedMaxPrice] = useState(maxPrice);
   const { types = [], loading: typesLoading } = useSelector((state) => state.types || {});
+  const { brands = [], loading: brandsLoading } = useSelector((state) => state.brands || {});
   const { attributes = [], typeAttributes = [], loading: attrLoading, } = useSelector((state) => state.attributes || {});
+
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const categories = (params.get("category") || "").split(",").filter(Boolean);
+    const typesFromUrl = (params.get("type") || "").split(",").filter(Boolean);
+    const brandsFromUrl = (params.get("brand") || "").split(",").filter(Boolean);
+    const labelsFromUrl = (params.get("label") || "").split(",").filter(Boolean);
+
+    syncingFromUrlRef.current = true;
+
+    setSelectedCategories(categories);
+    setSelectedTypes(typesFromUrl);
+    setSelectedBrands(brandsFromUrl);
+    setSelectedLabels(
+      labelsFromUrl.map((name) => ({ id: name, name }))
+    );
+
+    setSelectedAttributes({});
+    setIsBestSeller(false);
+
+    const nextMin = params.has("min") ? Number(params.get("min")) : minCatalogPrice;
+    const nextMax = params.has("max") ? Number(params.get("max")) : maxCatalogPrice;
+
+    setMinPrice(nextMin);
+    setMaxPrice(nextMax);
+    setDebouncedMinPrice(nextMin);
+    setDebouncedMaxPrice(nextMax);
+  }, [location.search]); 
 
   useEffect(() => {
     if (!Array.isArray(selectedTypes)) return;
@@ -499,6 +569,9 @@ export default function WomenCollections() {
     if (debouncedMinPrice != null) params.minPrice = debouncedMinPrice;
     if (debouncedMaxPrice != null) params.maxPrice = debouncedMaxPrice;
     if (matchedCategoryIdsKey) params.categories = matchedCategoryIdsKey;
+    if (selectedBrands.length > 0) {
+      params.brand = selectedBrands.join(",");
+    }
     const key = JSON.stringify(params);
     if (lastParamsKeyRef.current === key) return;
     lastParamsKeyRef.current = key;
@@ -530,6 +603,24 @@ export default function WomenCollections() {
     setSelectedAttributes({});
     dispatch(clearTypeAttributes());
     dispatch(fetchAttributes());
+  };
+
+  const handleBrandChange = (brandName) => {
+    setSelectedBrands((prev) => {
+      const exists = prev.some(
+        (brand) => brand.toLowerCase() === brandName.toLowerCase()
+      );
+
+      return exists
+        ? prev.filter(
+            (brand) => brand.toLowerCase() !== brandName.toLowerCase()
+          )
+        : [...prev, brandName];
+    });
+  };
+
+  const handleResetBrands = () => {
+    setSelectedBrands([]);
   };
 
   const handleAttributeChange = (code, valName) => {
@@ -564,6 +655,7 @@ export default function WomenCollections() {
   const handleClearAllFilters = () => {
     setSelectedCategories([]);
     setSelectedTypes([]);
+    setSelectedBrands([]);
     setSelectedAttributes({});
     setSelectedLabels([]);
     setIsBestSeller(false);
@@ -578,10 +670,15 @@ export default function WomenCollections() {
   };
 
   useEffect(() => {
+    if (syncingFromUrlRef.current) {
+      syncingFromUrlRef.current = false;
+      return;
+    }
     const params = new URLSearchParams();
     if (selectedCategories.length)
       params.set("category", selectedCategories.join(","));
     if (selectedTypes.length) params.set("type", selectedTypes.join(","));
+    if (selectedBrands.length) params.set("brand", selectedBrands.join(","));
     if (selectedLabels.length)
       params.set("label", selectedLabels.map((l) => l.name).join(","));
     if (debouncedMinPrice !== null && minCatalogPrice > 0 && debouncedMinPrice > minCatalogPrice) {
@@ -597,11 +694,17 @@ export default function WomenCollections() {
       navigate(newUrl, { replace: true });
     }
   }, [
+    location.pathname,
+    location.search,
+    navigate,
     selectedCategories,
     selectedTypes,
+    selectedBrands,
     selectedLabels,
     debouncedMinPrice,
     debouncedMaxPrice,
+    minCatalogPrice,
+    maxCatalogPrice,
   ]);
   const currentFilters = useMemo(() => {
     const arr = [
@@ -611,6 +714,7 @@ export default function WomenCollections() {
         label: v,
       })),
       ...selectedTypes.map((v) => ({ type: "type", value: v, label: v })),
+      ...selectedBrands.map((v) => ({ type: "brand", value: v, label: v })),
       ...selectedLabels.map((l) => ({
         type: "label",
         value: l.id,
@@ -638,6 +742,7 @@ export default function WomenCollections() {
   }, [
     selectedCategories,
     selectedTypes,
+    selectedBrands,
     selectedAttributes,
     selectedLabels,
     minPrice,
@@ -654,6 +759,9 @@ export default function WomenCollections() {
       return [String(t)];
     });
   const matchesFilters = (p) => {
+    if (!productMatchesSelectedBrands(p, selectedBrands, brands)) {
+    return false;
+  }
     if (isBestSeller) {
       const hasBestSeller = (p?.variants || []).some(
         (v) => v.is_best_seller === true
@@ -675,6 +783,8 @@ export default function WomenCollections() {
       };
 
       const hasDirectCategoryMatch =
+        matchCat(p.mainCategory_id) ||
+        matchCat(p.mainCategory) ||
         matchCat(p.category_id) ||
         matchCat(p.subcategory_id) ||
         matchCat(p.child_category_id) ||
@@ -732,6 +842,7 @@ export default function WomenCollections() {
     products,
     selectedCategories,
     selectedTypes,
+    selectedBrands,
     selectedAttributes,
     selectedLabels,
     isBestSeller,
@@ -799,6 +910,9 @@ export default function WomenCollections() {
             selectedTypes={selectedTypes}
             handleTypeChange={handleTypeChange}
             handleResetTypes={handleResetTypes}
+            selectedBrands={selectedBrands}
+            handleBrandChange={handleBrandChange}
+            handleResetBrands={handleResetBrands}
             selectedAttributes={selectedAttributes}
             handleAttributeChange={handleAttributeChange}
             handleResetAttributes={handleResetAttributes}
@@ -864,6 +978,9 @@ export default function WomenCollections() {
               selectedTypes={selectedTypes}
               handleTypeChange={handleTypeChange}
               handleResetTypes={handleResetTypes}
+              selectedBrands={selectedBrands}
+              handleBrandChange={handleBrandChange}
+              handleResetBrands={handleResetBrands}
               selectedAttributes={selectedAttributes}
               handleAttributeChange={handleAttributeChange}
               handleResetAttributes={handleResetAttributes}
@@ -946,6 +1063,11 @@ export default function WomenCollections() {
 
                           if (type === "type")
                             setSelectedTypes((p) =>
+                              p.filter((x) => x !== value),
+                            );
+                          
+                          if (type === "brand")
+                            setSelectedBrands((p) =>
                               p.filter((x) => x !== value),
                             );
 

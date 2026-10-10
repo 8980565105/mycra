@@ -8,6 +8,7 @@ import categoriesReducer from "./features/categories/categoriesSlice";
 import subcategoriesReducer from "./features/subcategories/subcategoriesSlice";
 import pagesReducer from "./features/pages/pagesSlice";
 import typesReducer from "./features/types/typesSlice";
+import brandsReducer from "./features/brands/brandSlice";
 import productLabelsReducer from "./features/productLabels/productLabelsSlice";
 import wishlistReducer from "./features/wishlist/wishlistSlice";
 import cartReducer from "./features/cart/cartSlice";
@@ -39,6 +40,7 @@ export const rootReducer = {
   coupons: couponsReducer,
   pages: pagesReducer,
   types: typesReducer,
+  brands: brandsReducer,
   productLabels: productLabelsReducer,
   wishlist: wishlistReducer,
   cart: cartReducer,

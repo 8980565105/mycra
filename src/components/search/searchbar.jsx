@@ -614,11 +614,11 @@ export default function SearchBar({ onNavigate }) {
                       <p className="text-[14px] font-medium text-gray-800 line-clamp-1 leading-snug">
                         {product.name}
                       </p>
-                      <p className="text-[11px] text-gray-400 mt-1">
+                      {/* <p className="text-[11px] text-gray-400 mt-1">
                         {category}
                         {category && type ? " • " : ""}
                         {type}
-                      </p>
+                      </p> */}
                     </div>
                   </button>
                 );

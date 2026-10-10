@@ -62,6 +62,154 @@ export const getGroupedTypes = (types = []) => {
   return Array.from(map.values());
 };
 
+export const normalizeFilterValue = (value) => String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+
+export const getFilterId = (value) =>
+  value && typeof value === "object"
+    ? String(value._id || value.id || "")
+    : String(value ?? "");
+
+export const getFilterName = (value) =>
+  value && typeof value === "object"
+    ? String(
+        value.name ||
+          value.brand_name ||
+          value.brandName ||
+          value.title ||
+          value.label ||
+          value.value ||
+          ""
+      ).trim()
+    : "";
+
+export const resolveFilterType = (value, types = []) => {
+  const id = getFilterId(value);
+  const name = getFilterName(value) || (typeof value === "string" ? value : "");
+  const found = types.find(
+    (type) =>
+      getFilterId(type) === id ||
+      normalizeFilterValue(getFilterName(type)) === normalizeFilterValue(name)
+  );
+
+  return {
+    id: found ? getFilterId(found) : /^[a-f\d]{24}$/i.test(id) ? id : "",
+    name: normalizeFilterValue(getFilterName(found) || name),
+  };
+};
+
+export const getVariantTypeValues = (variant) =>
+  [variant?.type, variant?.types, variant?.type_id].flatMap((value) =>
+    Array.isArray(value) ? value : value == null || value === "" ? [] : [value]
+  );
+
+export const variantMatchesSelectedTypes = (
+  variant,
+  selectedTypes = [],
+  types = []
+) => {
+  if (!selectedTypes.length) return true;
+
+  const variantTypes = getVariantTypeValues(variant).map((value) =>
+    resolveFilterType(value, types)
+  );
+
+  return selectedTypes.map((value) => resolveFilterType(value, types)).some(
+    (selected) =>
+      variantTypes.some(
+        (type) =>
+          (type.id && type.id === selected.id) ||
+          (type.name && type.name === selected.name)
+      )
+  );
+};
+
+export const productMatchesSelectedTypes = (
+  product,
+  selectedTypes = [],
+  types = []
+) =>
+  !selectedTypes.length ||
+  (product?.variants || []).some((variant) => variantMatchesSelectedTypes(variant, selectedTypes, types)
+  );
+
+export const resolveFilterBrandName = (value, brands = []) => {
+  const name = getFilterName(value);
+  if (name) return name;
+
+  const raw = getFilterId(value).trim();
+  const found = brands.find((brand) => getFilterId(brand) === raw);
+
+  if (found) return getFilterName(found);
+  return /^[a-f\d]{24}$/i.test(raw) || typeof value === "object" ? "" : raw;
+};
+
+export const getProductBrandNames = (
+  product,
+  brands = [],
+  selectedTypes = [],
+  types = []
+) => {
+  const variants = Array.isArray(product?.variants) ? product.variants : [];
+  const matchingVariants = selectedTypes.length
+    ? variants.filter((variant) =>
+        variantMatchesSelectedTypes(variant, selectedTypes, types)
+      )
+    : variants;
+
+  const values = matchingVariants.flatMap((variant) => [
+    variant.brand,
+    variant.brand_id,
+    variant.brandId,
+    variant.brandName,
+    variant.brand_name,
+  ]);
+
+  if (!variants.length) {
+    values.push(
+      product?.brand,
+      product?.brand_id,
+      product?.brandId,
+      product?.brandName,
+      product?.brand_name
+    );
+  }
+
+  return [
+    ...new Map(
+      values
+        .map((value) => resolveFilterBrandName(value, brands))
+        .filter(Boolean)
+        .map((name) => [normalizeFilterValue(name), name])
+    ),
+  ].map(([key, displayName]) => ({ key, displayName }));
+};
+
+export const getGroupedBrands = (
+  products = [],
+  brands = [],
+  selectedTypes = [],
+  types = []
+) => {
+  const grouped = new Map();
+
+  products.forEach((product) =>
+    getProductBrandNames(product, brands, selectedTypes, types).forEach(
+      ({ key, displayName }) => {
+        const current = grouped.get(key);
+        grouped.set(key, {
+          key,
+          displayName: current?.displayName || displayName,
+          count: (current?.count || 0) + 1,
+        });
+      }
+    )
+  );
+
+  return [...grouped.values()].sort((a, b) =>
+    a.displayName.localeCompare(b.displayName)
+  );
+};
+
 export const filterProductsByAttributes = (products = [], selectedAttributes = {}) => {
   if (!Array.isArray(products)) return [];
 

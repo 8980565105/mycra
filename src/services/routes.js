@@ -39,6 +39,10 @@
     getAll: "/types",
     getPublic: "/types/public",
   },
+  brands: {
+    getAll: "/brands",
+    getPublic: "/brands/public",
+  },
   productLabels: {
     getPublic: "/product-labels/Public",
     getAll: "/product-labels",
