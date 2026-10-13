@@ -18,6 +18,7 @@ import {
   Banknote,
   QrCode,
 } from "lucide-react";
+import { fetchWallet } from "../features/wallet/walletThunk";
 // const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 // const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 const stripePublishableKey =
@@ -542,41 +543,95 @@ useEffect(() => {
   paymentIntentId,
 ]);
 
-  const handlePlaceOrder = async () => {
-    if (!checkoutInfo) return;
-    setPlacing(true);
-    try {
-      const orderPayload = {
-        coupon_id: checkoutInfo.coupon_id,
-        shippingAddress: checkoutInfo.shippingAddress,
-        payment_method: selectedMethod === "wallet" ? "Wallet" : "COD",
-        shipping: checkoutInfo.shipping,
-        platform_charge: checkoutInfo.platformCharge,
-        items: checkoutInfo.items,
-      };
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/orders`, {
+  // const handlePlaceOrder = async () => {
+  //   if (!checkoutInfo) return;
+  //   setPlacing(true);
+  //   try {
+  //     const orderPayload = {
+  //       coupon_id: checkoutInfo.coupon_id,
+  //       shippingAddress: checkoutInfo.shippingAddress,
+  //       payment_method: selectedMethod === "wallet" ? "Wallet" : "COD",
+  //       shipping: checkoutInfo.shipping,
+  //       platform_charge: checkoutInfo.platformCharge,
+  //       items: checkoutInfo.items,
+  //     };
+  //     const response = await fetch(`${process.env.REACT_APP_API_URL}/orders`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+  //       },
+  //       body: JSON.stringify(orderPayload),
+  //     });
+  //     const data = await response.json();
+  //     if (!response.ok || !data?.success) {
+  //       throw new Error(data?.message || "Unable to place order");
+  //     }
+  //     toast.success("Order placed successfully!");
+  //     dispatch(clearCart());
+  //     sessionStorage.removeItem("checkoutInfo");
+  //     localStorage.removeItem("appliedCoupon");
+  //     navigate(`/order-success/${data.data._id}`);
+  //   } catch (err) {
+  //     toast.error(err.message || "Unable to place order");
+  //   } finally {
+  //     setPlacing(false);
+  //   }
+  // };
+  
+const handlePlaceOrder = async () => {
+  if (!checkoutInfo || placing) return;
+
+  setPlacing(true);
+
+  try {
+    const orderPayload = {
+      coupon_id: checkoutInfo.coupon_id,
+      shippingAddress: checkoutInfo.shippingAddress,
+      payment_method: selectedMethod === "wallet" ? "Wallet" : "COD",
+      shipping: checkoutInfo.shipping,
+      platform_charge: checkoutInfo.platformCharge,
+      items: checkoutInfo.items,
+    };
+
+    const response = await fetch(
+      `${process.env.REACT_APP_API_URL}/orders`,
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
         },
         body: JSON.stringify(orderPayload),
-      });
-      const data = await response.json();
-      if (!response.ok || !data?.success) {
-        throw new Error(data?.message || "Unable to place order");
       }
-      toast.success("Order placed successfully!");
-      dispatch(clearCart());
-      sessionStorage.removeItem("checkoutInfo");
-      localStorage.removeItem("appliedCoupon");
-      navigate(`/order-success/${data.data._id}`);
-    } catch (err) {
-      toast.error(err.message || "Unable to place order");
-    } finally {
-      setPlacing(false);
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data?.success) {
+      throw new Error(data?.message || "Unable to place order");
     }
-  };
+
+    // Refresh wallet balance after successful order creation.
+    if (selectedMethod === "wallet") {
+      await dispatch(fetchWallet());
+    }
+
+    toast.success("Order placed successfully!");
+
+    dispatch(clearCart());
+
+    sessionStorage.removeItem("checkoutInfo");
+    localStorage.removeItem("appliedCoupon");
+
+    navigate(`/order-success/${data.data._id}`);
+  } catch (err) {
+    console.error("Place order error:", err);
+    toast.error(err.message || "Unable to place order");
+  } finally {
+    setPlacing(false);
+  }
+};
 
   if (loading) {
     return (

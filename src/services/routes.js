@@ -130,6 +130,9 @@
     // adminAll: "/gift-cards/admin/all",
     my: "/gift-cards/my",
     receiver: "/gift-cards/receiver",
+    AdminCreateCardProduct: "/gift-cards/admin/products",
+    products: "/gift-cards/products", 
+    purchase: "/gift-cards/purchase", 
   },
   kyc: {
     validatePan: "/kyc/validate-pan",

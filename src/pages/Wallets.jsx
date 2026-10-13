@@ -59,7 +59,7 @@ const voucherBalance = Number(wallet?.voucherBalance || 0);
 
 const activeGiftCards = giftCards?.filter(
     (card) =>
-      String(card.status).toLowerCase() === "active" &&
+      String(card.status || "").toLowerCase() === "active" &&
       Number(card.remainingBalance || 0) > 0
   ) || [];
 
