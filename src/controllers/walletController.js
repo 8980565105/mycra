@@ -6,18 +6,63 @@ const Transection = require("../models/Transactions");
 const getBalance = async (req, res) => {
   try {
     const userId = req.user._id;
+    const now = new Date();
     let wallet = await Wallet.findOne({ user: userId });
     if (!wallet) {
-      wallet = await Wallet.create({ user: userId,
-        // balance: 0,
-        // giftCardBalance: 0,
-        // voucherBalance: 0,
-        // giftCards: [],
-       });
+      wallet = await Wallet.create({ user: userId });
     }
+
+    await GiftCard.updateMany(
+      {
+        assignedTo: userId,
+        status: "Active",
+        expiresAt: { $lte: now },
+      },
+      {
+        $set: { status: "Expired" },
+      }
+    );
+
+    const activeCards = await GiftCard.find({
+      assignedTo: userId,
+      status: "Active",
+      remainingBalance: { $gt: 0 },
+      $or: [
+        { expiresAt: null },
+        { expiresAt: { $gt: now } },
+      ],
+    })
+      .select("_id cardNumber remainingBalance status expiresAt")
+      .lean();
+
+    const giftCardBalance = activeCards.reduce(
+      (sum, card) => sum + Number(card.remainingBalance || 0),
+      0
+    );
+
+    const voucherIsActive =
+      wallet.voucherStatus === true &&
+      Boolean(wallet.expiresAt) &&
+      new Date(wallet.expiresAt) > now;
+
+    const balance = Number(wallet.balance || 0);
+
+    const voucherBalance = voucherIsActive
+      ? Number(wallet.voucherBalance || 0)
+      : 0;
+
     return res.status(200).json({
       success: true,
-      wallet,
+      wallet: {
+        ...wallet.toObject(),
+        balance,
+        giftCards: activeCards,
+        giftCardBalance,
+        voucherBalance,
+        voucherStatus: voucherIsActive,
+        isVoucherActive: voucherIsActive,
+        totalBalance: balance + giftCardBalance + voucherBalance,
+      },
     });
   } catch (error) {
     return res.status(500).json({
@@ -131,11 +176,10 @@ const getAllWallets = async (req, res) => {
 
     const currentPage = Math.max(Number(page) || 1, 1);
     const perPage = Math.max(Number(limit) || 10, 1);
+    const now = new Date();
     const userFilter = { role: "store_user" };
-    if (req.user?.role === "store_owner") {
-      if (req.user.storeId) {
-        userFilter.storeId = req.user.storeId;
-      }
+    if (req.user?.role === "store_owner" && req.user.storeId) {
+      userFilter.storeId = req.user.storeId;
     }
 
     if (search && search.trim()) {
@@ -160,42 +204,68 @@ const getAllWallets = async (req, res) => {
         }).lean();
 
         if (!wallet) {
-          wallet = await Wallet.create({
+          const createdWallet = await Wallet.create({
             user: user._id,
             balance: 0,
-            giftCardBalance: 0,
             voucherBalance: 0,
           });
 
-          wallet = wallet.toObject();
+          wallet = createdWallet.toObject();
         }
-        const giftCards = await GiftCard.find({assignedTo: user._id})
-          .select("_id cardNumber originalAmount remainingBalance status expiresAt recipientName recipientEmail")
+        await GiftCard.updateMany(
+          {
+            assignedTo: user._id,
+            status: "Active",
+            expiresAt: { $lte: now },
+          },
+          {
+            $set: { status: "Expired" },
+          }
+        );
+
+        const giftCards = await GiftCard.find({
+          assignedTo: user._id,
+          status: "Active",
+          remainingBalance: { $gt: 0 },
+          $or: [
+            { expiresAt: null },
+            { expiresAt: { $gt: now } },
+          ],
+        })
+          .select(
+            "_id cardNumber originalAmount remainingBalance status expiresAt recipientName recipientEmail source createdAt"
+          )
+          .sort({ createdAt: -1 })
           .lean();
 
         const giftCardBalance = giftCards.reduce(
-          (sum, card) => sum + Number(card.remainingBalance || 0),
+          (sum, card) =>
+            sum + Number(card.remainingBalance || 0),
           0
         );
 
         const balance = Number(wallet.balance || 0);
-        const voucherBalance = Number( wallet.voucherBalance || 0 );
+        const voucherIsActive =
+          wallet.voucherStatus === true &&
+          Boolean(wallet.expiresAt) &&
+          new Date(wallet.expiresAt) > now;
+
+        const voucherBalance = voucherIsActive
+          ? Number(wallet.voucherBalance || 0)
+          : 0;
         const totalBalance = balance + giftCardBalance + voucherBalance;
 
         return {
           ...wallet,
           user,
           giftCards,
+          balance,
           giftCardBalance,
           voucherBalance,
-          voucherStatus: wallet.voucherStatus ?? true,
-          expiresAt: wallet.expiresAt ?? null,
-          isVoucherActive:
-            wallet.voucherStatus === true &&
-            wallet.expiresAt &&
-            new Date() <= new Date(wallet.expiresAt),
-          balance,
           totalBalance,
+          voucherStatus: voucherIsActive,
+          isVoucherActive: voucherIsActive,
+          expiresAt: wallet.expiresAt || null,
         };
       })
     );
@@ -213,7 +283,6 @@ const getAllWallets = async (req, res) => {
     return res.status(500).json({success: false, message: error.message || "Failed to fetch wallets"});
   }
 };
-
 const adminAdjustBalance = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -320,15 +389,19 @@ const adminAddVoucher = async (req, res) => {
       wallet = await Wallet.create({
         user: userId,
         balance: 0,
-        giftCardBalance: 0,
         voucherBalance: voucherAmount,
         expiresAt: voucherExpiryDate,
         voucherStatus: status,
       });
     } else {
-      const oldVoucherBalance = Number(
-        wallet.voucherBalance || 0
-      );
+      const now = new Date();
+
+      const previousVoucherExpired =
+        !wallet.expiresAt || new Date(wallet.expiresAt) <= now;
+
+      const oldVoucherBalance = previousVoucherExpired
+        ? 0
+        : Number(wallet.voucherBalance || 0);
 
       wallet.voucherBalance = oldVoucherBalance + voucherAmount;
       wallet.expiresAt = voucherExpiryDate;

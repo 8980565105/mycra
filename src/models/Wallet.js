@@ -12,10 +12,10 @@ const walletSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    giftCardBalance: {
-      type: Number,
-      default: 0,
-    },
+    // giftCardBalance: {
+    //   type: Number,
+    //   default: 0,
+    // },
     voucherBalance: {
       type: Number,
       default: 0,
@@ -40,7 +40,7 @@ const walletSchema = new mongoose.Schema(
   { timestamps: true }
 );
 walletSchema.virtual("totalBalance").get(function () {
-  return this.balance + this.giftCardBalance + this.voucherBalance;
+   return Number(this.balance || 0) + Number(this.voucherBalance || 0);
 });
 walletSchema.set("toJSON", { virtuals: true });
 walletSchema.set("toObject", { virtuals: true });

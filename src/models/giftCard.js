@@ -4,15 +4,17 @@ const giftCardSchema = new mongoose.Schema(
   {
     cardNumber: {
       type: String,
-      required: true,
-      unique: true,
-      index: true,
+      required: function () {
+        return this.recordType !== "Product";
+      },
       trim: true,
     },
 
     pinHash: {
       type: String,
-      required: true,
+      required: function () {
+        return this.recordType !== "Product";
+      },
     },
 
     originalAmount: {
@@ -61,12 +63,7 @@ const giftCardSchema = new mongoose.Schema(
 
     source: {
       type: String,
-      enum: [
-        "Admin",
-        "Purchase",
-        "Promotion",
-        "Campaign",
-      ],
+      enum: ["Admin", "Purchase", "Promotion", "Campaign"],
       default: "Admin",
     },
 
@@ -90,9 +87,65 @@ const giftCardSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    gifterName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    message: {
+      type: String,
+      default: "",
+      maxlength: 100,
+      trim: true,
+    },
+
+    recordType: {
+      type: String,
+      enum: ["Product", "Issued"],
+      default: "Issued",
+      index: true,
+    },
+
+    productName: {
+      type: String,
+      trim: true,
+      required: function () {
+        return this.recordType === "Product";
+      },
+    },
+
+    productDescription: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    productImage: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    isPurchaseEnabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
+  }
+);
+
+giftCardSchema.index(
+  { cardNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      cardNumber: { $type: "string" },
+    },
+    name: "cardNumber_unique_strings",
   }
 );
 

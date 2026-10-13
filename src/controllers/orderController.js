@@ -579,7 +579,8 @@ const createOrder = async (req, res) => {
         payment_method === "Online" && transaction_id ? "paid" : "pending",
       transaction_id: transaction_id || "",
       status: "pending",
-      store_owner_id: store_owner_id || null,
+      // store_owner_id: store_owner_id || null,
+      store_owner_id: orderStoreId || null,
     });
 
     pushHistory(order, "pending", "customer", "Order placed");

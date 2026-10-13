@@ -1,63 +1,181 @@
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const GiftCard = require("../models/GiftCard");
-const GiftCardTransaction = require( "../models/GiftCardTransaction" );
+const GiftCardTransaction = require("../models/GiftCardTransaction");
+const Wallet = require("../models/Wallet");
+const User = require("../models/User");
 
-const { generateGiftCardNumber, generateGiftCardPin, } = require("../utils/giftCardGenerator");
+const {
+  generateGiftCardNumber,
+  generateGiftCardPin,
+} = require("../utils/giftCardGenerator");
 
-const createUniqueGiftCardNumber = async () => {
+
+const createUniqueGiftCardNumber = async (session = null) => {
   let cardNumber;
   let exists = true;
 
   while (exists) {
     cardNumber = generateGiftCardNumber();
-    exists = await GiftCard.exists({
-      cardNumber,
-    });
+
+    const query = GiftCard.exists({ cardNumber });
+
+    if (session) {
+      query.session(session);
+    }
+
+    exists = await query;
   }
 
   return cardNumber;
 };
-const getMyGiftCards = async (req, res) => {
+
+const createReferenceId = () => {
+  return `GC-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
+};
+
+const getAuthenticatedUserId = (req) => {
+  return req.user?._id || req.user?.id || null;
+};
+const issuedCardFilter = {
+  recordType: { $ne: "Product" },
+};
+
+const expireUserGiftCards = async (userId, session = null) => {
+  const query = GiftCard.updateMany(
+    {
+      ...issuedCardFilter,
+      assignedTo: userId,
+      status: "Active",
+      expiresAt: { $ne: null, $lte: new Date() },
+    },
+    {
+      $set: { status: "Expired" },
+    }
+  );
+
+  if (session) {
+    query.session(session);
+  }
+
+  await query;
+};
+
+const adminCreateGiftCardProduct = async (req, res) => {
   try {
-    const userId = req.user?._id;
+    const {
+      productName,
+      productDescription = "",
+      productImage = "",
+      amount,
+      isPurchaseEnabled = true,
+      productExpiresAt,
+    } = req.body;
 
-    console.log("LOGGED IN USER:", userId);
+    const adminId = getAuthenticatedUserId(req);
 
-    if (!userId) {
+    if (!adminId) {
       return res.status(401).json({
         success: false,
-        message: "Unauthorized",
+        message: "Authentication required.",
       });
     }
 
-    const giftCards = await GiftCard.find({
-      assignedTo: userId,
-    })
-      .select(
-        "cardNumber originalAmount remainingBalance status expiresAt recipientName recipientEmail source createdAt"
-      )
-      .sort({
-        createdAt: -1,
-      })
-      .lean();
+    if (!productName || !String(productName).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Product name is required.",
+      });
+    }
 
-    console.log("USER GIFT CARDS:", giftCards);
+    const numericAmount = Number(amount);
 
-    return res.status(200).json({
-      success: true,
-      giftCards,
+    if (
+      !Number.isFinite(numericAmount) ||
+      numericAmount <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid Gift Card amount.",
+      });
+    }
+
+    if (typeof isPurchaseEnabled !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "isPurchaseEnabled must be true or false.",
+      });
+    }
+
+    const product = await GiftCard.create({
+      recordType: "Product",
+      productName: String(productName).trim(),
+      productDescription: String(productDescription || "").trim(),
+      productImage: String(productImage || "").trim(),
+      originalAmount: numericAmount,
+      remainingBalance: 0,
+      isPurchaseEnabled,
+      assignedTo: null,
+      recipientName: "",
+      recipientEmail: "",
+      status: "Inactive",
+      source: "Admin",
+      createdBy: adminId,
+      expiresAt: null,
     });
 
+    return res.status(201).json({
+      success: true,
+      message: "Gift Card product created successfully.",
+      product: {
+        _id: product._id,
+        productName: product.productName,
+        productDescription: product.productDescription,
+        productImage: product.productImage,
+        amount: product.originalAmount,
+        isPurchaseEnabled: product.isPurchaseEnabled,
+        createdAt: product.createdAt,
+      },
+    });
   } catch (error) {
-    console.error(
-      "getMyGiftCards error:",
-      error
-    );
+    console.error("adminCreateGiftCardProduct error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch gift cards",
+      message: "Unable to create Gift Card product.",
+      error: error.message,
+    });
+  }
+};
+
+const getGiftCardPurchaseProducts = async (req, res) => {
+  try {
+    const products = await GiftCard.find({
+      recordType: "Product",
+      isPurchaseEnabled: true,
+    })
+      .select(
+        "_id productName productDescription productImage originalAmount isPurchaseEnabled createdAt"
+      )
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      count: products.length,
+      products: products.map((product) => ({
+        ...product,
+        amount: product.originalAmount,
+      })),
+    });
+  } catch (error) {
+    console.error("getGiftCardPurchaseProducts error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch Gift Card products.",
     });
   }
 };
@@ -67,151 +185,721 @@ const adminCreateGiftCard = async (req, res) => {
     const {
       amount,
       userId,
-      recipientName,
-      recipientEmail,
-      expiresAt,
+      recipientName = "",
+      recipientEmail = "",
+      expiresAt = null,
     } = req.body;
+
+    const adminId = getAuthenticatedUserId(req);
+
+    if (!adminId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
 
     const numericAmount = Number(amount);
 
-    if (
-      !amount ||
-      Number.isNaN(numericAmount) ||
-      numericAmount <= 0
-    ) {
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Valid gift card amount is required",
+        message: "Enter a valid Gift Card amount.",
       });
     }
 
-    if (!userId) {
+    if (!mongoose.isValidObjectId(userId)) {
       return res.status(400).json({
         success: false,
-        message: "User is required",
+        message: "A valid userId is required.",
       });
     }
 
-    const cardNumber = await createUniqueGiftCardNumber();
-    const pin = generateGiftCardPin();
-    const pinHash = await bcrypt.hash(pin, 10);
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
 
     let expiryDate = null;
 
     if (expiresAt) {
       expiryDate = new Date(expiresAt);
 
-      if (Number.isNaN(expiryDate.getTime())) {
+      if (Number.isNaN(expiryDate.getTime()) || expiryDate <= new Date()) {
         return res.status(400).json({
           success: false,
-          message: "Invalid expiry date",
+          message: "Expiry date must be a valid future date.",
         });
       }
     }
 
+    const cardNumber = await createUniqueGiftCardNumber();
+    const pin = String(generateGiftCardPin());
+    const pinHash = await bcrypt.hash(pin, 10);
+
     const giftCard = await GiftCard.create({
-        cardNumber,
-        pinHash,
-        originalAmount: numericAmount,
-        remainingBalance: numericAmount,
-        assignedTo: userId,
-        recipientName: recipientName || user.name || "",
-        recipientEmail: recipientEmail || user.email || "",
-        status: "Active",
-        source: "Admin",
-        expiresAt: expiresAt || null,
-        createdBy: req.user?._id || null,
-        activatedAt: new Date(),
+      recordType: "Issued",
+      cardNumber,
+      pinHash,
+      originalAmount: numericAmount,
+      remainingBalance: numericAmount,
+      assignedTo: user._id,
+      recipientName: String(recipientName).trim(),
+      recipientEmail: String(recipientEmail).trim().toLowerCase(),
+      status: "Active",
+      source: "Admin",
+      expiresAt: expiryDate,
+      createdBy: adminId,
+      activatedAt: new Date(),
     });
 
-    const transaction =
-      await GiftCardTransaction.create({
-        giftCard: giftCard._id,
-        user: userId,
-        type: "Issued",
-        amount: numericAmount,
-        balanceBefore: 0,
-        balanceAfter: numericAmount,
-        referenceId:
-          `GIFT-${Date.now()}-${Math.floor(
-            Math.random() * 100000
-          )}`,
-        description: "Gift card created by admin",
-      });
+    await GiftCardTransaction.create({
+      giftCard: giftCard._id,
+      user: user._id,
+      type: "Issued",
+      amount: numericAmount,
+      balanceBefore: 0,
+      balanceAfter: numericAmount,
+      referenceId: createReferenceId(),
+      description: "Gift Card issued by admin",
+    });
 
     return res.status(201).json({
       success: true,
-      message: "Gift card created successfully",
+      message: "Gift Card issued successfully.",
       giftCard: {
-        id: giftCard._id,
+        _id: giftCard._id,
         cardNumber: giftCard.cardNumber,
-        pin,
         originalAmount: giftCard.originalAmount,
         remainingBalance: giftCard.remainingBalance,
-        status: giftCard.status,
         recipientName: giftCard.recipientName,
         recipientEmail: giftCard.recipientEmail,
+        status: giftCard.status,
         expiresAt: giftCard.expiresAt,
-        createdAt: giftCard.createdAt,
       },
-      transaction,
+      // Display the PIN only once to the authorized admin.
+      pin,
     });
   } catch (error) {
-    console.error( "Admin create gift card error:", error );
-
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "Gift card number already exists. Please try again.",
-      });
-    }
+    console.error("adminCreateGiftCard error:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to create gift card",
+      message: "Unable to issue Gift Card.",
+    });
+  }
+};
+
+const purchaseGiftCard = async (req, res) => {
+  const userId = getAuthenticatedUserId(req);
+
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: "Please log in before purchasing.",
+    });
+  }
+
+  const {
+    productId,
+    quantity = 1,
+    receiverEmail,
+    receiverName,
+    gifterName = "",
+    message = "",
+  } = req.body;
+
+  if (!mongoose.isValidObjectId(productId)) {
+    return res.status(400).json({
+      success: false,
+      message: "A valid productId is required.",
+    });
+  }
+
+  const numericQuantity = Number(quantity);
+
+  // Preserve the existing maximum quantity policy of 3.
+  if (
+    !Number.isInteger(numericQuantity) ||
+    numericQuantity < 1 ||
+    numericQuantity > 3
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Quantity must be between 1 and 3.",
+    });
+  }
+
+  if (!receiverName || !String(receiverName).trim()) {
+    return res.status(400).json({
+      success: false,
+      message: "Recipient name is required.",
+    });
+  }
+
+  const normalizedEmail = String(receiverEmail || "").trim().toLowerCase();
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(normalizedEmail)) {
+    return res.status(400).json({
+      success: false,
+      message: "Enter a valid recipient email.",
+    });
+  }
+
+  if (String(message).trim().length > 100) {
+    return res.status(400).json({
+      success: false,
+      message: "Message cannot exceed 100 characters.",
+    });
+  }
+
+  const session = await mongoose.startSession();
+
+  let result;
+
+  try {
+    await session.withTransaction(async () => {
+      // Read the authoritative price from the database.
+      // Never trust an amount supplied by the frontend.
+      const product = await GiftCard.findOne({
+        _id: productId,
+        recordType: "Product",
+        isPurchaseEnabled: true,
+      }).session(session);
+
+      if (!product) {
+        const error = new Error(
+          "Gift Card product was not found or is disabled."
+        );
+        error.statusCode = 404;
+        throw error;
+      }
+
+      const unitAmount = Number(product.originalAmount);
+      const totalAmount = unitAmount * numericQuantity;
+
+      if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+        const error = new Error("Invalid product price.");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      // Atomically deduct wallet money inside the transaction.
+      const walletBefore = await Wallet.findOne({
+        user: userId,
+      }).session(session);
+
+      if (!walletBefore) {
+        const error = new Error("Wallet not found. Please contact support.");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      if (Number(walletBefore.balance || 0) < totalAmount) {
+        const error = new Error("Insufficient wallet balance.");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const walletAfter = await Wallet.findOneAndUpdate(
+        {
+          user: userId,
+          balance: { $gte: totalAmount },
+        },
+        {
+          $inc: { balance: -totalAmount },
+        },
+        {
+          new: true,
+          session,
+        }
+      );
+
+      if (!walletAfter) {
+        const error = new Error(
+          "Insufficient wallet balance or wallet was updated. Please retry."
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const issuedCards = [];
+      const transactionDocs = [];
+
+      for (let i = 0; i < numericQuantity; i += 1) {
+        const cardNumber = await createUniqueGiftCardNumber(session);
+        const pin = String(generateGiftCardPin());
+        const pinHash = await bcrypt.hash(pin, 10);
+
+        const [giftCard] = await GiftCard.create(
+          [
+            {
+              recordType: "Issued",
+              cardNumber,
+              pinHash,
+              originalAmount: unitAmount,
+              remainingBalance: unitAmount,
+
+              // Existing behavior: card belongs to the logged-in buyer.
+              // Recipient fields store the intended recipient details.
+              assignedTo: userId,
+              recipientName: String(receiverName).trim(),
+              recipientEmail: normalizedEmail,
+
+              gifterName: String(gifterName).trim(),
+              message: String(message).trim(),
+
+              status: "Active",
+              source: "Purchase",
+              createdBy: userId,
+              activatedAt: new Date(),
+              expiresAt: null,
+            },
+          ],
+          { session }
+        );
+
+        issuedCards.push({
+          _id: giftCard._id,
+          cardNumber: giftCard.cardNumber,
+          pin,
+          originalAmount: giftCard.originalAmount,
+          remainingBalance: giftCard.remainingBalance,
+          recipientName: giftCard.recipientName,
+          recipientEmail: giftCard.recipientEmail,
+          status: giftCard.status,
+        });
+
+        transactionDocs.push({
+          giftCard: giftCard._id,
+          user: userId,
+          type: "Issued",
+          amount: unitAmount,
+          balanceBefore: 0,
+          balanceAfter: unitAmount,
+          referenceId: createReferenceId(),
+          description: `Gift Card purchased: ${product.productName}`,
+        });
+      }
+
+      await GiftCardTransaction.create(transactionDocs, { session });
+
+      result = {
+        productName: product.productName,
+        quantity: numericQuantity,
+        unitAmount,
+        totalAmount,
+        cards: issuedCards,
+        walletBalance: walletAfter.balance,
+      };
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Gift Card purchased successfully.",
+      purchase: {
+        productName: result.productName,
+        quantity: result.quantity,
+        unitAmount: result.unitAmount,
+        totalAmount: result.totalAmount,
+      },
+      giftCards: result.cards,
+      wallet: {
+        balance: result.walletBalance,
+      },
+    });
+  } catch (error) {
+    console.error("purchaseGiftCard error:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message:
+        error.statusCode
+          ? error.message
+          : "Gift Card purchase failed. Please try again.",
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+const getMyGiftCards = async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    const now = new Date();
+
+    await expireUserGiftCards(userId);
+
+    const giftCards = await GiftCard.find({
+      ...issuedCardFilter,
+      assignedTo: userId,
+      status: "Active",
+      remainingBalance: { $gt: 0 },
+      $or: [
+        { expiresAt: null },
+        { expiresAt: { $exists: false } },
+        { expiresAt: { $gt: now } },
+      ],
+    })
+      .select("-pinHash")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const giftCardBalance = giftCards.reduce(
+      (total, card) => total + Number(card.remainingBalance || 0),
+      0
+    );
+
+    let wallet = await Wallet.findOne({ user: userId });
+
+    if (!wallet) {
+      wallet = await Wallet.create({
+        user: userId,
+        balance: 0,
+        voucherBalance: 0,
+      });
+    }
+
+    const voucherExpiry = wallet.expiresAt
+      ? new Date(wallet.expiresAt)
+      : null;
+
+    const isVoucherActive =
+      wallet.voucherStatus === true &&
+      Number(wallet.voucherBalance || 0) > 0 &&
+      voucherExpiry &&
+      voucherExpiry > now;
+
+    const voucherBalance = isVoucherActive
+      ? Number(wallet.voucherBalance || 0)
+      : 0;
+
+    const normalBalance = Number(wallet.balance || 0);
+
+    return res.status(200).json({
+      success: true,
+      count: giftCards.length,
+      giftCards,
+      giftCardBalance,
+      wallet: {
+        balance: normalBalance,
+        giftCardBalance,
+        voucherBalance,
+        voucherStatus: Boolean(isVoucherActive),
+        totalBalance: normalBalance + giftCardBalance + voucherBalance,
+      },
+    });
+  } catch (error) {
+    console.error("getMyGiftCards error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch your Gift Cards.",
     });
   }
 };
 
 const adminGetAllGiftCards = async (req, res) => {
   try {
-    const giftCards =
-      await GiftCard.find()
-        .populate(
-          "assignedTo",
-          "name email mobile_number"
-        )
-        .populate(
-          "createdBy",
-          "name email"
-        )
-        .sort({
-          createdAt: -1,
-        });
+    await GiftCard.updateMany(
+      {
+        ...issuedCardFilter,
+        status: "Active",
+        expiresAt: { $ne: null, $lte: new Date() },
+      },
+      {
+        $set: { status: "Expired" },
+      }
+    );
+
+    const giftCards = await GiftCard.find({})
+      .select("-pinHash")
+      .populate("assignedTo", "name email")
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 })
+      .lean();
 
     return res.status(200).json({
       success: true,
-
-      count:
-        giftCards.length,
-
+      count: giftCards.length,
       giftCards,
     });
   } catch (error) {
-    console.error(
-      "Get all gift cards error:",
-      error
-    );
+    console.error("adminGetAllGiftCards error:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Unable to fetch Gift Cards.",
     });
   }
 };
 
+const adminGetAllPurchasedGiftCards = async (req, res) => {
+  try {
+    const giftCards = await GiftCard.find({
+      ...issuedCardFilter,
+      source: "Purchase",
+      createdBy: { $ne: null },
+    })
+      .select("-pinHash")
+      .populate("assignedTo", "name email")
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      count: giftCards.length,
+      giftCards,
+    });
+  } catch (error) {
+    console.error("adminGetAllPurchasedGiftCards error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch purchased Gift Cards.",
+    });
+  }
+};
+
+const adminGetAllGiftCardProducts = async (req, res) => {
+  try {
+    const products = await GiftCard.find({
+      recordType: "Product",
+    })
+      .select(
+        "_id productName productDescription productImage originalAmount isPurchaseEnabled createdAt updatedAt"
+      )
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      count: products.length,
+      products: products.map((product) => ({
+        ...product,
+        amount: product.originalAmount,
+      })),
+    });
+  } catch (error) {
+    console.error("adminGetAllGiftCardProducts:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to load Gift Card products.",
+    });
+  }
+};
+
+const adminUpdateGiftCardProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      productName,
+      productDescription,
+      productImage,
+      amount,
+      isPurchaseEnabled,
+    } = req.body;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID.",
+      });
+    }
+
+    const product = await GiftCard.findOne({
+      _id: id,
+      recordType: "Product",
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Gift Card product not found.",
+      });
+    }
+
+    if (productName !== undefined) {
+      if (
+        typeof productName !== "string" ||
+        !productName.trim()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Product name is required.",
+        });
+      }
+
+      product.productName = productName.trim();
+    }
+
+    if (productDescription !== undefined) {
+      if (typeof productDescription !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid product description.",
+        });
+      }
+
+      product.productDescription = productDescription.trim();
+    }
+
+    if (productImage !== undefined) {
+      if (typeof productImage !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid product image URL.",
+        });
+      }
+
+      product.productImage = productImage.trim();
+    }
+
+    if (amount !== undefined) {
+      const numericAmount = Number(amount);
+
+      if (
+        !Number.isFinite(numericAmount) ||
+        numericAmount <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Enter a valid Gift Card amount.",
+        });
+      }
+
+      product.originalAmount = numericAmount;
+    }
+
+    if (isPurchaseEnabled !== undefined) {
+      if (typeof isPurchaseEnabled !== "boolean") {
+        return res.status(400).json({
+          success: false,
+          message: "isPurchaseEnabled must be true or false.",
+        });
+      }
+
+      product.isPurchaseEnabled = isPurchaseEnabled;
+    }
+
+    await product.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Gift Card product updated successfully.",
+      product: {
+        _id: product._id,
+        productName: product.productName,
+        productDescription: product.productDescription,
+        productImage: product.productImage,
+        amount: product.originalAmount,
+        originalAmount: product.originalAmount,
+        isPurchaseEnabled: product.isPurchaseEnabled,
+        updatedAt: product.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("adminUpdateGiftCardProduct:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update Gift Card product.",
+    });
+  }
+};
+
+
+const adminUpdateGiftCardProductStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isPurchaseEnabled } = req.body;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID.",
+      });
+    }
+
+    if (typeof isPurchaseEnabled !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "isPurchaseEnabled must be true or false.",
+      });
+    }
+
+    const product = await GiftCard.findOneAndUpdate(
+      {
+        _id: id,
+        recordType: "Product",
+      },
+      {
+        $set: { isPurchaseEnabled },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Gift Card product not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: isPurchaseEnabled
+        ? "Gift Card product activated."
+        : "Gift Card product deactivated.",
+      product: {
+        _id: product._id,
+        productName: product.productName,
+        amount: product.originalAmount,
+        isPurchaseEnabled: product.isPurchaseEnabled,
+      },
+    });
+  } catch (error) {
+    console.error("adminUpdateGiftCardProductStatus:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to change product status.",
+    });
+  }
+};
+const getGiftCardPurchaseOptions = async (req, res) => {
+  return getGiftCardPurchaseProducts(req, res);
+};
+
 module.exports = {
-  getMyGiftCards,
   adminCreateGiftCard,
+  adminCreateGiftCardProduct,
+  getGiftCardPurchaseProducts,
   adminGetAllGiftCards,
+  getMyGiftCards,
+  purchaseGiftCard,
+  adminGetAllPurchasedGiftCards,
+  getGiftCardPurchaseOptions,
+  adminGetAllGiftCardProducts,
+  adminUpdateGiftCardProduct,
+  adminUpdateGiftCardProductStatus,
 };
