@@ -1,3 +1,4 @@
+// import { combineReducers } from "@reduxjs/toolkit";
 import authReducer from "./features/auth/authSlice";
 import productsReducer from "./features/products/productsSlice";
 import categoriesReducer from "./features/categories/categoriesSlice";
@@ -7,6 +8,7 @@ import couponsReducer from "./features/coupons/couponsSlice";
 import festivalOffersReducer from "./features/festival-offers/festivalOffersSlice";
 import ordersReducer from "./features/orders/ordersSlice";
 import paymentsReducer from "./features/payments/paymentsSlice";
+import settlementReducer from "./features/settlements/settlementsSlice"
 import usersReducer from "./features/users/usersSlice";
 import customerReviewsReducer from "./features/customerReviews/customerReviewsSlice";
 import cartsReducer from "./features/carts/cartSlice";
@@ -46,6 +48,7 @@ export const rootReducer = {
   festivalOffers: festivalOffersReducer,
   orders: ordersReducer,
   payments: paymentsReducer,
+  settlement: settlementReducer,
   users: usersReducer,
   customerReviews: customerReviewsReducer,
   carts: cartsReducer,

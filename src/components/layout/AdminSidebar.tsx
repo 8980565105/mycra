@@ -25,6 +25,7 @@ import {
   Wallet,
   Tag,
   PartyPopper,
+  Gift,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -96,6 +97,8 @@ const adminSections = [
     items: [
       { title: "User Wallets", url: "/admin/wallets/users", icon: Wallet },
       { title: "Settlement ", url: "/admin/settlement", icon: Wallet },
+      { title: "Gift Cards", url: "/admin/gift-cards", icon: Gift },
+      { title: "Purchase Giftcards ", url: "/admin/purchase", icon: CreditCard },
     ],
   },
   {

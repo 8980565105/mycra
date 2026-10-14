@@ -131,6 +131,14 @@ export const ROUTES = {
     delete: (id: string) => `/payments/${id}`,
     bulkDelete: "/payments/bulk-delete",
   },
+  settlements: {
+    getAll: "/settlements",
+    withdraw: (id: string) => `/settlements/${id}/withdraw`,
+    processAvailable: "/settlements/process-available",
+    processing: (id: string) => `/settlements/${id}/processing`,
+    paid: (id: string) => `/settlements/${id}/paid`,
+    failed: (id: string) => `/settlements/${id}/failed`,
+  },
   users: {
     getAll: "/users",
     getStoreCustomers: "/users/store/customers",
@@ -287,6 +295,14 @@ export const ROUTES = {
   giftCards: {
     adminCreate: "/gift-cards/admin/create",
     adminAll: "/gift-cards/admin/all",
+    purchaseGiftCard: "/gift-cards/admin/purchased",
+    adminProducts: "/gift-cards/admin/products",
+    adminUpdateProduct: (id: string) => `/gift-cards/admin/products/${id}`,
+    adminProductStatus: (id: string) => `/gift-cards/admin/products/${id}/status`,
+    products: "/gift-cards/products",
+    purchaseOptions: "/gift-cards/purchase-options",
+    purchase: "/gift-cards/purchase",
+    my: "/gift-cards/my",
   },
   kyc: {
     adminSet: (userId: string) => `/kyc/admin/set/${userId}`,

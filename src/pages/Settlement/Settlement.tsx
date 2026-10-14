@@ -45,9 +45,14 @@ function Settlement() {
     };
     const columns = [
         {
-            key: "settlement_id",
+            key: "_id",
             label: "Settlement ID",
             width: "w-48",
+            render: (item: any) => (
+                <span className="font-mono text-sm">
+                    {item._id || "-"}
+                </span>
+            ),
         },
         {
             key: "transaction_id",

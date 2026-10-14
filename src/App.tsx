@@ -66,7 +66,9 @@ import EmailsForm from "./pages/Emails/EmailsFrom";
 import Settlement from "./pages/Settlement/Settlement";
 import FestivalOfferForm from "./pages/festival-offers/FestivalOfferForm";
 import FestivalOffersPage from "./pages/festival-offers/FestivalOffersPage";
-
+import AdminPurchasedGiftCards from "./pages/GiftCard/AdminPurchasedGiftCards";
+import AdminGiftCardProducts from "./pages/GiftCard/AdminGiftCardProducts";
+import AddGiftcardForm from "./pages/GiftCard/AddGiftcardForm";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -165,6 +167,10 @@ const App = () => (
               <Route path="emails/add" element={<EmailsForm />} />
               <Route path="emails/:id/edit" element={<EmailsForm />} />
               <Route path="settlement" element={<Settlement />} />
+              <Route path="purchase" element={<AdminPurchasedGiftCards />} />
+              <Route path="gift-cards" element={<AdminGiftCardProducts />} />
+              <Route path="gift-cards/add" element={<AddGiftcardForm />} />
+              <Route path="gift-cards/:id/edit" element={<AddGiftcardForm />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
