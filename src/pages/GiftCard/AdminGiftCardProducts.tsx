@@ -10,7 +10,7 @@ import { useBasePath } from "@/hooks/useBasePath";
 
 import {
   adminGetAllGiftCardProducts,
-  adminUpdateGiftCardProductStatus,
+  deleteGiftCrads,
 } from "@/features/giftCards/giftCardThunk";
 import { GiftCardProduct } from "@/features/giftCards/giftCardSlice";
 
@@ -137,7 +137,7 @@ export default function AdminGiftCardProducts() {
               ? result
               : result.products ?? [];
 
-            const term = (search ?? "z").trim().toLowerCase();
+            const term = (search ?? "").trim().toLowerCase();
 
             if (term) {
               records = records.filter((item) =>
@@ -177,6 +177,13 @@ export default function AdminGiftCardProducts() {
                   ? error.message
                   : "Failed to load gift card products."
             );
+          }
+        }}
+        deleteItem={async (id) => {
+          try {
+            await dispatch(deleteGiftCrads(id)).unwrap();
+          } catch (err: any) {
+            throw new Error(err || "Failed to delete brand");
           }
         }}
         headerActions={

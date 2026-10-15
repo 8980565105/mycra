@@ -2,12 +2,13 @@ import { createSlice } from "@reduxjs/toolkit";
 
 import {
   adminCreateGiftCard,
-  adminGetAllGiftCards,
+  getAllGiftCardProduct,
   adminGetAllPurchasedGiftCards,
   getGiftCardProducts,
   adminCreateGiftCardProduct,
   adminGetAllGiftCardProducts,
   adminUpdateGiftCardProduct,
+  deleteGiftCrads,
 } from "./giftCardThunk";
 
 export interface GiftCard {
@@ -34,6 +35,10 @@ export interface GiftCardProduct {
   amount?: number;
   originalAmount?: number;
   isPurchaseEnabled?: boolean;
+  allowCustomAmount?: boolean;
+  minAmount?: number;
+  maxAmount?: number;
+  amountStep?: number;
   productExpiresAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -53,6 +58,7 @@ interface GiftCardState {
   updateProductLoading: boolean;
   updateProductError: string | null;
   purchaseProducts: GiftCardProduct[];
+  total: number;
 }
 
 const initialState: GiftCardState = {
@@ -69,6 +75,7 @@ const initialState: GiftCardState = {
   updateProductLoading: false,
   updateProductError: null,
   purchaseProducts: [],
+  total: 0  
 };
 
 const giftCardSlice = createSlice({
@@ -116,64 +123,29 @@ const giftCardSlice = createSlice({
         state.error = (action.payload as string) || action.error.message || "Failed to create gift card";
       })
 
-      .addCase(adminGetAllGiftCards.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(adminGetAllGiftCards.fulfilled, (state, action) => {
+      .addCase(getAllGiftCardProduct.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
         state.giftCards = action.payload?.giftCards || [];
       })
-      .addCase(adminGetAllGiftCards.rejected, (state, action) => {
-        state.loading = false;
-        state.error = (action.payload as string) || action.error.message || "Failed to fetch gift cards";
-      })
 
-      .addCase(adminGetAllPurchasedGiftCards.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(adminGetAllPurchasedGiftCards.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
         state.giftCards = action.payload || [];
       })
-      .addCase(adminGetAllPurchasedGiftCards.rejected, (state, action) => {
-        state.loading = false;
-        state.error = (action.payload as string) || action.error.message || "Failed to fetch purchased gift cards.";
-      })
 
-      .addCase(getGiftCardProducts.pending, (state) => {
-        state.productsError = null;
-      })
       .addCase(getGiftCardProducts.fulfilled, (state, action) => {
         state.purchaseProducts = action.payload || [];
         state.productsError = null;
       })
-      .addCase(getGiftCardProducts.rejected, (state, action) => {
-        state.productsError = (action.payload as string) || action.error.message || "Failed to fetch gift card products.";
-      })
 
-      .addCase(adminGetAllGiftCardProducts.pending, (state) => {
-        state.productsLoading = true;
-        state.productsError = null;
-      })
       .addCase(adminGetAllGiftCardProducts.fulfilled, (state, action) => {
         state.productsLoading = false;
         state.productsError = null;
         state.adminProducts = Array.isArray(action.payload) ? action.payload : [];
       })
-      .addCase(adminGetAllGiftCardProducts.rejected, (state, action) => {
-        state.productsLoading = false;
-        state.productsError = (action.payload as string) || action.error.message || "Failed to load gift card products.";
-      })
 
-      .addCase(adminCreateGiftCardProduct.pending, (state) => {
-        state.createProductLoading = true;
-        state.createProductError = null;
-        state.createdProduct = null;
-      })
       .addCase(adminCreateGiftCardProduct.fulfilled, (state, action) => {
         state.createProductLoading = false;
         state.createProductError = null;
@@ -199,14 +171,10 @@ const giftCardSlice = createSlice({
           }
         }
       })
-      .addCase( adminCreateGiftCardProduct.rejected, (state, action) => {
-        state.createProductLoading = false;
-        state.createProductError = (action.payload as string) || action.error.message || "Failed to create gift card product.";
-      })
 
-      .addCase(adminUpdateGiftCardProduct.pending, (state) => {
-        state.updateProductLoading = true;
-        state.updateProductError = null;
+      .addCase(deleteGiftCrads.fulfilled, (state, action) => {
+        state.giftCards = state.giftCards.filter((b) => b._id !== action.payload);
+        state.total -= 1;
       })
 
       .addCase(adminUpdateGiftCardProduct.fulfilled, (state, action) => {
@@ -240,20 +208,9 @@ const giftCardSlice = createSlice({
           state.purchaseProducts.splice(purchaseIndex, 1);
         }
       })
-      .addCase(adminUpdateGiftCardProduct.rejected, (state, action) => {
-        state.updateProductLoading = false;
-        state.updateProductError = (action.payload as string) || action.error.message || "Failed to update gift card product.";
-      });
   },
 });
 
-export const {
-  clearGiftCardError,
-  clearCreatedGiftCard,
-  clearCreateProductError,
-  clearProductsError,
-  clearUpdateProductError,
-  clearCreatedProduct,
-} = giftCardSlice.actions;
+export const { clearGiftCardError, clearCreatedGiftCard, clearCreateProductError, clearProductsError, clearUpdateProductError, clearCreatedProduct } = giftCardSlice.actions;
 
 export default giftCardSlice.reducer;

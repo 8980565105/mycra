@@ -42,6 +42,10 @@ export default function AddGiftcardForm() {
   const [productImage, setProductImage] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [isPurchaseEnabled, setIsPurchaseEnabled] = useState(true);
+  const [allowCustomAmount, setAllowCustomAmount] = useState(false);
+  const [minAmount, setMinAmount] = useState("1000");
+  const [maxAmount, setMaxAmount] = useState("10000");
+  const [amountStep, setAmountStep] = useState("1000");
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -92,6 +96,10 @@ export default function AddGiftcardForm() {
         setProductExpiresAt(
             toDateInputValue(product.productExpiresAt)
         );
+        setAllowCustomAmount(product.allowCustomAmount ?? false);
+        setMinAmount(String(product.minAmount ?? 1000));
+        setMaxAmount(String(product.maxAmount ?? 10000));
+        setAmountStep(String(product.amountStep ?? 1000));
       } catch (error: unknown) {
         if (!cancelled) {
           toast.error(
@@ -170,12 +178,37 @@ const toDateInputValue = (value?: string | Date | null): string => {
       toast.error("Enter an amount greater than zero.");
       return;
     }
+    const parsedMin = Number(minAmount);
+    const parsedMax = Number(maxAmount);
+    const parsedStep = Number(amountStep);
+
+    if (allowCustomAmount) {
+      if (
+        !Number.isInteger(parsedMin) ||
+        !Number.isInteger(parsedMax) ||
+        !Number.isInteger(parsedStep) ||
+        parsedMin < 1 ||
+        parsedMax < parsedMin ||
+        parsedStep < 1 ||
+        parsedStep > parsedMax - parsedMin + 1 ||
+        (parsedMax - parsedMin) % parsedStep !== 0
+      ) {
+        toast.error(
+          "Enter valid minimum, maximum and step amounts. Maximum must match the step."
+        );
+        return;
+      }
+    }
 
     const payload = {
       productName: name,
       productDescription: description,
       productImage: productImage ?? "",
-      amount: parsedAmount,
+      amount: allowCustomAmount ? parsedMin : parsedAmount,
+      allowCustomAmount,
+      minAmount: allowCustomAmount ? parsedMin : parsedAmount,
+      maxAmount: allowCustomAmount ? parsedMax : parsedAmount,
+      amountStep: allowCustomAmount ? parsedStep : 1,
       isPurchaseEnabled,
       productExpiresAt: productExpiresAt || null,
     };
@@ -332,6 +365,91 @@ const toDateInputValue = (value?: string | Date | null): string => {
                     className="mt-1"
                   />
                 </div>
+                <div className="rounded-lg border p-4 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <Label htmlFor="allowCustomAmount">
+                        Allow customer to choose amount
+                      </Label>
+                      <p className="text-sm text-gray-500">
+                        Enable amounts from ₹1,000 to ₹10,000.
+                      </p>
+                    </div>
+
+                    <Switch
+                      id="allowCustomAmount"
+                      checked={allowCustomAmount}
+                      onCheckedChange={(checked) => {
+                        setAllowCustomAmount(checked);
+
+                        if (checked) {
+                          setAmount(minAmount || "1000");
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {allowCustomAmount && (
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div>
+                        <Label htmlFor="minAmount">Minimum Amount (₹)</Label>
+                        <Input
+                          id="minAmount"
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={minAmount}
+                          onChange={(e) => {
+                            setMinAmount(e.target.value);
+                            setAmount(e.target.value);
+                          }}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="maxAmount">Maximum Amount (₹)</Label>
+                        <Input
+                          id="maxAmount"
+                          type="number"
+                          min={minAmount || 1}
+                          max={10000}
+                          step="1"
+                          value={maxAmount}
+                          onChange={(e) => {
+                            const value = e.target.value;
+
+                            if (value === "") {
+                              setMaxAmount("");
+                              return;
+                            }
+
+                            if (Number(value) <= 10000 && Number(value) >= 1) {
+                              setMaxAmount(value);
+                            }
+                          }}
+                          required
+                        />
+                        <p className="mt-1 text-sm text-gray-500">
+                          Maximum allowed amount is ₹10,000.
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="amountStep">Amount Step (₹)</Label>
+                        <Input
+                          id="amountStep"
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={amountStep}
+                          onChange={(e) => setAmountStep(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div>
                   <Label htmlFor="productExpiresAt">Product Expiry Date</Label>
@@ -352,7 +470,8 @@ const toDateInputValue = (value?: string | Date | null): string => {
 
           {/* Right side */}
           <div className="space-y-6">
-            <Card className="sticky top-6 border border-gray-200 shadow-md">
+            <div className="sticky top-6">
+            <Card >
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">
                   Purchase Settings
@@ -375,7 +494,7 @@ const toDateInputValue = (value?: string | Date | null): string => {
             </Card>
 
             {/* Action buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-4">
               <Button
                 type="submit"
                 disabled={saving || loading}
@@ -401,6 +520,7 @@ const toDateInputValue = (value?: string | Date | null): string => {
                   Cancel
                 </Button>
               </Link>
+            </div>
             </div>
           </div>
         </form>

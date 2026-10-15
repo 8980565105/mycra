@@ -933,7 +933,7 @@ import { AppDispatch, RootState } from "@/store";
 import { GenericTable } from "@/components/ui/adminTable";
 import { adminAdjustBalance, adminVerifyKyc, fetchAllWallets, adminSetKycData, adminAddVoucher, adminUpdateVoucher } from "@/features/wallets/walletsThunk";
 
-import { adminCreateGiftCard, adminGetAllGiftCards, getGiftCardProducts } from "@/features/giftCards/giftCardThunk";
+import { adminCreateGiftCard, getAllGiftCardProduct, getGiftCardProducts } from "@/features/giftCards/giftCardThunk";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "react-day-picker";
 
@@ -943,7 +943,7 @@ export default function UserWallets() {
     const [showModal, setShowModal] = useState(false);
     const { giftCards } = useSelector((state: RootState) => state.giftCards);
     useEffect(() => {
-      dispatch(adminGetAllGiftCards())
+      dispatch(getAllGiftCardProduct())
         .unwrap()
         .then((res) => {
           console.log("ALL GIFT CARDS API RESPONSE:", res);
@@ -1050,7 +1050,7 @@ export default function UserWallets() {
         },
         {
             key: "balance",
-            label: "Balance",
+            label: "Wallet Balance",
             render: (item: any) => `₹${item.balance ?? 0}`,
         },  
         {

@@ -8,6 +8,11 @@ export type CreateGiftCardProductPayload = {
   productImage?: string;
   amount: number;
   isPurchaseEnabled: boolean;
+  allowCustomAmount: boolean;
+  minAmount: number;
+  maxAmount: number;
+  amountStep: number;
+  productExpiresAt?: string | null;
 };
 
 const getErrorMessage = (error: any, fallback: string): string => {
@@ -69,11 +74,11 @@ export const adminCreateGiftCard = createAsyncThunk(
   }
 );
 
-export const adminGetAllGiftCards = createAsyncThunk(
-  "giftCards/adminGetAllGiftCards",
+export const getAllGiftCardProduct = createAsyncThunk(
+  "giftCards/getAllGiftCardProduct",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get(ROUTES.giftCards.adminAll );
+      const res = await api.get(ROUTES.giftCards.getAll );
 
       if (res.data.success) {
         return res.data;
@@ -113,7 +118,7 @@ export const getGiftCardProducts = createAsyncThunk(
   "giftCards/getGiftCardProducts",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/gift-cards/products");
+      const response = await api.get(ROUTES.giftCards.products);
 
       return response.data.products || [];
     } catch (error) {
@@ -156,7 +161,7 @@ export const adminGetAllGiftCardProducts = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get(
-        ROUTES.giftCards.adminProducts
+        ROUTES.giftCards.adminget
       );
 
       if (!response.data?.success) {
@@ -184,11 +189,15 @@ export const adminUpdateGiftCardProduct = createAsyncThunk(
       amount?: number;
       isPurchaseEnabled?: boolean;
       productExpiresAt?: string | null;
+      allowCustomAmount?: boolean;
+      minAmount?: number;
+      maxAmount?: number;
+      amountStep?: number;
     },
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.patch(
+      const response = await api.put(
         ROUTES.giftCards.adminUpdateProduct(id),
         payload
       );
@@ -208,32 +217,15 @@ export const adminUpdateGiftCardProduct = createAsyncThunk(
   }
 );
 
-export const adminUpdateGiftCardProductStatus = createAsyncThunk(
-  "giftCards/adminProductStatus",
-  async (
-    { id, isPurchaseEnabled }: {
-      id: string;
-      isPurchaseEnabled: boolean;
-    },
-    { rejectWithValue }
-  ) => {
+export const deleteGiftCrads = createAsyncThunk(
+  "giftCards/deleteGiftCrads",
+  async (id: string, { rejectWithValue }) => {
     try {
-      const response = await api.patch(
-        ROUTES.giftCards.adminProductStatus(id),
-        { isPurchaseEnabled }
-      );
-
-      if (!response.data?.success) {
-        return rejectWithValue(
-          response.data?.message || "Failed to change status."
-        );
-      }
-
-      return response.data.product;
-    } catch (error: any) {
-      return rejectWithValue(
-        getErrorMessage(error, "Failed to change status.")
-      );
+      const res = await api.delete(ROUTES.giftCards.delete(id));
+      if (res.data.success) return id;
+      return rejectWithValue(res.data.message || "Failed to delete gift cards");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
     }
-  }
+  },
 );

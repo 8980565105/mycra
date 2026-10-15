@@ -136,18 +136,6 @@ export default function AdminPurchasedGiftCards() {
         item.gifterName || "-",
     },
     {
-      key: "message",
-      label: "Message",
-      render: (item: PurchasedGiftCard) => (
-        <span
-          className="block max-w-[220px] truncate"
-          title={item.message || ""}
-        >
-          {item.message || "-"}
-        </span>
-      ),
-    },
-    {
       key: "status",
       label: "Status",
       render: (item: PurchasedGiftCard) => (
@@ -230,11 +218,6 @@ export default function AdminPurchasedGiftCards() {
           total: filteredRecords.length,
         };
       } catch (error: any) {
-        console.error(
-          "Failed to load purchased Gift Cards:",
-          error
-        );
-
         throw new Error(
           typeof error === "string"
             ? error
@@ -254,6 +237,7 @@ export default function AdminPurchasedGiftCards() {
         rowKey="_id"
         searchEnabled
         fetchData={fetchData}
+        editEnabled={false}
       />
     </div>
   );
