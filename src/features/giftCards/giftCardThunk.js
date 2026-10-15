@@ -63,16 +63,3 @@ export const purchaseGiftCard = createAsyncThunk(
     }
   }
 );
-
-export const adminCreateGiftCardProduct = createAsyncThunk(
-  "giftCards/adminCreateGiftCardProduct",
-  async (payload, { rejectWithValue }) => {
-    try {
-      const response = await api.post(ROUTES.giftCards.AdminCreateCardProduct, payload);
-
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(errorMessage(error));
-    }
-  }
-);

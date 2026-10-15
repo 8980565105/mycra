@@ -276,7 +276,9 @@ export default function Payment() {
   const [initializing, setInitializing] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
-
+  const [giftCardBalance, setGiftCardBalance] = useState(0);
+  const [giftCardLoading, setGiftCardLoading] = useState(false);
+  const [giftCardError, setGiftCardError] = useState("");
   const currentMethod = PAYMENT_METHODS.find((m) => m.key === selectedMethod);
   const needsClientSecret =
     currentMethod?.type === "stripe" || currentMethod?.type === "upi_qr";
@@ -296,6 +298,60 @@ export default function Payment() {
       setLoading(false);
     }
   }, []);
+  
+useEffect(() => {
+  if (!checkoutInfo) return;
+
+  let cancelled = false;
+
+  const fetchGiftCardBalance = async () => {
+    setGiftCardLoading(true);
+    setGiftCardError("");
+
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/gift-cards/checkout-balance`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data?.success) {
+        throw new Error(
+          data?.message || "Unable to fetch gift card balance."
+        );
+      }
+
+      if (!cancelled) {
+        setGiftCardBalance(
+          Math.max(0, Number(data.availableBalance) || 0)
+        );
+      }
+    } catch (err) {
+      if (!cancelled) {
+        setGiftCardBalance(0);
+        setGiftCardError(
+          err.message || "Unable to fetch gift card balance."
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setGiftCardLoading(false);
+      }
+    }
+  };
+
+  fetchGiftCardBalance();
+
+  return () => {
+    cancelled = true;
+  };
+}, [checkoutInfo]);
 
   // useEffect(() => {
   //   if (!needsClientSecret || !checkoutInfo) return;
@@ -653,8 +709,11 @@ const handlePlaceOrder = async () => {
       </div>
     );
   }
-
-  const displayTotal = checkoutInfo.total;
+  const orderTotal = Number(checkoutInfo.orderTotal ?? checkoutInfo.total ?? 0);
+  const giftCardRedeemed = Number(Math.min(giftCardBalance, orderTotal).toFixed(2));
+  const remainingPayment = Number(Math.max(0, orderTotal - giftCardRedeemed).toFixed(2));
+  // const displayTotal = checkoutInfo.total;
+  const displayTotal = Number(checkoutInfo?.orderTotal ?? checkoutInfo?.total ?? 0 );
   const appearance = {
     theme: "stripe",
     variables: {
@@ -874,11 +933,57 @@ const handlePlaceOrder = async () => {
                       : "Free"}
                   </span>
                 </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-light">Available Gift Card Balance</span>
+                  <span>
+                    {giftCardLoading
+                      ? "Checking..."
+                      : `₹${giftCardBalance.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-green-600">
+                  <span>Gift Card Redeemed</span>
+                  <span>
+                    {giftCardLoading
+                      ? "Checking..."
+                      : `- ₹${giftCardRedeemed.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-light">Remaining Payment</span>
+                  <span>
+                    {giftCardLoading
+                      ? "Checking..."
+                      : `₹${remainingPayment.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`}
+                  </span>
+                </div>
+
+                {giftCardError && (
+                  <p className="text-sm text-red-600">
+                    {giftCardError}
+                  </p>
+                )}
+
                 <div className="border-t border-gray-300 pt-4">
                   <div className="flex justify-between text-black text-[18px] font-medium">
                     <span>Total</span>
                     <span>
-                      ₹{Math.round(displayTotal).toLocaleString("en-IN")}
+                      {/* ₹{Math.round(displayTotal).toLocaleString("en-IN")} */}
+                       ₹{Math.round(
+                          Number(checkoutInfo?.orderTotal ?? checkoutInfo?.total ?? 0) || 0
+                        ).toLocaleString("en-IN")}
                     </span>
                   </div>
                 </div>

@@ -169,24 +169,27 @@ export default function FestivalOfferBanner({pageType = "shop"}) {
       : "shop";
 
   const pageOffers = useMemo(() => {
-    if (!Array.isArray(festivalOffers)) {
-      return [];
-    }
+    const now = new Date();
 
     return festivalOffers.filter((offer) => {
-      if (!offer) {
+      if (!offer || offer.status !== "active") return false;
+      if (offer.display_on !== normalizedPageType) return false;
+
+      if (offer.start_date && now < new Date(offer.start_date)) {
         return false;
       }
 
-      if (offer.status !== "active") {
-        return false;
+      if (offer.end_date) {
+        const endDate = new Date(offer.end_date);
+        if (Number.isNaN(endDate.getTime())) return false;
+
+        endDate.setHours(23, 59, 59, 999);
+        if (now > endDate) return false;
       }
 
-      return (
-        offer.display_on === normalizedPageType
-      );
+      return true;
     });
-  }, [ festivalOffers, normalizedPageType ]);
+  }, [festivalOffers, normalizedPageType]);
 
   const sliderItems = useMemo(() => {
     if (!Array.isArray(pageOffers)) {

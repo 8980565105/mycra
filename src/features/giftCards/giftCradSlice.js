@@ -9,6 +9,9 @@ const initialState = {
    purchaseLoading: false,
   purchaseError: null,
   purchaseResult: null,
+  giftCardBalance: 0,
+  myGiftCardsLoading: false,
+  myGiftCardsError: null,
 };
 
 const giftCardSlice = createSlice({
@@ -24,57 +27,35 @@ const giftCardSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(getMyGiftCards.pending, (state) => {
-          state.loading = true;
-          state.error = null;
-        }
-      )
+        state.myGiftCardsLoading = true;
+        state.myGiftCardsError = null;
+      })
       .addCase(getMyGiftCards.fulfilled, (state, action) => {
-          state.loading = false;
-          // state.giftCards = action.payload.giftCards || [];
-          state.giftCards = Array.isArray(action.payload.giftCards)
-            ? action.payload.giftCards
-            : [];
+        state.myGiftCardsLoading = false;
+        state.giftCards = action.payload?.giftCards || [];
+        state.giftCardBalance = Number(
+          action.payload?.giftCardBalance ??
+          action.payload?.wallet?.giftCardBalance ??
+          0
+        );
 
-          state.giftCardBalance = Number(
-            action.payload.giftCardBalance || 0
-          );
-
-          state.error = null;
-        }
-      )
+        state.myGiftCardsError = null;
+      })
       .addCase(getMyGiftCards.rejected, (state, action) => {
-          state.loading = false;
-          state.error = action.payload || "Failed to fetch gift cards";
-        }
-      )
+        state.myGiftCardsLoading = false;
+        state.giftCardBalance = 0;
+        state.myGiftCardsError = action.payload || "Unable to fetch your Gift Cards.";
+      })
       
-        .addCase(purchaseGiftCard.pending, (state) => {
-          state.purchaseLoading = true;
-          state.purchaseError = null;
-          state.purchaseResult = null;
-        })
         .addCase(purchaseGiftCard.fulfilled, (state, action) => {
           state.purchaseLoading = false;
           state.purchaseResult = action.payload;
         })
-        .addCase(purchaseGiftCard.rejected, (state, action) => {
-          state.purchaseLoading = false;
-          state.purchaseError =
-            action.payload || "Gift card purchase failed";
-        })
-       .addCase(getGiftCardProducts.pending, (state) => {
-          state.productsLoading = true;
-          state.productsError = null;
-        })
+
         .addCase(getGiftCardProducts.fulfilled, (state, action) => {
           state.productsLoading = false;
           state.purchaseProducts = action.payload;
-        })
-        .addCase(getGiftCardProducts.rejected, (state, action) => {
-          state.productsLoading = false;
-          state.productsError =
-            action.payload || "Unable to load Gift Card products.";
-        })
+        });
   },
 });
 

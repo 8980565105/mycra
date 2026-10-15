@@ -23,11 +23,38 @@ export default function Wallets() {
   const [amount, setAmount] = useState(1000);
   const [addingMoney, setAddingMoney] = useState(false);
   const isKycVerified = wallet?.isKycVerified;
-  useEffect(() => {
-    dispatch(fetchWallet());
-    dispatch(getMyGiftCards());
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(fetchWallet());
+  //   dispatch(getMyGiftCards());
+  // }, [dispatch]);
   
+useEffect(() => {
+  const refreshWalletData = async () => {
+    const results = await Promise.allSettled([
+      dispatch(fetchWallet()),
+      dispatch(getMyGiftCards()),
+    ]);
+
+    results.forEach((result) => {
+      if (result.status === "rejected") {
+        console.error("Wallet refresh failed:", result.reason);
+      }
+    });
+  };
+
+  refreshWalletData();
+
+  const handleFocus = () => {
+    refreshWalletData();
+  };
+
+  window.addEventListener("focus", handleFocus);
+
+  return () => {
+    window.removeEventListener("focus", handleFocus);
+  };
+}, [dispatch]);
+
   const handleAddMoney = async () => {
     if (!amount || amount <= 0) return;
     setAddingMoney(true);
@@ -54,21 +81,42 @@ export default function Wallets() {
     setAmount(currentAmount + val);
   };
 
-const walletBalance = Number(wallet?.balance || 0);
-const voucherBalance = Number(wallet?.voucherBalance || 0);
+// const walletBalance = Number(wallet?.balance || 0);
+// const voucherBalance = Number(wallet?.voucherBalance || 0);
 
-const activeGiftCards = giftCards?.filter(
-    (card) =>
-      String(card.status || "").toLowerCase() === "active" &&
-      Number(card.remainingBalance || 0) > 0
-  ) || [];
+// const activeGiftCards = giftCards?.filter(
+//     (card) =>
+//       String(card.status || "").toLowerCase() === "active" &&
+//       Number(card.remainingBalance || 0) > 0
+//   ) || [];
+
+const walletBalance = Number(wallet?.balance ?? 0);
+const voucherBalance =
+  wallet?.voucherStatus === true
+    ? Number(wallet?.voucherBalance ?? 0)
+    : 0;
+
+const activeGiftCards = (giftCards || []).filter(
+  (card) =>
+    String(card.status || "").toLowerCase() === "active" &&
+    Number(card.remainingBalance || 0) > 0
+);
 
 const totalGiftCardBalance = activeGiftCards.reduce(
   (total, card) => total + Number(card.remainingBalance || 0),
   0
 );
 
-const totalBalance = walletBalance + totalGiftCardBalance + voucherBalance;
+const totalBalance =
+  walletBalance + totalGiftCardBalance + voucherBalance;
+
+
+// const totalGiftCardBalance = activeGiftCards.reduce(
+//   (total, card) => total + Number(card.remainingBalance || 0),
+//   0
+// );
+
+// const totalBalance = walletBalance + totalGiftCardBalance + voucherBalance;
 
   return (
     <>
