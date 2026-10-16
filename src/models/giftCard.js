@@ -128,6 +128,33 @@ const giftCardSchema = new mongoose.Schema(
       default: "",
     },
 
+    allowCustomAmount: {
+      type: Boolean,
+      default: false,
+    },
+
+    minAmount: {
+      type: Number,
+      default: 1000,
+      min: 1,
+    },
+
+    maxAmount: {
+      type: Number,
+      default: 10000,
+      min: 1,
+    },
+
+    amountStep: {
+      type: Number,
+      default: 1000,
+      min: 1,
+    },
+
+    productExpiresAt: {
+      type: Date,
+      default: null,
+    },
     isPurchaseEnabled: {
       type: Boolean,
       default: false,

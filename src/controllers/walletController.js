@@ -238,6 +238,16 @@ const getAllWallets = async (req, res) => {
           .sort({ createdAt: -1 })
           .lean();
 
+        const purchasedGiftCards = await GiftCard.find({
+          assignedTo: user._id, source: "Purchase",
+        })
+        .select("_id cardNumber originalAmount remainingBalance status expiresAt source createdAt")
+        .sort({ createdAt: -1 })
+        .lean();
+
+        const purchasedGiftCardTotal = purchasedGiftCards.reduce(
+          (total, card) => total + Number(card.originalAmount || 0), 0
+        );
         const giftCardBalance = giftCards.reduce(
           (sum, card) =>
             sum + Number(card.remainingBalance || 0),
@@ -259,6 +269,8 @@ const getAllWallets = async (req, res) => {
           ...wallet,
           user,
           giftCards,
+          purchasedGiftCards,
+          purchasedGiftCardTotal,
           balance,
           giftCardBalance,
           voucherBalance,

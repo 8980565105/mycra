@@ -12,6 +12,30 @@ const {
   generateGiftCardPin,
 } = require("../utils/giftCardGenerator");
 
+const parseProductExpiryDate = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  if (
+    typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)
+  ) {
+    throw new Error("Expiry date must use YYYY-MM-DD format.");
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const dateCheck = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    dateCheck.getUTCFullYear() !== year ||
+    dateCheck.getUTCMonth() !== month - 1 ||
+    dateCheck.getUTCDate() !== day
+  ) {
+    throw new Error("Enter a valid expiry date.");
+  }
+  return new Date(`${value}T23:59:59.999+05:30`);
+};
+
 
 const createUniqueGiftCardNumber = async (session = null) => {
   let cardNumber;
@@ -72,7 +96,26 @@ const adminCreateGiftCardProduct = async (req, res) => {
       amount,
       isPurchaseEnabled = true,
       productExpiresAt,
+      allowCustomAmount = false,
+      minAmount = 1000,
+      maxAmount = 10000,
+      amountStep = 1000,
     } = req.body;
+    let parsedProductExpiresAt;
+
+    if (parsedProductExpiresAt && parsedProductExpiresAt <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Expiry date must be in the future.",
+      });
+    }
+    try {
+      parsedProductExpiresAt = parseProductExpiryDate(productExpiresAt);
+    } catch (error) {
+      return res.status(error.statusCode || 400).json({
+        success: false, message: error.message,
+      });
+    }
 
     const adminId = getAuthenticatedUserId(req);
 
@@ -91,6 +134,38 @@ const adminCreateGiftCardProduct = async (req, res) => {
     }
 
     const numericAmount = Number(amount);
+
+    if (typeof allowCustomAmount !== "boolean") {
+      return res.status(400).json({
+        success: false, message: "allowCustomAmount must be true or false.",
+      });
+    }
+
+    const numericMin = Number(minAmount);
+    const numericMax = Number(maxAmount);
+    const numericStep = Number(amountStep);
+
+    if (allowCustomAmount) {
+      if (
+        !Number.isInteger(numericMin) ||
+        !Number.isInteger(numericMax) ||
+        !Number.isInteger(numericStep) ||
+        numericMin < 1 ||
+        numericMax < numericMin ||
+        numericStep < 1 ||
+        numericStep > numericMax - numericMin + 1
+      ) {
+        return res.status(400).json({
+          success: false, message: "Enter valid minimum, maximum and step amounts.",
+        });
+      }
+
+      if ((numericMax - numericMin) % numericStep !== 0) {
+        return res.status(400).json({
+          success: false, message: "Maximum amount must match the selected amount step.",
+        });
+      }
+    }
 
     if (
       !Number.isFinite(numericAmount) ||
@@ -124,6 +199,11 @@ const adminCreateGiftCardProduct = async (req, res) => {
       source: "Admin",
       createdBy: adminId,
       expiresAt: null,
+      productExpiresAt: parsedProductExpiresAt,
+      allowCustomAmount,
+      minAmount: allowCustomAmount ? numericMin : numericAmount,
+      maxAmount: allowCustomAmount ? numericMax : numericAmount,
+      amountStep: allowCustomAmount ? numericStep : 1,
     });
 
     return res.status(201).json({
@@ -136,6 +216,11 @@ const adminCreateGiftCardProduct = async (req, res) => {
         productImage: product.productImage,
         amount: product.originalAmount,
         isPurchaseEnabled: product.isPurchaseEnabled,
+        productExpiresAt: product.productExpiresAt,  
+        allowCustomAmount: product.allowCustomAmount,
+        minAmount: product.minAmount,
+        maxAmount: product.maxAmount,
+        amountStep: product.amountStep,
         createdAt: product.createdAt,
       },
     });
@@ -152,12 +237,18 @@ const adminCreateGiftCardProduct = async (req, res) => {
 
 const getGiftCardPurchaseProducts = async (req, res) => {
   try {
+    const now = new Date();
     const products = await GiftCard.find({
       recordType: "Product",
       isPurchaseEnabled: true,
+      $or: [
+        { productExpiresAt: null },
+        { productExpiresAt: { $exists: false } },
+        { productExpiresAt: { $gt: now } },
+      ],
     })
       .select(
-        "_id productName productDescription productImage originalAmount isPurchaseEnabled createdAt"
+        "_id productName productDescription productImage originalAmount isPurchaseEnabled productExpiresAt allowCustomAmount minAmount maxAmount amountStep createdAt"
       )
       .sort({ createdAt: -1 })
       .lean();
@@ -171,24 +262,13 @@ const getGiftCardPurchaseProducts = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error("getGiftCardPurchaseProducts error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch Gift Card products.",
-    });
+    return sendResponse(res, false, "Unable to fetch Gift Card products.");
   }
 };
 
 const adminCreateGiftCard = async (req, res) => {
   try {
-    const {
-      amount,
-      userId,
-      recipientName = "",
-      recipientEmail = "",
-      expiresAt = null,
-    } = req.body;
+    const {amount, userId, recipientName = "", recipientEmail = "", expiresAt = null,} = req.body;
 
     const adminId = getAuthenticatedUserId(req);
 
@@ -304,14 +384,7 @@ const purchaseGiftCard = async (req, res) => {
     });
   }
 
-  const {
-    productId,
-    quantity = 1,
-    receiverEmail,
-    receiverName,
-    gifterName = "",
-    message = "",
-  } = req.body;
+  const { productId, customAmount, quantity = 1, receiverEmail, receiverName, gifterName = "", message = "", } = req.body;
 
   if (!mongoose.isValidObjectId(productId)) {
     return res.status(400).json({
@@ -381,8 +454,58 @@ const purchaseGiftCard = async (req, res) => {
         throw error;
       }
 
-      const unitAmount = Number(product.originalAmount);
+      if (
+        product.productExpiresAt &&
+        product.productExpiresAt <= new Date()
+      ) {
+        const error = new Error(
+          "This Gift Card product has expired and cannot be purchased."
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      let unitAmount;
+
+      if (product.allowCustomAmount === true) {
+        unitAmount = Number(customAmount);
+
+        const min = Number(product.minAmount);
+        const max = Number(product.maxAmount);
+        const step = Number(product.amountStep);
+
+        if (
+          !Number.isInteger(unitAmount) ||
+          !Number.isFinite(min) ||
+          !Number.isFinite(max) ||
+          !Number.isFinite(step) ||
+          step <= 0 ||
+          unitAmount < min ||
+          unitAmount > max ||
+          (unitAmount - min) % step !== 0
+        ) {
+          const error = new Error(
+            `Select an amount between ₹${min} and ₹${max} in ₹${step} increments.`
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+      } else {
+        unitAmount = Number(product.originalAmount);
+      }
+
       const totalAmount = unitAmount * numericQuantity;
+
+      if (
+        !Number.isSafeInteger(totalAmount) ||
+        !Number.isFinite(unitAmount) ||
+        unitAmount <= 0 ||
+        totalAmount <= 0
+      ) {
+        const error = new Error("Invalid Gift Card amount.");
+        error.statusCode = 400;
+        throw error;
+      }
 
       if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
         const error = new Error("Invalid product price.");
@@ -418,6 +541,7 @@ const purchaseGiftCard = async (req, res) => {
         {
           new: true,
           session,
+          runValidators: true,
         }
       );
 
@@ -648,7 +772,7 @@ const adminGetAllGiftCards = async (req, res) => {
   }
 };
 
-const adminGetAllPurchasedGiftCards = async (req, res) => {
+const getPurchasedGiftCards = async (req, res) => {
   try {
     const giftCards = await GiftCard.find({
       ...issuedCardFilter,
@@ -676,13 +800,13 @@ const adminGetAllPurchasedGiftCards = async (req, res) => {
   }
 };
 
-const adminGetAllGiftCardProducts = async (req, res) => {
+const getGiftCardProduct = async (req, res) => {
   try {
     const products = await GiftCard.find({
       recordType: "Product",
     })
       .select(
-        "_id productName productDescription productImage originalAmount isPurchaseEnabled createdAt updatedAt"
+        "_id productName productDescription productImage originalAmount isPurchaseEnabled productExpiresAt allowCustomAmount minAmount maxAmount amountStep createdAt updatedAt"
       )
       .sort({ createdAt: -1 })
       .lean();
@@ -705,27 +829,19 @@ const adminGetAllGiftCardProducts = async (req, res) => {
   }
 };
 
-const adminUpdateGiftCardProduct = async (req, res) => {
+const updateGiftCardProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      productName,
-      productDescription,
-      productImage,
-      amount,
-      isPurchaseEnabled,
-    } = req.body;
+   const { productName, productDescription, productImage, amount, isPurchaseEnabled, productExpiresAt, allowCustomAmount, minAmount, maxAmount, amountStep } = req.body;
 
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({
-        success: false,
-        message: "Invalid product ID.",
+        success: false, message: "Invalid product ID.",
       });
     }
 
     const product = await GiftCard.findOne({
-      _id: id,
-      recordType: "Product",
+      _id: id, recordType: "Product",
     });
 
     if (!product) {
@@ -787,6 +903,39 @@ const adminUpdateGiftCardProduct = async (req, res) => {
       product.originalAmount = numericAmount;
     }
 
+    if (allowCustomAmount !== undefined) {
+      if (typeof allowCustomAmount !== "boolean") {
+        return res.status(400).json({
+          success: false,  message: "allowCustomAmount must be true or false.",
+        });
+      }
+      product.allowCustomAmount = allowCustomAmount;
+    }
+
+    const nextMin = minAmount !== undefined ? Number(minAmount) : Number(product.minAmount);
+    const nextMax = maxAmount !== undefined ? Number(maxAmount) : Number(product.maxAmount);
+    const nextStep = amountStep !== undefined ? Number(amountStep) : Number(product.amountStep);
+
+    if (
+      !Number.isInteger(nextMin) ||
+      !Number.isInteger(nextMax) ||
+      !Number.isInteger(nextStep) ||
+      nextMin < 1 ||
+      nextMax < nextMin ||
+      nextStep < 1 ||
+      nextStep > nextMax - nextMin + 1 ||
+      (nextMax - nextMin) % nextStep !== 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid custom amount settings.",
+      });
+    }
+
+    product.minAmount = nextMin;
+    product.maxAmount = nextMax;
+    product.amountStep = nextStep;
+
     if (isPurchaseEnabled !== undefined) {
       if (typeof isPurchaseEnabled !== "boolean") {
         return res.status(400).json({
@@ -798,6 +947,16 @@ const adminUpdateGiftCardProduct = async (req, res) => {
       product.isPurchaseEnabled = isPurchaseEnabled;
     }
 
+    if (productExpiresAt !== undefined) {
+      try {
+        product.productExpiresAt = parseProductExpiryDate(productExpiresAt);
+      } catch (error) {
+        return res.status(error.statusCode || 400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+    }
     await product.save();
 
     return res.status(200).json({
@@ -811,6 +970,11 @@ const adminUpdateGiftCardProduct = async (req, res) => {
         amount: product.originalAmount,
         originalAmount: product.originalAmount,
         isPurchaseEnabled: product.isPurchaseEnabled,
+        productExpiresAt: product.productExpiresAt ?? null,
+        allowCustomAmount: product.allowCustomAmount,
+        minAmount: product.minAmount,
+        maxAmount: product.maxAmount,
+        amountStep: product.amountStep,
         updatedAt: product.updatedAt,
       },
     });
@@ -823,71 +987,28 @@ const adminUpdateGiftCardProduct = async (req, res) => {
     });
   }
 };
-
-
-const adminUpdateGiftCardProductStatus = async (req, res) => {
+const deleteGiftCards = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isPurchaseEnabled } = req.body;
-
-    if (!mongoose.isValidObjectId(id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
-        success: false,
-        message: "Invalid product ID.",
+        success: false, data: null, message: "Invalid gift card ID",
       });
     }
+    const deletedGiftCard = await GiftCard.findByIdAndDelete(id);
 
-    if (typeof isPurchaseEnabled !== "boolean") {
-      return res.status(400).json({
-        success: false,
-        message: "isPurchaseEnabled must be true or false.",
-      });
-    }
-
-    const product = await GiftCard.findOneAndUpdate(
-      {
-        _id: id,
-        recordType: "Product",
-      },
-      {
-        $set: { isPurchaseEnabled },
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Gift Card product not found.",
-      });
+    if (!deletedGiftCard) {
+      return res.status(404).json({success: false,  data: null, message: "Gift card not found"});
     }
 
     return res.status(200).json({
       success: true,
-      message: isPurchaseEnabled
-        ? "Gift Card product activated."
-        : "Gift Card product deactivated.",
-      product: {
-        _id: product._id,
-        productName: product.productName,
-        amount: product.originalAmount,
-        isPurchaseEnabled: product.isPurchaseEnabled,
-      },
+      data: deletedGiftCard,
+      message: "Gift card deleted successfully",
     });
-  } catch (error) {
-    console.error("adminUpdateGiftCardProductStatus:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to change product status.",
-    });
+  } catch (err) {
+    return res.status(500).json({success: false, data: null, message: "Failed to delete gift card", error: err.message});
   }
-};
-const getGiftCardPurchaseOptions = async (req, res) => {
-  return getGiftCardPurchaseProducts(req, res);
 };
 
 module.exports = {
@@ -897,9 +1018,8 @@ module.exports = {
   adminGetAllGiftCards,
   getMyGiftCards,
   purchaseGiftCard,
-  adminGetAllPurchasedGiftCards,
-  getGiftCardPurchaseOptions,
-  adminGetAllGiftCardProducts,
-  adminUpdateGiftCardProduct,
-  adminUpdateGiftCardProductStatus,
+  getPurchasedGiftCards,
+  getGiftCardProduct,
+  updateGiftCardProduct,
+  deleteGiftCards,
 };

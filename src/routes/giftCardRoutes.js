@@ -3,21 +3,21 @@ const express = require("express");
 const router = express.Router();
 
 const { authMiddleware, authorizeMinRole } = require("../middlewares/authMiddleware");
-const { adminCreateGiftCard, adminCreateGiftCardProduct, getGiftCardPurchaseProducts, adminGetAllGiftCards, getMyGiftCards, purchaseGiftCard, adminGetAllPurchasedGiftCards, getGiftCardPurchaseOptions,
-  adminGetAllGiftCardProducts, adminUpdateGiftCardProduct, adminUpdateGiftCardProductStatus,} = require("../controllers/giftCardController");
+const { adminCreateGiftCard, adminCreateGiftCardProduct, getGiftCardPurchaseProducts, adminGetAllGiftCards, getMyGiftCards, purchaseGiftCard, getPurchasedGiftCards, updateGiftCardProduct, 
+   deleteGiftCards, getGiftCardProduct, } = require("../controllers/giftCardController");
 
 router.get( "/products", getGiftCardPurchaseProducts );
-router.get( "/purchase-options", getGiftCardPurchaseOptions );
-router.get( "/my", authMiddleware, getMyGiftCards );
-router.post( "/purchase", authMiddleware, purchaseGiftCard );
+router.use(authMiddleware);
 
-router.post( "/admin/products", authMiddleware, authorizeMinRole("admin"), adminCreateGiftCardProduct );
-router.post( "/admin/create", authMiddleware, authorizeMinRole("admin"), adminCreateGiftCard );
-router.get("/admin/all", authMiddleware, authorizeMinRole("admin"), adminGetAllGiftCards);
-router.get( "/admin/purchased", authMiddleware, authorizeMinRole("admin"), adminGetAllPurchasedGiftCards );
-router.get( "/admin/products", authMiddleware, authorizeMinRole("admin"), adminGetAllGiftCardProducts );
+router.get( "/my", getMyGiftCards );
+router.post( "/purchase", purchaseGiftCard );
 
-router.patch("/admin/products/:id", authMiddleware, authorizeMinRole("admin"), adminUpdateGiftCardProduct);
-router.patch("/admin/products/:id/status", authMiddleware, authorizeMinRole("admin"), adminUpdateGiftCardProductStatus);
+router.get( "/admin/getAll", authorizeMinRole("admin"), getGiftCardProduct );
+router.post( "/admin/products", authorizeMinRole("admin"), adminCreateGiftCardProduct );
+router.post( "/admin/create", authorizeMinRole("admin"), adminCreateGiftCard );
+router.get("/admin/all", authorizeMinRole("admin"), adminGetAllGiftCards);
+router.get("/admin/purchased", authorizeMinRole("admin"), getPurchasedGiftCards );
 
+router.put("/admin/products/:id", authorizeMinRole("admin"), updateGiftCardProduct);
+router.delete("/:id", authorizeMinRole("admin"), deleteGiftCards);
 module.exports = router;
