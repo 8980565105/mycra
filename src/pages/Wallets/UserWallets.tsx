@@ -944,14 +944,6 @@ export default function UserWallets() {
     const { giftCards } = useSelector((state: RootState) => state.giftCards);
     useEffect(() => {
       dispatch(getAllGiftCardProduct())
-        .unwrap()
-        .then((res) => {
-          console.log("ALL GIFT CARDS API RESPONSE:", res);
-          console.log("ALL GIFT CARDS:", res.giftCards);
-        })
-        .catch((err) => {
-          console.error("ALL GIFT CARDS ERROR:", err);
-        });
     }, [dispatch]);
     const [showVoucherModal, setShowVoucherModal] = useState(false);
     const [voucherLoading, setVoucherLoading] = useState(false);
