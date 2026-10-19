@@ -11,6 +11,7 @@ const {
   generateGiftCardNumber,
   generateGiftCardPin,
 } = require("../utils/giftCardGenerator");
+const { sendResponse } = require("../utils/response");
 
 const parseProductExpiryDate = (value) => {
   if (value === undefined || value === null || value === "") {
@@ -1011,6 +1012,56 @@ const deleteGiftCards = async (req, res) => {
   }
 };
 
+const validateGiftCardForCheckout = async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return sendResponse(res, false, "Please login to apply your Gift Card.");
+    }
+
+    const code = String(req.body?.code || "")
+      .trim()
+      .toUpperCase();
+
+    if (!code) {
+      return sendResponse(res, false, "Gift Card code is required.");
+    }
+
+    const now = new Date();
+
+    const giftCard = await GiftCard.findOne({
+      recordType: "Issued",
+      assignedTo: userId,
+      cardNumber: code,
+      status: "Active",
+      remainingBalance: { $gt: 0 },
+      $or: [
+        { expiresAt: null },
+        { expiresAt: { $gt: now } },
+      ],
+    }).select("_id cardNumber remainingBalance status expiresAt");
+
+    if (!giftCard) {
+      return sendResponse(res, false, "Invalid, expired, or unavailable Gift Card.");
+    }
+
+    return sendResponse(res, true, 
+      {
+        giftCard: {
+          _id: giftCard._id,
+          code: giftCard.cardNumber,
+          remainingBalance: Number(giftCard.remainingBalance),
+          expiresAt: giftCard.expiresAt || null,
+        },
+      },
+      "Gift Card validated successfully."
+    );
+  } catch (error) {
+     return sendResponse(res, false, "Unable to validate Gift Card.");
+  }
+};
+
 module.exports = {
   adminCreateGiftCard,
   adminCreateGiftCardProduct,
@@ -1022,4 +1073,5 @@ module.exports = {
   getGiftCardProduct,
   updateGiftCardProduct,
   deleteGiftCards,
+  validateGiftCardForCheckout
 };
