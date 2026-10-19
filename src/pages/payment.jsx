@@ -299,59 +299,59 @@ export default function Payment() {
     }
   }, []);
   
-useEffect(() => {
-  if (!checkoutInfo) return;
+// useEffect(() => {
+//   if (!checkoutInfo) return;
 
-  let cancelled = false;
+//   let cancelled = false;
 
-  const fetchGiftCardBalance = async () => {
-    setGiftCardLoading(true);
-    setGiftCardError("");
+//   const fetchGiftCardBalance = async () => {
+//     setGiftCardLoading(true);
+//     setGiftCardError("");
 
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/gift-cards/checkout-balance`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-          },
-        }
-      );
+//     try {
+//       const response = await fetch(
+//         `${process.env.REACT_APP_API_URL}/gift-cards/checkout-balance`,
+//         {
+//           method: "GET",
+//           headers: {
+//             Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+//           },
+//         }
+//       );
 
-      const data = await response.json();
+//       const data = await response.json();
 
-      if (!response.ok || !data?.success) {
-        throw new Error(
-          data?.message || "Unable to fetch gift card balance."
-        );
-      }
+//       if (!response.ok || !data?.success) {
+//         throw new Error(
+//           data?.message || "Unable to fetch gift card balance."
+//         );
+//       }
 
-      if (!cancelled) {
-        setGiftCardBalance(
-          Math.max(0, Number(data.availableBalance) || 0)
-        );
-      }
-    } catch (err) {
-      if (!cancelled) {
-        setGiftCardBalance(0);
-        setGiftCardError(
-          err.message || "Unable to fetch gift card balance."
-        );
-      }
-    } finally {
-      if (!cancelled) {
-        setGiftCardLoading(false);
-      }
-    }
-  };
+//       if (!cancelled) {
+//         setGiftCardBalance(
+//           Math.max(0, Number(data.availableBalance) || 0)
+//         );
+//       }
+//     } catch (err) {
+//       if (!cancelled) {
+//         setGiftCardBalance(0);
+//         setGiftCardError(
+//           err.message || "Unable to fetch gift card balance."
+//         );
+//       }
+//     } finally {
+//       if (!cancelled) {
+//         setGiftCardLoading(false);
+//       }
+//     }
+//   };
 
-  fetchGiftCardBalance();
+//   fetchGiftCardBalance();
 
-  return () => {
-    cancelled = true;
-  };
-}, [checkoutInfo]);
+//   return () => {
+//     cancelled = true;
+//   };
+// }, [checkoutInfo]);
 
   // useEffect(() => {
   //   if (!needsClientSecret || !checkoutInfo) return;
@@ -503,6 +503,16 @@ useEffect(() => {
             shippingAddress: checkoutInfo.shippingAddress,
             email: checkoutInfo.email,
             method: selectedMethod,
+
+            appliedGiftCardId: checkoutInfo.appliedGiftCardId || null,
+            giftCardCode: checkoutInfo.giftCardCode || null,
+            useGiftCardBalance: Boolean(
+              checkoutInfo.useGiftCardBalance
+            ),
+            giftCardRedeemed: Number(
+              checkoutInfo.giftCardRedeemed
+            ) || 0,
+            expectedPayableAmount: remainingPayment,
           }
         : {
             paymentIntentId,
@@ -648,6 +658,11 @@ const handlePlaceOrder = async () => {
       shipping: checkoutInfo.shipping,
       platform_charge: checkoutInfo.platformCharge,
       items: checkoutInfo.items,
+
+      appliedGiftCardId: checkoutInfo.appliedGiftCardId || null,
+      giftCardCode: checkoutInfo.giftCardCode || null,
+      useGiftCardBalance: Boolean(checkoutInfo.useGiftCardBalance),
+      giftCardRedeemed: Number(checkoutInfo.giftCardRedeemed) || 0,
     };
 
     const response = await fetch(
@@ -709,11 +724,23 @@ const handlePlaceOrder = async () => {
       </div>
     );
   }
-  const orderTotal = Number(checkoutInfo.orderTotal ?? checkoutInfo.total ?? 0);
-  const giftCardRedeemed = Number(Math.min(giftCardBalance, orderTotal).toFixed(2));
-  const remainingPayment = Number(Math.max(0, orderTotal - giftCardRedeemed).toFixed(2));
-  // const displayTotal = checkoutInfo.total;
-  const displayTotal = Number(checkoutInfo?.orderTotal ?? checkoutInfo?.total ?? 0 );
+  // const orderTotal = Number(checkoutInfo.orderTotal ?? checkoutInfo.total ?? 0);
+  // const giftCardRedeemed = Number(Math.min(giftCardBalance, orderTotal).toFixed(2));
+  // const remainingPayment = Number(Math.max(0, orderTotal - giftCardRedeemed).toFixed(2));
+  // // const displayTotal = checkoutInfo.total;
+  // const displayTotal = Number(checkoutInfo?.orderTotal ?? checkoutInfo?.total ?? 0 );
+  const orderTotal = Math.max(0, Number(checkoutInfo?.orderTotal ?? checkoutInfo?.total ?? 0) || 0);
+
+  const giftCardRedeemed = Math.min(
+    Math.max(0, Number(checkoutInfo?.giftCardRedeemed) || 0),
+    orderTotal
+  );
+
+  const remainingPayment = Number(
+    Math.max(0, orderTotal - giftCardRedeemed).toFixed(2)
+  );
+
+  const displayTotal = remainingPayment;
   const appearance = {
     theme: "stripe",
     variables: {
@@ -981,9 +1008,10 @@ const handlePlaceOrder = async () => {
                     <span>Total</span>
                     <span>
                       {/* ₹{Math.round(displayTotal).toLocaleString("en-IN")} */}
-                       ₹{Math.round(
+                       {/* ₹{Math.round(
                           Number(checkoutInfo?.orderTotal ?? checkoutInfo?.total ?? 0) || 0
-                        ).toLocaleString("en-IN")}
+                        ).toLocaleString("en-IN")} */}
+                        ₹{Math.round(remainingPayment).toLocaleString("en-IN")}
                     </span>
                   </div>
                 </div>

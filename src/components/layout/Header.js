@@ -329,22 +329,26 @@ const Header = () => {
                     <>
                       <Link
                         to={item.path}
-                        className={`relative cursor-pointer transition-all duration-300 pb-[10px] flex items-center
+                        className={`relative inline-flex items-center gap-1 cursor-pointer transition-all duration-300 pb-[10px]
                           ${
                             isShopActive
                               ? "text-[var(--primary-color)] font-medium"
                               : "text-black hover:text-[var(--primary-color)]"
-                          }
-                          after:content-['•••'] after:absolute after:left-[52%] after:-bottom-[4px]
-                          after:-translate-x-1/2 after:text-[20px] after:tracking-[3px]
-                          after:font-bold after:text-[var(--primary-color)]
-                          after:h-[14px] after:leading-[14px]
-                          after:transition-opacity after:duration-300
-                          ${isShopActive ? "after:opacity-100" : "after:opacity-0"}`}
+                          }`}
                       >
-                        {item.name}
+                        <span className="relative">
+                          {item.name}
+                          <span
+                            className={`absolute left-1/2 -translate-x-1/2 -bottom-[14px] text-[20px] tracking-[3px] font-bold leading-[14px]
+                              text-[var(--primary-color)] transition-opacity duration-300 ${
+                                isShopActive ? "opacity-100" : "opacity-0"
+                              }`}
+                          >
+                            •••
+                          </span>
+                        </span>
                         <ChevronDown
-                          className={`w-4 h-4 ml-1 transition-transform duration-300 ${
+                          className={`w-4 h-4 shrink-0 transition-transform duration-300 ${
                             isMegaMenuOpen ? "rotate-180" : ""
                           }`}
                         />

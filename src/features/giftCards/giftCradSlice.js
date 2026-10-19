@@ -1,9 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getGiftCardProducts, getMyGiftCards, purchaseGiftCard } from "./giftCardThunk";
+import { getGiftCardProducts, getMyGiftCards, purchaseGiftCard, validateGiftCard } from "./giftCardThunk";
 
 const initialState = {
   giftCards: [],
   purchaseProducts: [],
+  appliedGiftCard: null,
   loading: false,
   error: null,
    purchaseLoading: false,
@@ -22,6 +23,10 @@ const giftCardSlice = createSlice({
       state.purchaseError = null;
       state.purchaseResult = null;
     },
+    removeAppliedGiftCard: (state) => {
+      state.appliedGiftCard = null;
+      state.error = null;
+    },  
   },
 
   extraReducers: (builder) => {
@@ -55,8 +60,25 @@ const giftCardSlice = createSlice({
         .addCase(getGiftCardProducts.fulfilled, (state, action) => {
           state.productsLoading = false;
           state.purchaseProducts = action.payload;
+        })
+        .addCase(validateGiftCard.pending, (state) => {
+          state.loading = true;
+          state.error = null;
+        })
+
+        .addCase(validateGiftCard.fulfilled, (state, action) => {
+          state.loading = false;
+          state.appliedGiftCard = action.payload?.data?.giftCard || null;
+          state.error = null;
+        })
+
+        .addCase(validateGiftCard.rejected, (state, action) => {
+          state.loading = false;
+          state.error = action.payload || "Gift card validation failed";
         });
   },
 });
+
+export const { removeAppliedGiftCard, clearPurchaseState} = giftCardSlice.actions;
 
 export default giftCardSlice.reducer;

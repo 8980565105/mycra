@@ -63,3 +63,24 @@ export const purchaseGiftCard = createAsyncThunk(
     }
   }
 );
+
+export const validateGiftCard = createAsyncThunk(
+  "giftCards/validateGiftCard",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const code = String(payload?.code || "")
+        .trim()
+        .toUpperCase();
+
+      if (!code) {
+        return rejectWithValue("Please enter your Gift Card code.");
+      }
+
+      const response = await api.post(ROUTES.giftCards.checkoutValidate, { code });
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(errorMessage(error));
+    }
+  }
+);

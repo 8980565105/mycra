@@ -1603,6 +1603,11 @@ const GiftCardToBalance = () => {
     try {
       await navigator.clipboard.writeText(cardNumber);
       setCopiedCardNumber(cardNumber);
+      setTimeout(() => {
+      setCopiedCardNumber((currentCard) =>
+          currentCard === cardNumber ? "" : currentCard
+        );
+      }, 2000);
     } catch {
       setBuyError("Unable to copy the card number. Please copy it manually.");
     }
@@ -2338,7 +2343,14 @@ const GiftCardToBalance = () => {
                         {cardNumber && (
                           <button
                             type="button"
-                            title="Copy full card number"
+                            title={
+                              copiedCardNumber === cardNumber
+                                ? "Copied!" : "Copy full card number"
+                            }
+                            aria-label={
+                              copiedCardNumber === cardNumber
+                                ? "Gift card number copied" : "Copy gift card number"
+                            }
                             onClick={() => handleCopyCardNumber(cardNumber)}
                             className="rounded-lg bg-white/15 p-2 hover:bg-white/25"
                           >

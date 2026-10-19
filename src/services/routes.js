@@ -129,6 +129,7 @@
     my: "/gift-cards/my",
     products: "/gift-cards/products", 
     purchase: "/gift-cards/purchase", 
+    checkoutValidate: "/gift-cards/checkout/validate",
   },
   kyc: {
     validatePan: "/kyc/validate-pan",
