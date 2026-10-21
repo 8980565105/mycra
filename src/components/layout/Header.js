@@ -243,18 +243,46 @@ const Header = () => {
 
   const openProtectedLink = useProtectedLink(setIsLoginOpen, token);
 
-  const handleCategoryClick = (categoryName) => {
+  // const handleCategoryClick = (categoryName) => {
+  //   setIsMegaMenuOpen(false);
+  //   setIsMenuOpen(false);
+  //   setIsMobileMegaMenuOpen(false);
+  //   if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+
+  //   const targetUrl = `/shop?category=${encodeURIComponent(categoryName)}`;
+  //   if (location.pathname === "/shop") {
+  //     navigate(targetUrl, { replace: true });
+  //   } else {
+  //     navigate(targetUrl);
+  //   }
+  // };
+  const handleCategoryClick = (categoryName, subcategoryId = null, childCategoryId = null, typeName = null) => {
     setIsMegaMenuOpen(false);
     setIsMenuOpen(false);
     setIsMobileMegaMenuOpen(false);
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
 
-    const targetUrl = `/shop?category=${encodeURIComponent(categoryName)}`;
-    if (location.pathname === "/shop") {
-      navigate(targetUrl, { replace: true });
-    } else {
-      navigate(targetUrl);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
     }
+
+    const params = new URLSearchParams();
+
+    if (categoryName) {
+      params.set("category", categoryName);
+    }
+
+    if (subcategoryId) {
+      params.set("subcategory", String(subcategoryId));
+    }
+
+    if (childCategoryId) {
+      params.set("childcategory", String(childCategoryId));
+    }
+
+    if (typeName) {
+      params.set("type", typeName);
+    }
+    navigate(`/shop?${params.toString()}`);
   };
   const BASE = process.env.REACT_APP_API_URL_IMAGE;
 
@@ -458,11 +486,10 @@ const Header = () => {
                                                 >
                                                   <p
                                                     className="text-sm font-semibold text-[var(--secondary-color)] cursor-pointer hover:text-[var(--theme-color)] mb-2"
-                                                    onClick={() =>
+                                                    onClick={() => {
                                                       handleCategoryClick(
-                                                        sub.name,
-                                                      )
-                                                    }
+                                                        sub.name, null);
+                                                    }}
                                                   >
                                                     {sub.name}
                                                   </p>
@@ -474,11 +501,11 @@ const Header = () => {
                                                           <li
                                                             key={child._id}
                                                             className="text-xs text-gray-500 cursor-pointer hover:text-[var(--theme-color)]"
-                                                            onClick={() =>
+                                                            onClick={() => {
                                                               handleCategoryClick(
-                                                                child.name,
-                                                              )
-                                                            }
+                                                                sub.name, null, child._id
+                                                              );
+                                                            }}
                                                           >
                                                             {child.name}
                                                           </li>

@@ -82,9 +82,18 @@ const CategoriesSection = () => {
                 <div
                   key={category._id || index}
                   className="flex flex-col items-center group cursor-pointer px-[10px] sm:px-[26.5px]"
-                  onClick={() =>
-                    navigate(`/collections?category=${category.name}`)
-                  }
+                  // onClick={() =>
+                  //   navigate(`/collections?category=${category.name}`)
+                  // }
+                  onClick={() => {
+                    if (!category?._id || category.isStatic) {
+                      return;
+                    }
+
+                    const params = new URLSearchParams();
+                    params.set("categoryId", category._id);
+                    navigate(`/collections?${params.toString()}`);
+                  }}
                 >
                   <div className="relative w-full aspect-square rounded-full overflow-hidden border-4 circle-border duration-300 flex items-center justify-center">
                     <img

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { getImageUrl } from "../components/utils/helper";
 import shoppingImg from "../assets/shopping.png";
 import { fetchsubCategories } from "../features/subcategories/subcategoriesThunk";
@@ -24,8 +24,12 @@ const createSlug = (name) => {
 function Collections({ products = [] }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [searchParams] = useSearchParams();
+
+  const categoryIdFromUrl = searchParams.get("categoryId") || "";
+  const activecategory = categoryIdFromUrl || "all";
   const location = useLocation();
-  const [activecategory, setActivecategory] = useState("all");
+  // const [activecategory, setActivecategory] = useState("all");
   const { items: categories, loading: catLoading } = useSelector(
     (state) => state.categories,
   );
@@ -58,15 +62,6 @@ function Collections({ products = [] }) {
     }
   }, [dispatch]);
 
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const categoryIdFromUrl = searchParams.get("categoryId");
-    if (categoryIdFromUrl) {
-      setActivecategory(categoryIdFromUrl);
-    } else {
-      setActivecategory("all");
-    }
-  }, [location.search]);
 
   const loading = catLoading || subLoading;
 
@@ -76,19 +71,19 @@ function Collections({ products = [] }) {
     return String(sub.parent_id);
   };
 
-  const displaySubcategories =
-    activecategory === "all"
-      ? subcategories
-      : subcategories.filter(
-        (sub) => getParentId(sub) === String(activecategory),
-      );
+  const displaySubcategories = categoryIdFromUrl ? subcategories.filter(
+    (subcategory) =>
+      getParentId(subcategory) === String(categoryIdFromUrl)
+    )
+  : subcategories;
 
-  const selectedCategory =
-    activecategory === "all"
-      ? null
-      : categories.find((cat) => String(cat._id) === String(activecategory));
+  const selectedCategory = categoryIdFromUrl ? categories.find(
+    (category) =>
+      String(category._id) === String(categoryIdFromUrl)
+    ) || null
+  : null;
 
-  const selectedCategoryName = selectedCategory?.name;
+  const selectedCategoryName = selectedCategory?.name || "All Categories";
   const headingText = selectedCategoryName
     ? `${selectedCategoryName} Subcategories`
     : "All Subcategories";

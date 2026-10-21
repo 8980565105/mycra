@@ -171,15 +171,21 @@ export default function CollectionAbout({ setShowLoginPopup }) {
 
   const handleSubcategoryClick = (subcategory) => {
     const params = new URLSearchParams();
-    if (bannerTitle) {
-      params.set("category", bannerTitle);
+    const categoryName = matchedCategory?.name || bannerTitle;
+
+    if (categoryName) {
+      params.set("category", categoryName);
     }
+
+    if (activeCategory) {
+      params.set("childcategory", String(activeCategory));
+    }
+
     if (subcategory?.name) {
       params.set("type", subcategory.name);
     }
     navigate(`/shop?${params.toString()}`);
   };
-
   const handleLoadMore = () => {
     const newCount = visibleCount + 8;
     setVisibleCount(newCount);

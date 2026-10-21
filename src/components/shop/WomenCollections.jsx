@@ -419,6 +419,9 @@ export default function WomenCollections() {
   const { items: subcategories = [] } = useSelector(
     (state) => state.subcategories,
   );
+  const { items: allChildCategories = [] } = useSelector(
+  (state) => state.childcategory || {}
+);
   const { discounts: allDiscounts = [] } = useSelector(
     (state) => state.discounts || {},
   );
@@ -429,6 +432,7 @@ export default function WomenCollections() {
     const params = new URLSearchParams(location.search);
     return {
       categories: params.get("category") ? params.get("category").split(",") : [],
+      childCategories: params.get("childcategory") ? params.get("childcategory").split(",") : [],
       types: params.get("type") ? params.get("type").split(",") : [],
        brands: params.get("brand") ? params.get("brand").split(",").filter(Boolean) : [],
       labels: params.get("label") ? params.get("label").split(",") : [],
@@ -457,6 +461,7 @@ export default function WomenCollections() {
   const maxCatalogPrice = catalogPrices.max;
   const hasSyncedMaxPrice = useRef(false);
   const [selectedCategories, setSelectedCategories] = useState(() => getInitialParams().categories);
+  const [selectedChildCategories, setSelectedChildCategories] = useState(() => getInitialParams().childCategories);
   const [selectedTypes, setSelectedTypes] = useState(() => getInitialParams().types);
   const [selectedBrands, setSelectedBrands] = useState(() => getInitialParams().brands);
   const [typeIdsToFetch, setTypeIdsToFetch] = useState([]);
@@ -484,6 +489,7 @@ export default function WomenCollections() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const categories = (params.get("category") || "").split(",").filter(Boolean);
+    const childCategoriesFromUrl = (params.get("childcategory") || "").split(",").filter(Boolean);
     const typesFromUrl = (params.get("type") || "").split(",").filter(Boolean);
     const brandsFromUrl = (params.get("brand") || "").split(",").filter(Boolean);
     const labelsFromUrl = (params.get("label") || "").split(",").filter(Boolean);
@@ -491,6 +497,7 @@ export default function WomenCollections() {
     syncingFromUrlRef.current = true;
 
     setSelectedCategories(categories);
+    setSelectedChildCategories(childCategoriesFromUrl);
     setSelectedTypes(typesFromUrl);
     setSelectedBrands(brandsFromUrl);
     setSelectedLabels(
@@ -586,6 +593,15 @@ export default function WomenCollections() {
 
   const handleCategoryChange = (name) => {
     setSelectedCategories((prev) => (prev.includes(name) ? [] : [name]));
+     setSelectedChildCategories([]);
+     setSelectedTypes([]);
+  };
+
+  const handleChildCategoryChange = (childCategory) => {
+    setSelectedChildCategories(
+      childCategory ? [childCategory] : []
+    );
+    setSelectedTypes([]);
   };
 
   const handleTypeChange = (typeName) => {
@@ -675,9 +691,15 @@ export default function WomenCollections() {
       return;
     }
     const params = new URLSearchParams();
-    if (selectedCategories.length)
+    if (selectedCategories.length) {
       params.set("category", selectedCategories.join(","));
-    if (selectedTypes.length) params.set("type", selectedTypes.join(","));
+    }
+    if (selectedChildCategories.length) {
+      params.set( "childcategory", selectedChildCategories.join(",") );
+    }
+    if (selectedTypes.length) {
+      params.set("type", selectedTypes.join(","));
+    }
     if (selectedBrands.length) params.set("brand", selectedBrands.join(","));
     if (selectedLabels.length)
       params.set("label", selectedLabels.map((l) => l.name).join(","));
@@ -698,6 +720,7 @@ export default function WomenCollections() {
     location.search,
     navigate,
     selectedCategories,
+    selectedChildCategories,
     selectedTypes,
     selectedBrands,
     selectedLabels,
@@ -713,6 +736,18 @@ export default function WomenCollections() {
         value: v,
         label: v,
       })),
+      ...selectedChildCategories.map((selectedId) => {
+        const child = allChildCategories.find(
+          (item) =>
+            String(item._id ?? item.id) === String(selectedId)
+        );
+
+        return {
+          type: "childcategory",
+          value: selectedId,
+          label: child?.name ?? String(selectedId),
+        };
+      }),
       ...selectedTypes.map((v) => ({ type: "type", value: v, label: v })),
       ...selectedBrands.map((v) => ({ type: "brand", value: v, label: v })),
       ...selectedLabels.map((l) => ({
@@ -741,6 +776,7 @@ export default function WomenCollections() {
     return arr;
   }, [
     selectedCategories,
+    selectedChildCategories,
     selectedTypes,
     selectedBrands,
     selectedAttributes,
@@ -805,6 +841,41 @@ export default function WomenCollections() {
       if (!hasDirectCategoryMatch && !hasTypeMatchInVariants) return false;
     }
 
+    if (selectedChildCategories.length > 0) {
+      const matchesChildCategory = [
+        p?.child_category_id,
+        p?.childCategory_id,
+        p?.childCategoryId,
+        p?.childcategory_id,
+        p?.child_category,
+        p?.childCategory,
+        p?.childcategory,
+      ].some((value) => {
+        const id =
+          typeof value === "object" && value !== null
+            ? String(value._id ?? value.id ?? value.child_category_id ?? value.childCategoryId ?? "")
+            : String(value ?? "");
+
+        const name =
+          typeof value === "object" && value !== null
+            ? String(value.name ?? value.title ?? "").trim().toLowerCase()
+            : String(value ?? "").trim().toLowerCase();
+
+        return selectedChildCategories.some((selected) => {
+          const child = allChildCategories.find(
+            (item) => String(item._id ?? item.id) === String(selected).trim()
+          );
+
+          return (
+            id === String(selected).trim() ||
+            (child?.name && name === child.name.trim().toLowerCase())
+          );
+        });
+      });
+
+      if (!matchesChildCategory) return false;
+    }
+
     if (selectedTypes.length > 0) {
       const types = productTypeNames(p);
       if (!selectedTypes.some((t) => types.includes(t))) return false;
@@ -841,6 +912,7 @@ export default function WomenCollections() {
   }, [
     products,
     selectedCategories,
+    selectedChildCategories,
     selectedTypes,
     selectedBrands,
     selectedAttributes,
@@ -975,6 +1047,8 @@ export default function WomenCollections() {
               selectedCategories={selectedCategories}
               handleCategoryChange={handleCategoryChange}
               handleResetCategories={() => setSelectedCategories([])}
+              selectedChildCategories={selectedChildCategories}
+              handleChildCategoryChange={handleChildCategoryChange}
               selectedTypes={selectedTypes}
               handleTypeChange={handleTypeChange}
               handleResetTypes={handleResetTypes}
@@ -1058,6 +1132,10 @@ export default function WomenCollections() {
                           const { type, value } = filter;
                           if (type === "category")
                             setSelectedCategories((p) =>
+                              p.filter((x) => x !== value),
+                            );
+                          if (type === "childcategory")
+                            setSelectedChildCategories((p) =>
                               p.filter((x) => x !== value),
                             );
 

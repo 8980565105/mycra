@@ -46,6 +46,7 @@ export default function Shop() {
     const urlChildCategory =
       searchParams.get("childcategory") || "";
     const urlBrand = searchParams.get("brand") || "";
+    const urlType = searchParams.get("type") || "";
 
   return (
     <>
@@ -66,7 +67,13 @@ export default function Shop() {
           />
         ))}
       </div>
-      <WomenCollections />
+      <WomenCollections
+        categoryFromUrl={urlCategory}
+        subcategoryFromUrl={urlSubcategory}
+        childCategoryFromUrl={urlChildCategory}
+        brandFromUrl={urlBrand}
+        typeFromUrl={urlType}
+      />
     </>
   );
 }
