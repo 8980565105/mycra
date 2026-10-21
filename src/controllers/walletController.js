@@ -1,7 +1,11 @@
+const Stripe = require("stripe");
+const mongoose = require("mongoose");
 const Wallet = require("../models/Wallet");
 const User = require("../models/User");
 const GiftCard = require("../models/GiftCard");
 const Transection = require("../models/Transactions");
+const WalletTopUp = require("../models/WalletTopUp");
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const getBalance = async (req, res) => {
   try {
@@ -71,63 +75,7 @@ const getBalance = async (req, res) => {
     });
   }
 };
-const addMoney = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { amount, paymentMode } = req.body;
 
-    if (!amount || amount <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid amount aapo",
-      });
-    }
-
-    let wallet = await Wallet.findOne({ user: userId });
-    if (!wallet) {
-      wallet = await Wallet.create({ user: userId });
-    }
-
-    if (!wallet.isKycVerified) {
-      return res.status(403).json({
-        success: false,
-        message: "Wallet set up karva mate eKYC complete karo",
-      });
-    }
-
-    if (amount > wallet.maxAddLimit) {
-      return res.status(400).json({
-        success: false,
-        message: `maximum ₹${wallet.maxAddLimit} add balance`,
-      });
-    }
-
-    wallet.balance += Number(amount);
-    await wallet.save();
-    const transection = await Transection.create({
-      user: userId,
-      amount,
-      type: "Money received",
-      category: "Financial Services",
-      paymentMode: paymentMode || "UPI",
-      status: "Success",
-      description: "Wallet ma paisa add karya",
-      referenceId: `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Paisa successfully add thai gaya",
-      wallet,
-      transection,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 const verifyKyc = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -526,13 +474,226 @@ const adminUpdateVoucher = async (req, res) => {
     });
   }
 };
+
+const createWalletTopUpSession = async (req, res) => {
+  try {
+    const amount = Number(req.body.amount);
+    const userId = req.user._id;
+
+    if (!Number.isSafeInteger(amount) || amount < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid whole-rupee amount",
+      });
+    }
+
+    let wallet = await Wallet.findOne({ user: userId });
+
+    if (!wallet) {
+      wallet = await Wallet.create({ user: userId });
+    }
+
+    if (!wallet.isKycVerified) {
+      return res.status(403).json({
+        success: false, message: "Complete eKYC before adding money",
+      });
+    }
+
+    const maxAddLimit = 10000;
+
+    if (amount > maxAddLimit) {
+      return res.status(400).json({
+        success: false, message: `Maximum top-up amount is ₹${maxAddLimit}`,
+      });
+    }
+
+    // Create a pending record. Do NOT credit wallet here.
+    const topUp = await WalletTopUp.create({
+      user: userId,
+      amount,
+      currency: "inr",
+      status: "pending",
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL;
+
+    if (!frontendUrl) {
+      throw new Error("FRONTEND_URL is missing in environment");
+    }
+
+    const checkout = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+
+      line_items: [
+        {
+          price_data: {
+            currency: "inr",
+            product_data: {
+              name: "Wallet Amount",
+            },
+            unit_amount: amount * 100,
+          },
+          quantity: 1,
+        },
+      ],
+
+      client_reference_id: String(topUp._id),
+
+      metadata: {
+        topUpId: String(topUp._id),
+        userId: String(userId),
+      },
+
+      payment_intent_data: {
+        metadata: {
+          topUpId: String(topUp._id),
+          userId: String(userId),
+        },
+      },
+
+      success_url: `${frontendUrl}/my-account/wallets?topup=success&session_id={CHECKOUT_SESSION_ID}`,
+
+      cancel_url: `${frontendUrl}/my-account/wallets?topup=cancelled`,
+    });
+
+    topUp.sessionId = checkout.id;
+    await topUp.save();
+
+    return res.status(200).json({
+      success: true,
+      url: checkout.url,
+    });
+  } catch (error) {
+    console.error("Wallet checkout error:", error.message);
+
+    return res.status(500).json({
+      success: false, message: "Unable to start wallet payment",
+    });
+  }
+};
+
+const handleWalletStripeWebhook = async (req, res) => {
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      req.headers["stripe-signature"],
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+    console.log("✅ Wallet Stripe webhook received:", event.type);  
+  } catch (error) {
+    console.error("Wallet Stripe signature error:", error.message);
+    return res.status(400).send("Invalid Stripe webhook signature");
+  }
+
+  const supportedEvents = [
+    "checkout.session.completed",
+    "checkout.session.async_payment_succeeded",
+  ];
+
+  if (!supportedEvents.includes(event.type)) {
+    return res.status(200).json({ received: true });
+  }
+
+  const checkout = event.data.object;
+
+  if (checkout.payment_status !== "paid") {
+    return res.status(200).json({ received: true });
+  }
+
+  const topUpId = checkout.metadata?.topUpId;
+
+  if (!topUpId || !mongoose.isValidObjectId(topUpId)) {
+    return res.status(400).send("Missing or invalid top-up reference");
+  }
+
+  const dbSession = await mongoose.startSession();
+
+  try {
+    await dbSession.withTransaction(async () => {
+      const topUp = await WalletTopUp.findById(topUpId).session(dbSession);
+
+      if (!topUp) {
+        throw new Error("Wallet top-up record not found");
+      }
+
+      if (topUp.status === "paid") {
+        return;
+      }
+
+      if (topUp.status !== "pending") {
+        throw new Error("Wallet top-up is not pending");
+      }
+
+      if (
+        checkout.client_reference_id !== String(topUp._id) ||
+        checkout.metadata?.userId !== String(topUp.user) ||
+        Number(checkout.amount_total) !== topUp.amount * 100 ||
+        String(checkout.currency).toLowerCase() !== "inr"
+      ) {
+        throw new Error("Stripe checkout details do not match top-up");
+      }
+
+      const wallet = await Wallet.findOne({ user: topUp.user })
+        .session(dbSession);
+
+      if (!wallet) {
+        throw new Error("Wallet not found for this top-up");
+      }
+
+      wallet.balance = Number(wallet.balance || 0) + topUp.amount;
+      await wallet.save({ session: dbSession });
+
+      await Transection.create(
+        [
+          {
+            user: topUp.user,
+            amount: topUp.amount,
+            type: "Money received",
+            category: "Financial Services",
+            paymentMode: "Stripe",
+            status: "Success",
+            description: "Wallet top-up via Stripe",
+            referenceId: `STRIPE-${checkout.id}`,
+          },
+        ],
+        { session: dbSession }
+      );
+
+      topUp.status = "paid";
+      topUp.sessionId = checkout.id;
+      topUp.paymentIntentId =
+        typeof checkout.payment_intent === "string"
+          ? checkout.payment_intent
+          : checkout.payment_intent?.id || null;
+      topUp.creditedAt = new Date();
+
+      await topUp.save({ session: dbSession });
+    });
+
+    return res.status(200).json({ received: true });
+  } catch (error) {
+    console.error("Wallet Stripe webhook processing error:", error.message);
+
+    return res.status(500).json({
+      received: false, message: "Wallet payment processing failed",
+    });
+  } finally {
+    await dbSession.endSession();
+  }
+};
+
+
 module.exports = {
   getBalance,
-  addMoney,
   verifyKyc,
   adminAdjustBalance,
   getAllWallets,
   adminVerifyKyc,
   adminAddVoucher,
-  adminUpdateVoucher
+  adminUpdateVoucher,
+  createWalletTopUpSession,
+  handleWalletStripeWebhook
 };

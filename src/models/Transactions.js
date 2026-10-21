@@ -38,6 +38,7 @@ const transectionSchema = new mongoose.Schema(
         "Net Banking",
         "Amazon Credit",
         "Cash on Delivery",
+        "Stripe",
       ],
       required: true,
     },

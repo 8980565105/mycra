@@ -52,6 +52,7 @@ const {
 } = require("./src/controllers/stripeWebhookController");
 const helmet = require("helmet");
 const { off } = require("pdfkit");
+const { handleWalletStripeWebhook } = require("./src/controllers/walletController");
 connectDB();
 const app = express();
 const ADMIN_ORIGINS = (process.env.ADMIN_ORIGINS || "http://localhost:8080")
@@ -144,6 +145,11 @@ app.post(
   "/api/payments/webhook",
   express.raw({ type: "application/json" }),
   handleStripeWebhook,
+);
+app.post(
+  "/api/wallet/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  handleWalletStripeWebhook
 );
 
 app.use(express.json({ limit: "50mb" }));
