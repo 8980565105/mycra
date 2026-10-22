@@ -151,3 +151,21 @@ export const redeemGiftCard = createAsyncThunk(
     }
   }
 );
+export const createWalletTopUpSession = createAsyncThunk(
+  "wallet/createTopUpSession",
+  async ({ amount }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(ROUTES.wallet.createTopUpSession, { amount });
+
+      if (!res.data?.url) {
+        return rejectWithValue("Stripe checkout URL response ma malyo nathi");
+      }
+
+      return res.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Stripe payment start na thayu"
+      );
+    }
+  }
+);

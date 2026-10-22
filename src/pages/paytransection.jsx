@@ -329,7 +329,12 @@ export default function TransactionHistory() {
                             <span>• Mode: {tx.paymentMode}</span>
                             <span>• Type: {tx.type}</span>
                             {tx.referenceId && (
-                              <span className="font-mono text-[11px]">Ref: {tx.referenceId}</span>
+                              <span className="font-mono text-[11px]">
+                                Ref:{" "}
+                                {tx.referenceId.length > 12
+                                  ? `${tx.referenceId.slice(0, 8)}...${tx.referenceId.slice(-4)}`
+                                  : tx.referenceId}
+                              </span>
                             )}
                           </div>
                         </div>

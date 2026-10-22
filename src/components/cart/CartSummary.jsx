@@ -105,7 +105,7 @@ export default function CartSummary({ appliedCoupon }) {
         </div>
       </h2>
       <div className="space-y-[25px] text-light text-p mb-[50px]">
-        <div className="border border-1 light-border" />
+        {/* <div className="border border-1 light-border" /> */}
 
         <div className="flex justify-between">
           <span>Sub-Total:</span>
@@ -119,7 +119,7 @@ export default function CartSummary({ appliedCoupon }) {
           </div>
         )}
 
-        <div className="border border-1 light-border !mt-0" />
+        <div className="border light-border !mt-0" />
 
         <div className="flex justify-between">
           <span>After Discount:</span>
@@ -135,7 +135,7 @@ export default function CartSummary({ appliedCoupon }) {
           </span>
         </div>
 
-        <div className="border border-1 light-border !mt-0" />
+        <div className=" border light-border !mt-0" />
 
         <div className="flex justify-between font-bold">
           <span>TOTAL:</span>

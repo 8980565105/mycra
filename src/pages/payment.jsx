@@ -7,7 +7,7 @@ import {
   useStripe,
 } from "@stripe/react-stripe-js";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import CartProgress from "../components/cart/CartProgress";
 import { clearCart } from "../features/cart/cartSlice";
@@ -205,7 +205,7 @@ function UpiQrPayment({
       if (paymentIntent?.status === "canceled") {
         clearInterval(interval);
         setPolling(false);
-        setError("Payment was cancelled.");
+        setError("his UPI payment attempt was canceled. You can try again.");
       }
     }, 3000);
 
@@ -265,6 +265,8 @@ function UpiQrPayment({
 export default function Payment() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { wallet } = useSelector((state) => state.wallet);
+  const walletBalance = Number(wallet?.balance ?? 0);
   const [paymentInitError, setPaymentInitError] = useState("");
   const [checkoutInfo, setCheckoutInfo] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState("card");
@@ -298,188 +300,7 @@ export default function Payment() {
       setLoading(false);
     }
   }, []);
-  
-// useEffect(() => {
-//   if (!checkoutInfo) return;
 
-//   let cancelled = false;
-
-//   const fetchGiftCardBalance = async () => {
-//     setGiftCardLoading(true);
-//     setGiftCardError("");
-
-//     try {
-//       const response = await fetch(
-//         `${process.env.REACT_APP_API_URL}/gift-cards/checkout-balance`,
-//         {
-//           method: "GET",
-//           headers: {
-//             Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-//           },
-//         }
-//       );
-
-//       const data = await response.json();
-
-//       if (!response.ok || !data?.success) {
-//         throw new Error(
-//           data?.message || "Unable to fetch gift card balance."
-//         );
-//       }
-
-//       if (!cancelled) {
-//         setGiftCardBalance(
-//           Math.max(0, Number(data.availableBalance) || 0)
-//         );
-//       }
-//     } catch (err) {
-//       if (!cancelled) {
-//         setGiftCardBalance(0);
-//         setGiftCardError(
-//           err.message || "Unable to fetch gift card balance."
-//         );
-//       }
-//     } finally {
-//       if (!cancelled) {
-//         setGiftCardLoading(false);
-//       }
-//     }
-//   };
-
-//   fetchGiftCardBalance();
-
-//   return () => {
-//     cancelled = true;
-//   };
-// }, [checkoutInfo]);
-
-  // useEffect(() => {
-  //   if (!needsClientSecret || !checkoutInfo) return;
-  //   if (fetchedForMethod === selectedMethod) return;
-
-  //   const createIntent = async () => {
-  //     setInitializing(true);
-  //     setClientSecret("");
-  //     try {
-  //       const response = await fetch(
-  //         `${process.env.REACT_APP_API_URL}/payments/stripe/create-intent`,
-  //         {
-  //           method: "POST",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //             Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-  //           },
-  //           body: JSON.stringify({
-  //             cart_id: checkoutInfo.cart_id,
-  //             coupon_id: checkoutInfo.coupon_id,
-  //             shippingAddress: checkoutInfo.shippingAddress,
-  //             email: checkoutInfo.email,
-  //             method: selectedMethod,
-  //           }),
-  //         },
-  //       );
-  //       const data = await response.json();
-  //       if (!response.ok || !data?.success) {
-  //         throw new Error(data?.message || "Unable to initialize payment");
-  //       }
-  //       setClientSecret(data.data.clientSecret);
-  //       setStripeAmountData({ amount: data.data.amount });
-  //       setFetchedForMethod(selectedMethod);
-  //       sessionStorage.setItem(
-  //         "pendingPayment",
-  //         JSON.stringify({
-  //           paymentIntentId: data.data.paymentIntentId,
-  //           clientSecret: data.data.clientSecret,
-  //           subtotal: data.data.subtotal,
-  //           discount: data.data.discount,
-  //           shipping: data.data.shipping,
-  //           platformCharge: data.data.platformCharge,
-  //           amount: data.data.amount,
-  //         }),
-  //       );
-  //     } catch (err) {
-  //       toast.error(err.message || "Unable to initialize payment");
-  //     } finally {
-  //       setInitializing(false);
-  //     }
-  //   };
-  //   createIntent();
-  // }, [needsClientSecret, checkoutInfo, selectedMethod, fetchedForMethod]);
-
-  // useEffect(() => {
-  //   if (!needsClientSecret || !checkoutInfo) return;
-
-  //   const initPayment = async () => {
-  //     setInitializing(true);
-  //     try {
-  //       if (!paymentIntentId) {
-  //         // ==== First time: CREATE intent ====
-  //         const response = await fetch(
-  //           `${process.env.REACT_APP_API_URL}/payments/stripe/create-intent`,
-  //           {
-  //             method: "POST",
-  //             headers: {
-  //               "Content-Type": "application/json",
-  //               Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-  //             },
-  //             body: JSON.stringify({
-  //               cart_id: checkoutInfo.cart_id,
-  //               coupon_id: checkoutInfo.coupon_id,
-  //               shippingAddress: checkoutInfo.shippingAddress,
-  //               email: checkoutInfo.email,
-  //               method: selectedMethod,
-  //             }),
-  //           },
-  //         );
-  //         const data = await response.json();
-  //         if (!response.ok || !data?.success) {
-  //           throw new Error(data?.message || "Unable to initialize payment");
-  //         }
-  //         setClientSecret(data.data.clientSecret);
-  //         setPaymentIntentId(data.data.paymentIntentId);
-  //         setStripeAmountData({ amount: data.data.amount });
-  //         sessionStorage.setItem(
-  //           "pendingPayment",
-  //           JSON.stringify({
-  //             paymentIntentId: data.data.paymentIntentId,
-  //             clientSecret: data.data.clientSecret,
-  //             amount: data.data.amount,
-  //           }),
-  //         );
-  //       } else {
-  //         // ==== Already have an intent: UPDATE method type only ====
-  //         const response = await fetch(
-  //           `${process.env.REACT_APP_API_URL}/payments/stripe/update-intent`,
-  //           {
-  //             method: "POST",
-  //             headers: {
-  //               "Content-Type": "application/json",
-  //               Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-  //             },
-  //             body: JSON.stringify({
-  //               paymentIntentId,
-  //               method: selectedMethod,
-  //             }),
-  //           },
-  //         );
-  //         const data = await response.json();
-  //         if (!response.ok || !data?.success) {
-  //           throw new Error(data?.message || "Unable to switch payment method");
-  //         }
-  //         setClientSecret(data.data.clientSecret);
-  //         setStripeAmountData({ amount: data.data.amount });
-  //       }
-  //     } catch (err) {
-  //       toast.error(err.message || "Unable to initialize payment");
-  //     } finally {
-  //       setInitializing(false);
-  //     }
-  //   };
-
-  //   initPayment();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [needsClientSecret, checkoutInfo, selectedMethod]);
-  
 useEffect(() => {
   if (!needsClientSecret || !checkoutInfo) return;
 
@@ -644,7 +465,10 @@ useEffect(() => {
   //     setPlacing(false);
   //   }
   // };
-  
+  const isGiftCardApplied =
+  Boolean(checkoutInfo?.useGiftCardBalance) &&
+  Number(checkoutInfo?.giftCardRedeemed || 0) > 0;
+
 const handlePlaceOrder = async () => {
   if (!checkoutInfo || placing) return;
 
@@ -961,29 +785,31 @@ const handlePlaceOrder = async () => {
                   </span>
                 </div>
                 
+                {isGiftCardApplied && (
                 <div className="flex justify-between">
                   <span className="text-light">Available Gift Card Balance</span>
                   <span>
                     {giftCardLoading
                       ? "Checking..."
-                      : `₹${giftCardBalance.toLocaleString("en-IN", {
+                      : `₹${Number(giftCardBalance || 0).toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}`}
                   </span>
                 </div>
+                )}
 
+                {isGiftCardApplied && (
                 <div className="flex justify-between text-green-600">
                   <span>Gift Card Redeemed</span>
                   <span>
-                    {giftCardLoading
-                      ? "Checking..."
-                      : `- ₹${giftCardRedeemed.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`}
+                    - ₹{giftCardRedeemed.toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </span>
                 </div>
+              )}
 
                 <div className="flex justify-between">
                   <span className="text-light">Remaining Payment</span>

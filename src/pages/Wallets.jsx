@@ -10,15 +10,21 @@ import {
 import Section from "../components/ui/Section";
 import Row from "../components/ui/Row";
 import Button from "../components/ui/Button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { addMoneyToWallet, fetchWallet } from "../features/wallet/walletThunk";
+import { addMoneyToWallet, createWalletTopUpSession, fetchWallet } from "../features/wallet/walletThunk";
 import { getMyGiftCards } from "../features/giftCards/giftCardThunk";
 
 export default function Wallets() {
   const navigation = useNavigate();
   const dispatch = useDispatch();
-  const { wallet, loading, error } = useSelector((state) => state.wallet);
+  const [searchParams, setSearchParams] = useSearchParams();  
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const topupStatus = searchParams.get("topup");
+  const sessionId = searchParams.get("session_id");
+  const { wallet, error } = useSelector((state) => state.wallet);
+  const maxAddLimit = Number(wallet?.maxAddLimit ?? 10000);
+  const walletBalance = Number(wallet?.balance ?? 0);
   const { giftCards } = useSelector((state) => state.giftCards);
   const [amount, setAmount] = useState(1000);
   const [addingMoney, setAddingMoney] = useState(false);
@@ -28,48 +34,116 @@ export default function Wallets() {
   //   dispatch(getMyGiftCards());
   // }, [dispatch]);
   
-useEffect(() => {
-  const refreshWalletData = async () => {
-    const results = await Promise.allSettled([
-      dispatch(fetchWallet()),
-      dispatch(getMyGiftCards()),
-    ]);
+  useEffect(() => {
+    const refreshWalletData = async () => {
+      const results = await Promise.allSettled([
+        dispatch(fetchWallet()).unwrap(),
+        dispatch(getMyGiftCards()).unwrap(),
+      ]);
 
-    results.forEach((result) => {
-      if (result.status === "rejected") {
-        console.error("Wallet refresh failed:", result.reason);
-      }
-    });
-  };
+      results.forEach((result) => {
+        if (result.status === "rejected") {
+          console.error("Wallet refresh failed:", result.reason);
+        }
+      });
+    };
 
-  refreshWalletData();
-
-  const handleFocus = () => {
     refreshWalletData();
-  };
 
-  window.addEventListener("focus", handleFocus);
+    const handleFocus = () => {
+      refreshWalletData();
+    };
 
-  return () => {
-    window.removeEventListener("focus", handleFocus);
-  };
-}, [dispatch]);
+    window.addEventListener("focus", handleFocus);
 
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (topupStatus === "cancelled") {
+      setPaymentMessage("Payment was cancelled.");
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
+    if (topupStatus !== "success" || !sessionId) {
+      return;
+    }
+
+    let cancelled = false;
+    let timer;
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    const verifyWalletUpdate = async () => {
+      if (cancelled) return;
+
+      attempts++;
+
+      setPaymentMessage("Payment completed. Refreshing your wallet balance...");
+
+      try {
+        await dispatch(fetchWallet()).unwrap();
+
+        dispatch(getMyGiftCards());
+      } catch (error) {
+        console.error("Wallet verification failed:", error);
+      }
+
+      if (cancelled) return;
+
+      if (attempts < maxAttempts) {
+        timer = setTimeout(verifyWalletUpdate, 2000);
+      } else {
+        setPaymentMessage("Payment processing check completed. Please verify your wallet balance.");
+
+        setSearchParams({}, { replace: true });
+      }
+    };
+
+    verifyWalletUpdate();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [dispatch, topupStatus, sessionId, setSearchParams]);
+    
   const handleAddMoney = async () => {
-    if (!amount || amount <= 0) return;
+    const value = Number(amount);
+
+    if (!Number.isSafeInteger(value) || value < 1) {
+      alert("Please enter a valid whole-rupee amount.");
+      return;
+    }
+
+    if (value > maxAddLimit) {
+      alert(`Maximum wallet top-up is ₹${maxAddLimit}`);
+      return;
+    }
+
     setAddingMoney(true);
-    const result = await dispatch(
-      addMoneyToWallet({ amount: Number(amount), paymentMode: "UPI" }),
-    );
-    setAddingMoney(false);
-    if (addMoneyToWallet.fulfilled.match(result)) {
-      setAmount(0);
+
+    try {
+      const result = await dispatch(
+        createWalletTopUpSession({ amount: value })
+      ).unwrap();
+
+      if (!result?.url) {
+        throw new Error("Stripe checkout URL was not received.");
+      }
+      window.location.assign(result.url);
+    } catch (error) {
+      alert(
+        typeof error === "string"
+          ? error
+          : error?.message || "Unable to start Stripe payment."
+      );
+      setAddingMoney(false);
     }
   };
-
-
-
-  const maxAddLimit = Number(wallet?.maxAddLimit || 10000);
 
   const quickAdd = (val) => {
     const currentAmount = Number(amount) || 0;
@@ -90,7 +164,6 @@ useEffect(() => {
 //       Number(card.remainingBalance || 0) > 0
 //   ) || [];
 
-const walletBalance = Number(wallet?.balance ?? 0);
 const voucherBalance =
   wallet?.voucherStatus === true
     ? Number(wallet?.voucherBalance ?? 0)
@@ -123,6 +196,11 @@ const totalBalance =
       <h1 className="text-[28px] font-bold text-gray-900 mb-4">
         Mycra Pay balance
       </h1>
+      {paymentMessage && (
+        <p className="mb-4 text-sm text-blue-700">
+          {paymentMessage}
+        </p>
+      )}
       <div className="flex flex-col lg:flex-row gap-[30px] max-w-6xl">
         <div className="flex-1 space-y-4">
           <div className="bg-gray-50 rounded-lg shadow-sm p-2 md:p-4">
@@ -136,7 +214,7 @@ const totalBalance =
             <div className="flex justify-between items-center py-3 border-b border-gray-100">
               <span className="text-gray-600">Wallet</span>
               <span className="text-gray-600">
-                ₹{wallet?.balance.toLocaleString("en-IN")}
+                ₹{walletBalance.toLocaleString("en-IN")}
               </span>
             </div>
             )}
@@ -218,11 +296,27 @@ const totalBalance =
                   <div className="flex items-center text-xl text-gray-900 mt-1">
                     <span className="mr-1">₹</span>
                     <input
-                      type="numeric"
-                      min={0}
-                      maxLength={6}
+                      type="number"
+                      min={1}
+                      max={maxAddLimit}
+                      step={1}
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        if (value === "") {
+                          setAmount("");
+                          return;
+                        }
+
+                        if (!/^\d+$/.test(value)) {
+                          return;
+                        }
+
+                        setAmount(
+                          String(Math.min(Number(value), maxAddLimit))
+                        );
+                      }}
                       className="w-full outline-none"
                     />
                   </div>
@@ -263,18 +357,18 @@ const totalBalance =
                 <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
                   <Info size={16} className="text-gray-500" />
                   <span>
-                    You can add up to ₹{wallet?.maxAddLimit || 10000}.00
+                    You can add up to ₹{maxAddLimit.toLocaleString("en-IN")}.00
                   </span>
                 </div>
                 {error && (
                   <p className="text-red-500 text-xs mb-2">{error}</p>
                 )}
                 <Button
-                  onClick={handleAddMoney}
                   variant="common"
-                  disabled={addingMoney || !amount || amount <= 0}
+                  onClick={handleAddMoney}
+                  disabled={addingMoney}
                 >
-                  {addingMoney ? "Adding..." : "Add Money"}
+                  {addingMoney ? "Redirecting to payment..." : "Add Money"}
                 </Button>
               </>
             )}

@@ -404,7 +404,7 @@ export default function CheckoutForm({
                             : getImageUrl(item.product_id?.images?.[0])
                         }
                         alt={item.product_id?.name}
-                        className="w-full h-[122px] md:h-[150px] object-fit rounded-[3px]"
+                        className="w-full h-[120px] md:h-[130px] object-fit rounded-[3px]"
                       />
                     </Link>
                     <span className="absolute top-[-10px] right-[-10px] w-[22px] h-[22px] bg-white border text-black text-xs font-bold rounded-full flex items-center justify-center shadow-sm">

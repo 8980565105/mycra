@@ -121,6 +121,7 @@
     adminAll: "/wallet/admin/all",
     adminAdjust: (userId) => `/wallet/admin/adjust/${userId}`,
     adminVerifyKyc: (userId) => `/wallet/admin/verify-kyc/${userId}`,
+    createTopUpSession: "/wallet/topup/create-checkout-session",  
   },
   festivalOffers: {
       getAll: "/festival-offers",
