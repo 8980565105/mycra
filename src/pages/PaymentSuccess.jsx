@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { clearCart } from "../features/cart/cartSlice";
+import Row from "../components/ui/Row";
+import Section from "../components/ui/Section";
+import Button from "../components/ui/Button";
 export default function PaymentSuccess() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
@@ -37,13 +41,19 @@ export default function PaymentSuccess() {
         throw new Error(data?.message || "Unable to create order");
       }
 
-      setOrder(data.data?.order);
+      const confirmedOrder = data?.data?.order;
+
+      if (!confirmedOrder?._id) {
+        throw new Error("Payment was verified, but order confirmation was not returned. Please check My Orders before retrying.");
+      }
+
+      setOrder(confirmedOrder);
       dispatch(clearCart());
       sessionStorage.removeItem("pendingPayment");
+      sessionStorage.removeItem("checkoutInfo");
       localStorage.removeItem("appliedCoupon");
       setLoading(false);
     } catch (err) {
-      console.error("Finalize payment error:", err);
       setError(err.message || "Unable to finalize payment");
       setLoading(false);
     }
@@ -77,7 +87,8 @@ export default function PaymentSuccess() {
     );
   }
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-5">
+    <Section className="!py-0 !pt-[25px] md:!pt-[50px]">
+    <Row className="min-h-[60vh] flex items-center justify-center px-5">
       <div className="text-center">
         <div className="w-[70px] h-[70px] rounded-full border-2 border-green-500 flex items-center justify-center mx-auto mb-5">
           <span className="text-green-500 text-[32px]">✓</span>
@@ -96,13 +107,14 @@ export default function PaymentSuccess() {
             Payment ID: {paymentIntent}
           </p>
         )}
-        <Link
-          to="/my-account/orders"
-          className="inline-block px-7 py-3 bg-black text-white uppercase"
+        <Button
+          variant="common"
+          onClick={() => navigate("/my-account/orders")}
         >
           VIEW MY ORDERS
-        </Link>
+        </Button>
       </div>
-    </div>
+    </Row>
+    </Section>
   );
 }

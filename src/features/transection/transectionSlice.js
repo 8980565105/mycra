@@ -73,6 +73,7 @@ const transectionSlice = createSlice({
           types: action.payload?.types || [],
           paymentModes: action.payload?.paymentModes || [],
           statuses: action.payload?.statuses || [],
+          tabs: action.payload?.tabs || [],
         };
       })
       .addCase(fetchTransectionFilterOptions.rejected, (state, action) => {

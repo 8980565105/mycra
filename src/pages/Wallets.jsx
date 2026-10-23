@@ -394,7 +394,7 @@ const totalBalance =
           </div>
         </div>
 
-        <div className="w-full lg:w-72 space-y-4">
+        <div className="w-full lg:w-72 space-y-4 custom-lg:sticky custom-lg:top-[110px] self-start">
           <div className="bg-gray-50 rounded-lg shadow-sm p-4">
             <h3 className="font-bold text-gray-900 mb-2">
               Do more with Amazon Pay Balance

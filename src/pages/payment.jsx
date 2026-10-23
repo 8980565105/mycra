@@ -19,12 +19,19 @@ import {
   QrCode,
 } from "lucide-react";
 import { fetchWallet } from "../features/wallet/walletThunk";
+import { createOrder } from "../features/orders/orderThunk";
 // const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 // const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 const stripePublishableKey =
   process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 
-const stripePromise = loadStripe(stripePublishableKey);
+  if (!stripePublishableKey) {
+    console.error("Stripe publishable key missing. Check frontend .env");
+  }
+
+  const stripePromise = stripePublishableKey
+    ? loadStripe(stripePublishableKey)
+    : Promise.resolve(null);
 
 const PAYMENT_METHODS = [
   {
@@ -112,6 +119,7 @@ function UpiQrPayment({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [polling, setPolling] = useState(false);
+  const [instructionsUrl, setInstructionsUrl] = useState("");
 
   const handleShowQr = async () => {
     if (!stripe || !clientSecret) return;
@@ -171,18 +179,34 @@ function UpiQrPayment({
         return;
       }
 
-      const qrUrl =
-        paymentIntent?.next_action?.upi_display_qr_code?.image_data_url ||
-        paymentIntent?.next_action?.upi_display_qr_code
-          ?.hosted_instructions_url;
+      const upiAction =
+        paymentIntent?.next_action?.upi_handle_redirect_or_display_qr_code;
 
-      if (qrUrl) {
-        setQrImage(qrUrl);
+      const qrImageUrl =
+        upiAction?.qr_code?.image_url_png ||
+        upiAction?.qr_code?.image_url_svg ||
+        paymentIntent?.next_action?.upi_display_qr_code?.image_data_url;
+
+      const hostedInstructionsUrl =
+        upiAction?.hosted_instructions_url ||
+        paymentIntent?.next_action?.upi_display_qr_code?.hosted_instructions_url;
+
+      if (qrImageUrl) {
+        setQrImage(qrImageUrl);
         setShowQr(true);
+        pollPaymentStatus(clientSecret);
+      } else if (hostedInstructionsUrl) {
+        setQrImage("");
+        setShowQr(true);
+        setInstructionsUrl(hostedInstructionsUrl);
         pollPaymentStatus(clientSecret);
       } else {
         setError(
-          `QR data not received. Status: ${paymentIntent?.status || "unknown"}, next_action type: ${paymentIntent?.next_action?.type || "none"}.`,
+          `UPI QR details unavailable. Status: ${
+            paymentIntent?.status || "unknown"
+          }; next action: ${
+            paymentIntent?.next_action?.type || "none"
+          }`,
         );
       }
     } catch (err) {
@@ -237,11 +261,23 @@ function UpiQrPayment({
           <div className="text-[20px] font-semibold">
             ₹{Math.round(amount).toLocaleString("en-IN")}
           </div>
-          <img
-            src={qrImage}
-            alt="UPI QR Code"
-            className="w-[220px] h-[220px] border border-gray-200 p-2"
-          />
+          {qrImage ? (
+              <img
+                src={qrImage}
+                alt="UPI QR Code"
+                className="w-[220px] h-[220px] border border-gray-200 p-2"
+              />
+            ) : instructionsUrl ? (
+              <a
+                href={instructionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-blue-600"
+              >
+                Open Stripe UPI payment instructions
+              </a>
+            ) : null
+          }
           {polling && (
             <p className="text-[12px] text-gray-500 animate-pulse">
               Waiting for payment confirmation...
@@ -269,7 +305,7 @@ export default function Payment() {
   const walletBalance = Number(wallet?.balance ?? 0);
   const [paymentInitError, setPaymentInitError] = useState("");
   const [checkoutInfo, setCheckoutInfo] = useState(null);
-  const [selectedMethod, setSelectedMethod] = useState("card");
+  const [selectedMethod, setSelectedMethod] = useState("wallet");
   const [clientSecret, setClientSecret] = useState("");
   const [paymentIntentId, setPaymentIntentId] = useState("");
   const [fetchedForMethod, setFetchedForMethod] = useState("");
@@ -478,55 +514,71 @@ const handlePlaceOrder = async () => {
     const orderPayload = {
       coupon_id: checkoutInfo.coupon_id,
       shippingAddress: checkoutInfo.shippingAddress,
-      payment_method: selectedMethod === "wallet" ? "Wallet" : "COD",
+      payment_method:
+        selectedMethod === "wallet" ? "Wallet" : "COD",
       shipping: checkoutInfo.shipping,
       platform_charge: checkoutInfo.platformCharge,
       items: checkoutInfo.items,
 
       appliedGiftCardId: checkoutInfo.appliedGiftCardId || null,
       giftCardCode: checkoutInfo.giftCardCode || null,
-      useGiftCardBalance: Boolean(checkoutInfo.useGiftCardBalance),
-      giftCardRedeemed: Number(checkoutInfo.giftCardRedeemed) || 0,
+      useGiftCardBalance: Boolean(
+        checkoutInfo.useGiftCardBalance
+      ),
+      giftCardRedeemed:
+        Number(checkoutInfo.giftCardRedeemed) || 0,
     };
 
-    const response = await fetch(
-      `${process.env.REACT_APP_API_URL}/orders`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-        },
-        body: JSON.stringify(orderPayload),
-      }
-    );
+    // Step 1: Create the order
+    const createdOrder = await dispatch(
+      createOrder(orderPayload)
+    ).unwrap();
 
-    const data = await response.json();
-
-    if (!response.ok || !data?.success) {
-      throw new Error(data?.message || "Unable to place order");
+    // Step 2: Verify the order ID
+    if (!createdOrder?._id) {
+      throw new Error(
+        "Order response is missing the order ID."
+      );
     }
 
-    // Refresh wallet balance after successful order creation.
+    // Step 3: Refresh wallet without blocking navigation
     if (selectedMethod === "wallet") {
-      await dispatch(fetchWallet());
+      try {
+        await dispatch(fetchWallet()).unwrap();
+      } catch (walletError) {
+        console.error(
+          "Wallet refresh failed:",
+          walletError
+        );
+      }
     }
 
-    toast.success("Order placed successfully!");
-
+    // Step 4: Clear cart and checkout data
     dispatch(clearCart());
 
     sessionStorage.removeItem("checkoutInfo");
     localStorage.removeItem("appliedCoupon");
 
-    navigate(`/order-success/${data.data._id}`);
+    // Step 5: Navigate to the order success page
+    toast.success("Order placed successfully!");
+
+    navigate(`/order-success/${createdOrder._id}`, {
+      replace: true,
+    });
+
   } catch (err) {
     console.error("Place order error:", err);
-    toast.error(err.message || "Unable to place order");
+
+    toast.error(
+      typeof err === "string"
+        ? err
+        : err?.message || "Unable to place order."
+    );
   } finally {
     setPlacing(false);
   }
 };
+
 
   if (loading) {
     return (

@@ -38,14 +38,42 @@ const STATUS_OPTIONS = ["Success", "Pending", "Failed"];
 
 const TABS = ["All", "Refund", "Cashback"];
 
+const getTimePeriodOptions = () => {
+  const options = [];
+  const today = new Date();
+
+  for (let i = 0; i < 5; i++) {
+    const date = new Date(
+      today.getFullYear(),
+      today.getMonth() - i,
+      1
+    );
+
+    options.push({
+      label: date.toLocaleDateString("en-US", {
+        month: "long", year: "numeric",
+      }),
+      value: `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`,
+    });
+  }
+
+  options.push({
+    label: "Older transactions", value: "older",
+  });
+
+  return options;
+};
+
 export default function TransactionHistory() {
   const dispatch = useDispatch();
   const { transections = [], totalPages = 1, loading, error, filterOptions, filterLoading,} = useSelector(
     (state) => state.transection
   );
-  const { categories = [], types = [], paymentModes = [], statuses = [], } = filterOptions || {};
+  const { categories = [], types = [], paymentModes = [], statuses = [],  tabs = [],} = filterOptions || {};
 
-  console.log("FILTER OPTIONS FROM REDUX:", filterOptions, "| CATEGORIES:", categories, "| TYPES:", types, "| PAYMENT MODES:", paymentModes, "| STATUSES:", statuses);
+  // console.log("FILTER OPTIONS FROM REDUX:", filterOptions, "| CATEGORIES:", categories, "| TYPES:", types, "| PAYMENT MODES:", paymentModes, "| STATUSES:", statuses);
 
   const [activeTab, setActiveTab] = useState("All");
   const [search, setSearch] = useState("");
@@ -151,7 +179,7 @@ export default function TransactionHistory() {
         </div>
 
         <div className="grid grid-cols-1 custom-lg:grid-cols-[1fr_3fr] gap-[30px] items-start w-full">
-          <div className="w-full bg-white rounded-lg box-shadow p-4">
+          <div className="w-full bg-white rounded-lg box-shadow p-4 custom-lg:sticky custom-lg:top-[110px] self-start">
             <div className="flex justify-between">
               <h2 className="font-bold text-gray-900 mb-3">Filters</h2>
               {hasFilters && (
@@ -229,12 +257,15 @@ export default function TransactionHistory() {
             </FilterGroup>
 
             <FilterGroup title="Time period">
-              {TIME_PERIOD_OPTIONS.map((opt) => (
+              {getTimePeriodOptions().map((opt) => (
                 <Radio
-                  key={opt}
-                  label={opt}
-                  checked={timePeriod === opt}
-                  onChange={() => setTimePeriod(opt)}
+                  key={opt.value}
+                  label={opt.label}
+                  checked={timePeriod === opt.value}
+                  onChange={() => {
+                    setTimePeriod(opt.value);
+                    setCurrentPage(1);
+                  }}
                 />
               ))}
             </FilterGroup>
@@ -264,10 +295,13 @@ export default function TransactionHistory() {
 
           <div className=" bg-white rounded-lg box-shadow p-4">
             <div className="flex gap-6 border-b border-gray-200 mb-6">
-              {TABS.map((tab) => (
+              {tabs.map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    setCurrentPage(1);
+                  }}
                   className={`pb-2 text-sm font-medium ${
                     activeTab === tab
                       ? "text-[var(--primary-color)] border-b-2 border-color"
