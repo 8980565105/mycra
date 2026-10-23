@@ -4,6 +4,5 @@ const router = express.Router();
 const { logPageVisit } = require("../middlewares/trackPageVisit");
 const { authMiddleware } = require("../middlewares/authMiddleware");
 
-router.post("/page-visit", authMiddleware, logPageVisit);
-
+router.post("/", authMiddleware, logPageVisit);
 module.exports = router;

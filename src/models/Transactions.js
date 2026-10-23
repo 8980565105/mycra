@@ -7,6 +7,25 @@ const transectionSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    order_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+      default: null,
+    },
+    stripe_payment_intent_id: {
+      type: String,
+      default: null,
+    },
+     stripe_charge_id: {
+      type: String,
+      default: null,
+    },
+
+    currency: {
+      type: String,
+      default: "inr",
+      lowercase: true,
+    },
     amount: {
       type: Number,
       required: true,
@@ -26,6 +45,7 @@ const transectionSchema = new mongoose.Schema(
         "Daily Transit",
         "Travel",
         "Financial Services",
+        "Online Order",
       ],
       required: true,
     },
@@ -59,6 +79,7 @@ const transectionSchema = new mongoose.Schema(
     referenceId: {
       type: String,
       unique: true,
+      sparse: true,
     },
   },
   { timestamps: true },

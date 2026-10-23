@@ -53,17 +53,30 @@ const getTransactions = async (req, res) => {
         },
       ];
     }
-    if (timePeriod && timePeriod !== "Older transactions") {
-      const [monthName, year] = timePeriod.split(" ");
-      const monthIndex = new Date(`${monthName} 1, ${year}`).getMonth();
-      const startDate = new Date(year, monthIndex, 1);
-      const endDate = new Date(year, monthIndex + 1, 1);
 
-      filter.createdAt = { $gte: startDate, $lt: endDate };
-    } else if (timePeriod === "Older transactions") {
-      const cutoff = new Date();
-      cutoff.setMonth(cutoff.getMonth() - 4);
-      filter.createdAt = { $lt: cutoff };
+    if (timePeriod && /^\d{4}-\d{2}$/.test(timePeriod)) {
+      const [year, month] = timePeriod.split("-").map(Number);
+
+      if (month < 1 || month > 12) {
+        return res.status(400).json({
+          success: false, message: "Invalid time period. Expected YYYY-MM.",
+        });
+      }
+
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 1);
+
+      filter.createdAt = {
+        $gte: startDate, $lt: endDate,
+      };
+    } else if (timePeriod === "older") {
+      const today = new Date();
+
+      const cutoffDate = new Date(
+        today.getFullYear(), today.getMonth() - 4, 1
+      );
+
+      filter.createdAt = {$lt: cutoffDate};
     }
     const skip = (Number(page) - 1) * Number(limit);
     const [transactions, total] = await Promise.all([
@@ -213,6 +226,7 @@ const getTransectionFilterOptions = async (req, res) => {
         user: userId,
       }),
     ]);
+    const tabs = Transection.schema.path("tab").enumValues;
 
     return res.status(200).json({
       success: true,
@@ -222,6 +236,7 @@ const getTransectionFilterOptions = async (req, res) => {
         types: types.filter(Boolean).sort(),
         paymentModes: paymentModes.filter(Boolean).sort(),
         statuses: statuses.filter(Boolean).sort(),
+        tabs,
       },
     });
   } catch (error) {

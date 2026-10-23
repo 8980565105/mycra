@@ -3,6 +3,7 @@ const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const ProductVariant = require("../models/ProductVariant");
 const Product = require("../models/Product");
+const transection = require("../models/Transactions")
 const Cart = require("../models/Cart");
 const Stripe = require("stripe");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -18,6 +19,58 @@ const {
   sendAdminNewOrder,
 } = require("../utils/orderEmailService");
 const mongoose = require("mongoose");
+
+const saveCheckoutTransaction = async ({ payment, paymentIntent, orderId }) => {
+  const charge =
+    paymentIntent.latest_charge &&
+    typeof paymentIntent.latest_charge === "object"
+      ? paymentIntent.latest_charge
+      : null;
+
+  const gatewayMethod =
+    charge?.payment_method_details?.type ||
+    paymentIntent.payment_method_types?.[0];
+
+  const paymentMode =
+    gatewayMethod === "upi"
+      ? "UPI"
+      : gatewayMethod === "card"
+        ? "Credit/Debit Card"
+        : "Stripe";
+
+  const amount = Number(payment.amount_paid);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Invalid payment amount for transaction history");
+  }
+
+  return transection.findOneAndUpdate(
+    { referenceId: paymentIntent.id },
+    {
+      $setOnInsert: {
+        user: payment.user_id,
+        order_id: orderId,
+        stripe_payment_intent_id: paymentIntent.id,
+        stripe_charge_id: charge?.id || null,
+        currency: paymentIntent.currency || "inr",
+        amount,
+        type: "Money sent",
+        category: "Online Order",
+        paymentMode,
+        status: "Success",
+        tab: "All",
+        description: `Order ${orderId} paid via ${paymentMode}`,
+        referenceId: paymentIntent.id,
+      },
+    },
+    {
+      upsert: true,
+      returnDocument: "after",  
+      runValidators: true,
+      setDefaultsOnInsert: true,
+    },
+  );
+};
 
 const getCustomerInfo = (order) => {
   const email = order.user_id?.email || null;
@@ -384,8 +437,12 @@ const finalizeStripePayment = async (req, res) => {
       return sendResponse(res, false, null, "Payment Intent ID is required");
     }
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
+    // const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      paymentIntentId, {
+        expand: ["latest_charge"],
+      },
+    );
     if (paymentIntent.status !== "succeeded") {
       return sendResponse(
         res,
@@ -394,16 +451,46 @@ const finalizeStripePayment = async (req, res) => {
         `Payment is not successful. Current status: ${paymentIntent.status}`,
       );
     }
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return sendResponse(res, false, null, "Unauthorized");
+    }
 
     const payment = await Payment.findOne({
       stripe_payment_intent_id: paymentIntent.id,
+      user_id: userId,
     });
 
     if (!payment) {
       return sendResponse(res, false, null, "Payment record not found");
     }
+
+    if (payment.status === "failed") {
+      return sendResponse(res, false, null, "This payment has already been marked failed");
+    }
+    const expectedAmount = Math.round(Number(payment.amount_paid) * 100);
+    if (
+      !Number.isFinite(expectedAmount) ||
+      expectedAmount <= 0 ||
+      paymentIntent.amount_received !== expectedAmount ||
+      paymentIntent.currency !== "inr"
+    ) {
+      return sendResponse(res, false, null, "Stripe payment amount or currency does not match");
+    }
     if (payment.order_id) {
       const existingOrder = await Order.findById(payment.order_id);
+
+      if (!existingOrder) {
+        return sendResponse(res, false, null, "Existing order not found");
+      }
+      if (payment.status === "completed") {
+        await saveCheckoutTransaction({
+          payment,
+          paymentIntent,
+          orderId: existingOrder._id,
+        });
+      }
       return sendResponse(
         res,
         true,
@@ -491,6 +578,11 @@ const finalizeStripePayment = async (req, res) => {
     payment.status = "completed";
     payment.transaction_id = paymentIntent.id;
     payment.payment_date = new Date();
+    await saveCheckoutTransaction({
+      payment,
+      paymentIntent,
+      orderId: savedOrder._id,
+    });
     await payment.save();
     const populatedOrder = await Order.findById(savedOrder._id).populate(
       "user_id",
