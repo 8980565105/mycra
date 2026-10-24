@@ -12,7 +12,7 @@ import Row from "../components/ui/Row";
 import Button from "../components/ui/Button";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { addMoneyToWallet, createWalletTopUpSession, fetchWallet } from "../features/wallet/walletThunk";
+import { addMoneyToWallet, createWalletTopUpSession, fetchWallet, fetchWalletTopUpStatus } from "../features/wallet/walletThunk";
 import { getMyGiftCards } from "../features/giftCards/giftCardThunk";
 
 export default function Wallets() {
@@ -61,6 +61,56 @@ export default function Wallets() {
     };
   }, [dispatch]);
 
+  // useEffect(() => {
+  //   if (topupStatus === "cancelled") {
+  //     setPaymentMessage("Payment was cancelled.");
+  //     setSearchParams({}, { replace: true });
+  //     return;
+  //   }
+
+  //   if (topupStatus !== "success" || !sessionId) {
+  //     return;
+  //   }
+
+  //   let cancelled = false;
+  //   let timer;
+  //   let attempts = 0;
+  //   const maxAttempts = 5;
+
+  //   const verifyWalletUpdate = async () => {
+  //     if (cancelled) return;
+
+  //     attempts++;
+
+  //     setPaymentMessage("Payment completed. Refreshing your wallet balance...");
+
+  //     try {
+  //       await dispatch(fetchWallet()).unwrap();
+
+  //       dispatch(getMyGiftCards());
+  //     } catch (error) {
+  //       console.error("Wallet verification failed:", error);
+  //     }
+
+  //     if (cancelled) return;
+
+  //     if (attempts < maxAttempts) {
+  //       timer = setTimeout(verifyWalletUpdate, 2000);
+  //     } else {
+  //       setPaymentMessage("Payment processing check completed. Please verify your wallet balance.");
+
+  //       setSearchParams({}, { replace: true });
+  //     }
+  //   };
+
+  //   verifyWalletUpdate();
+
+  //   return () => {
+  //     cancelled = true;
+  //     clearTimeout(timer);
+  //   };
+  // }, [dispatch, topupStatus, sessionId, setSearchParams]);
+    
   useEffect(() => {
     if (topupStatus === "cancelled") {
       setPaymentMessage("Payment was cancelled.");
@@ -75,52 +125,87 @@ export default function Wallets() {
     let cancelled = false;
     let timer;
     let attempts = 0;
-    const maxAttempts = 5;
+    const maxAttempts = 15;
 
-    const verifyWalletUpdate = async () => {
+    const verifyTopUp = async () => {
       if (cancelled) return;
 
-      attempts++;
-
-      setPaymentMessage("Payment completed. Refreshing your wallet balance...");
-
       try {
-        await dispatch(fetchWallet()).unwrap();
+        const topUp = await dispatch(
+          fetchWalletTopUpStatus({ sessionId })
+        ).unwrap();
 
-        dispatch(getMyGiftCards());
+        if (cancelled) return;
+
+        if (topUp.status === "paid") {
+          await dispatch(fetchWallet()).unwrap();
+
+          if (cancelled) return;
+
+          await dispatch(getMyGiftCards()).unwrap().catch(() => {});
+
+          setPaymentMessage(
+            `Wallet successfully recharged with ₹${Number(
+              topUp.amount
+            ).toLocaleString("en-IN")}.`
+          );
+
+          setSearchParams({}, { replace: true });
+          return;
+        }
+
+        if (topUp.status === "failed") {
+          setPaymentMessage(
+            "Wallet recharge failed. Your wallet has not been credited."
+          );
+          setSearchParams({}, { replace: true });
+          return;
+        }
       } catch (error) {
-        console.error("Wallet verification failed:", error);
+        console.error("Top-up status check failed:", error);
       }
 
       if (cancelled) return;
 
-      if (attempts < maxAttempts) {
-        timer = setTimeout(verifyWalletUpdate, 2000);
-      } else {
-        setPaymentMessage("Payment processing check completed. Please verify your wallet balance.");
+      attempts += 1;
 
-        setSearchParams({}, { replace: true });
+      if (attempts < maxAttempts) {
+        setPaymentMessage(
+          "Payment received or processing. Waiting for wallet confirmation..."
+        );
+
+        timer = setTimeout(verifyTopUp, 2000);
+      } else {
+        setPaymentMessage(
+          "Wallet credit is not confirmed yet. Please check your wallet again before retrying payment."
+        );
       }
     };
 
-    verifyWalletUpdate();
+    verifyTopUp();
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [dispatch, topupStatus, sessionId, setSearchParams]);
-    
+  }, [
+    dispatch,
+    topupStatus,
+    sessionId,
+    setSearchParams,
+  ]);
+
   const handleAddMoney = async () => {
-    const value = Number(amount);
+    const numericAmount = Number(amount);
 
-    if (!Number.isSafeInteger(value) || value < 1) {
-      alert("Please enter a valid whole-rupee amount.");
-      return;
-    }
-
-    if (value > maxAddLimit) {
-      alert(`Maximum wallet top-up is ₹${maxAddLimit}`);
+    if (
+      !Number.isSafeInteger(numericAmount) ||
+      numericAmount < 50 ||
+      numericAmount > maxAddLimit
+    ) {
+      alert(
+        `Please enter an amount between ₹50 and ₹${maxAddLimit}.`
+      );
       return;
     }
 
@@ -128,7 +213,7 @@ export default function Wallets() {
 
     try {
       const result = await dispatch(
-        createWalletTopUpSession({ amount: value })
+        createWalletTopUpSession({ amount: numericAmount })
       ).unwrap();
 
       if (!result?.url) {
@@ -297,7 +382,7 @@ const totalBalance =
                     <span className="mr-1">₹</span>
                     <input
                       type="number"
-                      min={1}
+                      min={50}
                       max={maxAddLimit}
                       step={1}
                       value={amount}
@@ -309,13 +394,11 @@ const totalBalance =
                           return;
                         }
 
-                        if (!/^\d+$/.test(value)) {
-                          return;
-                        }
+                        const numericValue = Number(value);
 
-                        setAmount(
-                          String(Math.min(Number(value), maxAddLimit))
-                        );
+                        if (numericValue >= 0 && numericValue <= maxAddLimit) {
+                          setAmount(value);
+                        }
                       }}
                       className="w-full outline-none"
                     />

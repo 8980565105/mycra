@@ -169,3 +169,24 @@ export const createWalletTopUpSession = createAsyncThunk(
     }
   }
 );
+
+export const fetchWalletTopUpStatus = createAsyncThunk(
+  "wallet/fetchTopUpStatus",
+  async ({ sessionId }, { rejectWithValue }) => {
+    try {
+      const res = await api.get(ROUTES.wallet.topUpStatus(sessionId));
+
+      if (!res.data?.success) {
+        return rejectWithValue(
+          res.data?.message || "Unable to verify wallet top-up."
+        );
+      }
+
+      return res.data.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Unable to verify wallet top-up."
+      );
+    }
+  }
+);

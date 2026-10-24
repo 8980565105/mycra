@@ -369,7 +369,7 @@ export default function Orders() {
               #
             </th>
             <th className="p-[12px] py-[10px] text-left flex gap-[7px] items-center font-normal">
-              Order ID{" "}
+              Order No.{" "}
               <img src={sortImg} className="h-[14px] w-[14px]" alt="sort" />
             </th>
             <th className="p-[12px] py-[10px] text-left font-normal">Date</th>
@@ -394,7 +394,9 @@ export default function Orders() {
                 <td className="p-3 px-[30px] h-[75px]">
                   {index + 1 + (page - 1) * limit}
                 </td>
-                <td className="p-3 h-[75px]">{order.order_id || order._id}</td>
+                <td className="p-3 h-[75px]">
+                  {order.order_number || order._id}
+                </td>
                 <td className="p-3 h-[75px]">{formatDate(order.createdAt)}</td>
                 <td className="p-3 h-[75px]">
                   ₹{order.total_price?.toLocaleString()}
@@ -411,8 +413,9 @@ export default function Orders() {
                   </span>
                 </td>
                 <td className="p-3 h-[75px]">
-                  {" "}
-                  {order.shippingAddress?.address || "-"}
+                  {order.shippingAddress?.address
+                    ? `${order.shippingAddress.address.slice(0, 15)}...`
+                    : "-"}
                 </td>
                 <td className="p-3 h-[75px]">
                   <span

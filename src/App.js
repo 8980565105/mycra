@@ -44,6 +44,9 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import LoginForm from "./pages/Login";
 import PolicyPage from "./pages/PolicyPage";
 import OrderSuccess from "./pages/OrderSuccess";
+import PaymentProcessing from "./pages/PaymentProcessing";
+import PaymentFailed from "./pages/PaymentFailed";
+import WalletRechargeSuccess from "./pages/WalletRechargeSuccess";
 
 const hexToRgba = (hex, opacity) => {
   if (!hex) return null;
@@ -257,7 +260,10 @@ function App() {
           <Route path="/checkout" element={<Checkout />}></Route>
           <Route path="/payment" element={<Payment />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-processing" element={<PaymentProcessing />} />
+          <Route path="/payment-failed" element={<PaymentFailed />} />
           <Route path="/order-success/:id" element={<OrderSuccess />} />
+          <Route path="/wallet/recharge-success" element={<WalletRechargeSuccess />} />
           <Route path="/products/:id" element={<Product />}></Route>
           <Route path="/wishlist" element={<Wishlist />}></Route>
           <Route path="/faqs" element={<Faqs />} />

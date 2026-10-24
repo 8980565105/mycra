@@ -3,16 +3,45 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 import { ROUTES } from "../../services/routes";
 
+// export const createOrder = createAsyncThunk(
+//   "orders/createOrder",
+//   async (orderData, { rejectWithValue }) => {
+//     try {
+//       const res = await api.post(ROUTES.orders.getAll, orderData);
+//       return res.data.data;
+//     } catch (err) {
+//       return rejectWithValue(err.response?.data?.message || err.message);
+//     }
+//   },
+// );
+
 export const createOrder = createAsyncThunk(
   "orders/createOrder",
   async (orderData, { rejectWithValue }) => {
     try {
       const res = await api.post(ROUTES.orders.getAll, orderData);
-      return res.data.data;
+
+      if (!res.data?.success) {
+        return rejectWithValue(
+          res.data?.message || "Order creation failed"
+        );
+      }
+
+      const order = res.data?.data?.order || res.data?.data;
+
+      if (!order?._id) {
+        return rejectWithValue(
+          "Order response is missing the order ID"
+        );
+      }
+
+      return order;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || err.message);
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Unable to create order"
+      );
     }
-  },
+  }
 );
 
 export const fetchOrder = createAsyncThunk(
@@ -20,7 +49,14 @@ export const fetchOrder = createAsyncThunk(
   async (orderId, { rejectWithValue }) => {
     try {
       const res = await api.get(ROUTES.orders.getById(orderId));
-      return res.data.data;
+      // return res.data.data;
+      const order = res.data?.data?.order ?? res.data?.data;
+
+      if (!order?._id) {
+        return rejectWithValue("Order details not found in API response.");
+      }
+
+      return order;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
     }

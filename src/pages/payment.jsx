@@ -255,7 +255,8 @@ function UpiQrPayment({
         </>
       )}
 
-      {showQr && qrImage && (
+      {/* {showQr && qrImage && ( */}
+      {showQr && (
         <div className="flex flex-col items-center gap-4">
           <h3 className="text-[16px] font-medium">Scan QR and Pay</h3>
           <div className="text-[20px] font-semibold">
@@ -466,41 +467,6 @@ useEffect(() => {
   paymentIntentId,
 ]);
 
-  // const handlePlaceOrder = async () => {
-  //   if (!checkoutInfo) return;
-  //   setPlacing(true);
-  //   try {
-  //     const orderPayload = {
-  //       coupon_id: checkoutInfo.coupon_id,
-  //       shippingAddress: checkoutInfo.shippingAddress,
-  //       payment_method: selectedMethod === "wallet" ? "Wallet" : "COD",
-  //       shipping: checkoutInfo.shipping,
-  //       platform_charge: checkoutInfo.platformCharge,
-  //       items: checkoutInfo.items,
-  //     };
-  //     const response = await fetch(`${process.env.REACT_APP_API_URL}/orders`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-  //       },
-  //       body: JSON.stringify(orderPayload),
-  //     });
-  //     const data = await response.json();
-  //     if (!response.ok || !data?.success) {
-  //       throw new Error(data?.message || "Unable to place order");
-  //     }
-  //     toast.success("Order placed successfully!");
-  //     dispatch(clearCart());
-  //     sessionStorage.removeItem("checkoutInfo");
-  //     localStorage.removeItem("appliedCoupon");
-  //     navigate(`/order-success/${data.data._id}`);
-  //   } catch (err) {
-  //     toast.error(err.message || "Unable to place order");
-  //   } finally {
-  //     setPlacing(false);
-  //   }
-  // };
   const isGiftCardApplied =
   Boolean(checkoutInfo?.useGiftCardBalance) &&
   Number(checkoutInfo?.giftCardRedeemed || 0) > 0;
@@ -529,40 +495,43 @@ const handlePlaceOrder = async () => {
         Number(checkoutInfo.giftCardRedeemed) || 0,
     };
 
-    // Step 1: Create the order
-    const createdOrder = await dispatch(
+    const result = await dispatch(
       createOrder(orderPayload)
     ).unwrap();
 
-    // Step 2: Verify the order ID
-    if (!createdOrder?._id) {
+    const createdOrder =
+      result?.order ||
+      result?.data?.order ||
+      result?.data ||
+      result;
+
+    const orderId = createdOrder?._id;
+
+    if (!orderId) {
+      console.error("Unexpected createOrder response:", result);
+
       throw new Error(
-        "Order response is missing the order ID."
+        "Order ID was not returned. Please check My Orders before retrying."
       );
     }
 
-    // Step 3: Refresh wallet without blocking navigation
     if (selectedMethod === "wallet") {
       try {
         await dispatch(fetchWallet()).unwrap();
       } catch (walletError) {
-        console.error(
-          "Wallet refresh failed:",
-          walletError
-        );
+        console.error("Wallet refresh failed:", walletError);
       }
     }
 
-    // Step 4: Clear cart and checkout data
     dispatch(clearCart());
 
     sessionStorage.removeItem("checkoutInfo");
+    sessionStorage.removeItem("pendingPayment");
     localStorage.removeItem("appliedCoupon");
 
-    // Step 5: Navigate to the order success page
     toast.success("Order placed successfully!");
 
-    navigate(`/order-success/${createdOrder._id}`, {
+    navigate(`/order-success/${orderId}`, {
       replace: true,
     });
 
