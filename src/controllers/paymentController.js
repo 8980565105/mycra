@@ -290,7 +290,7 @@ const createStripePaymentIntent = async (req, res) => {
     if (!cart) {
       return sendResponse(res, false, null, "Cart not found");
     }
-    if (!Array.isArray(cart.items) || !cart.items.length) {
+    if (!Array.isArray(cart.items) || cart.items.length === 0) {
       return sendResponse(res, false, null, "Cart is empty");
     }
 
@@ -309,11 +309,11 @@ const createStripePaymentIntent = async (req, res) => {
         cartItem.variant_id,
       ).populate("product_id");
 
-      if (!variant) {
-        return sendResponse(res, false, null, "Product variant not found");
+      if (!variant || !variant.product_id) {
+        return sendResponse(res, false, null, "Product variant or product not found");
       }
 
-      if (variant.stock_quantity < quantity) {
+      if (Number(variant.stock_quantity) < quantity) {
         return sendResponse(
           res,
           false,
@@ -322,7 +322,11 @@ const createStripePaymentIntent = async (req, res) => {
         );
       }
 
-      const price = Number(variant.offerprice) || 0;
+      const price = Number(variant.offerprice);
+
+      if (!Number.isFinite(price) || price < 0) {
+        return sendResponse(res, false, null, "Invalid product price");
+      }
 
       subtotal += price * quantity;
       shipping += getItemShipping(variant.product_id, price, quantity);
@@ -344,9 +348,14 @@ const createStripePaymentIntent = async (req, res) => {
       }
       if (coupon.discount_type === "fixed") {
         discount = Math.min(Number(coupon.discount_value) || 0, subtotal);
-      }
-      if (coupon.discount_type === "percentage") {
-        discount = (subtotal * (Number(coupon.discount_value) || 0)) / 100;
+      } else if (coupon.discount_type === "percentage") {
+        const percentage = Number(coupon.discount_value) || 0;
+
+        if (percentage < 0 || percentage > 100) {
+          return sendResponse(res, false, null, "Invalid coupon percentage");
+        }
+
+        discount = (subtotal * percentage) / 100;
       }
       if (coupon.max_discount_amount) {
         discount = Math.min(discount, Number(coupon.max_discount_amount));
@@ -355,19 +364,23 @@ const createStripePaymentIntent = async (req, res) => {
     discount = Number(discount.toFixed(2));
 
     const discountedTotal = subtotal - discount;
-
     const platformCharge = await getPlatformCharge(discountedTotal);
     const total = Number(
-      (discountedTotal + shipping + platformCharge).toFixed(2),
+      (discountedTotal + shipping + Number(platformCharge || 0)).toFixed(2)
     );
-    if (total <= 0) {
+    if (!Number.isFinite(total) || total <= 0) {
       return sendResponse(res, false, null, "Invalid payment amount");
     }
-    const stripeAmount = Math.round(total * 100);
-    const allowedTypes = method === "upi" ? ["upi"] : ["card"];
+    const allowedTypes =
+      method === "upi" ? ["upi"] :
+      method === "card" ? ["card"] :
+      null;
 
+    if (!allowedTypes) {
+      return sendResponse(res, false, null, "Unsupported Stripe payment method");
+    }
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: stripeAmount,
+      amount: Math.round(total * 100),
       currency: "inr",
       payment_method_types: allowedTypes,
       receipt_email: email || undefined,
@@ -430,19 +443,38 @@ const createStripePaymentIntent = async (req, res) => {
 };
 
 const finalizeStripePayment = async (req, res) => {
+  let session;
+
   try {
+    const userId = req.user?._id;
     const { paymentIntentId } = req.body;
+
+    if (!userId) {
+      return sendResponse(res, false, null, "Unauthorized");
+    }
 
     if (!paymentIntentId) {
       return sendResponse(res, false, null, "Payment Intent ID is required");
     }
 
-    // const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     const paymentIntent = await stripe.paymentIntents.retrieve(
       paymentIntentId, {
         expand: ["latest_charge"],
       },
     );
+    if (String(paymentIntent.metadata?.user_id) !== String(userId)) {
+      return sendResponse(res, false, null, "Payment user verification failed");
+    }
+
+    if (paymentIntent.status === "processing") {
+      return sendResponse(res, false, {
+          processing: true,
+          code: "PAYMENT_PROCESSING",
+        },
+        "Payment is still processing."
+      );
+    }
+
     if (paymentIntent.status !== "succeeded") {
       return sendResponse(
         res,
@@ -450,11 +482,6 @@ const finalizeStripePayment = async (req, res) => {
         null,
         `Payment is not successful. Current status: ${paymentIntent.status}`,
       );
-    }
-    const userId = req.user?._id;
-
-    if (!userId) {
-      return sendResponse(res, false, null, "Unauthorized");
     }
 
     const payment = await Payment.findOne({
@@ -469,6 +496,14 @@ const finalizeStripePayment = async (req, res) => {
     if (payment.status === "failed") {
       return sendResponse(res, false, null, "This payment has already been marked failed");
     }
+
+    if (
+      String(payment.checkout_data?.user_id) !== String(userId) ||
+      String(paymentIntent.metadata?.cart_id) !== String(payment.checkout_data?.cart_id)
+    ) {
+      return sendResponse(res, false, null, "Checkout ownership verification failed");
+    }
+
     const expectedAmount = Math.round(Number(payment.amount_paid) * 100);
     if (
       !Number.isFinite(expectedAmount) ||
@@ -484,81 +519,96 @@ const finalizeStripePayment = async (req, res) => {
       if (!existingOrder) {
         return sendResponse(res, false, null, "Existing order not found");
       }
-      if (payment.status === "completed") {
-        await saveCheckoutTransaction({
-          payment,
-          paymentIntent,
-          orderId: existingOrder._id,
-        });
-      }
       return sendResponse(
         res,
         true,
-        {
-          order: existingOrder,
-          payment,
-        },
-        "Order already created",
+        { order: existingOrder, payment }, "Order already created"
       );
+    }
+
+    if (payment.status !== "pending") {
+      return sendResponse(res, false, null, "Payment is not in a finalizable state");
     }
     const checkout = payment.checkout_data;
-    if (!checkout) {
-      return sendResponse(res, false, null, "Checkout data not found");
-    }
-    const {
-      user_id,
-      items,
-      total_price,
-      coupon_id,
-      shipping,
-      platform_charge,
-      shippingAddress,
-    } = checkout;
-    if (!user_id || !Array.isArray(items) || !items.length) {
+
+    if (!checkout || !Array.isArray(checkout.items) || checkout.items.length === 0) {
       return sendResponse(res, false, null, "Invalid checkout data");
     }
-    let subtotal = 0;
-    const orderItems = [];
+    session = await mongoose.startSession();
+
+    let createdOrderId = null;
+
+  await session.withTransaction(async () => {
+    const currentPayment = await Payment.findOne({
+      _id: payment._id,
+      user_id: userId,
+    }).session(session);
+
+    if (!currentPayment) {
+      throw new Error("Payment record not found");
+    }
+
+    if (currentPayment.order_id) {
+      createdOrderId = currentPayment.order_id;
+      return;
+    }
+
+    if (currentPayment.status !== "pending") {
+      throw new Error("Payment is not in a finalizable state");
+    }
+
     let store_owner_id = null;
-    for (const item of items) {
-      const variant = await ProductVariant.findById(item.variant_id).populate(
-        "product_id",
-      );
-      if (!variant) {
-        throw new Error("Product variant not found");
+    const orderItems = [];
+
+    for (const item of checkout.items) {
+      const quantity = Number(item.quantity);
+      const price = Number(item.price);
+
+      if (
+        !Number.isInteger(quantity) ||
+        quantity <= 0 ||
+        !Number.isFinite(price) ||
+        price < 0
+      ) {
+        throw new Error("Invalid checkout item");
       }
-      if (variant.stock_quantity < Number(item.quantity)) {
-        throw new Error(`Not enough stock for ${variant.sku}`);
+
+      const variant = await ProductVariant.findOneAndUpdate(
+        { _id: item.variant_id, stock_quantity: { $gte: quantity } },
+        { $inc: { stock_quantity: -quantity }},
+        { new: true, session}
+      ).populate("product_id");
+
+      if (!variant || !variant.product_id) {
+        throw new Error("Product is unavailable or stock is insufficient");
       }
-      if (!store_owner_id && variant.product_id) {
+
+      if (!store_owner_id) {
         store_owner_id =
           variant.product_id.storeId?._id ||
           variant.product_id.storeId ||
           variant.product_id.createdBy?._id ||
-          variant.product_id.createdBy;
+          variant.product_id.createdBy ||
+          null;
       }
-      const price = Number(variant.offerprice) || 0;
-      subtotal += price * Number(item.quantity);
-      variant.stock_quantity -= Number(item.quantity);
-      await variant.save();
       orderItems.push({
         product_id: variant.product_id._id,
         variant_id: variant._id,
-        quantity: Number(item.quantity),
+        quantity,
         price_at_order: price,
       });
-    }
+      }
 
     const order = new Order({
-      user_id,
-      total_price: Number(total_price),
-      coupon_id: coupon_id || null,
-      shippingAddress,
+      user_id: userId,
+      total_price: Number(checkout.total_price),
+      coupon_id: checkout.coupon_id || null,
+      shippingAddress: checkout.shippingAddress,
       payment_method: "Online",
       payment_status: "paid",
       transaction_id: paymentIntent.id,
       status: "pending",
-      store_owner_id: store_owner_id || null,
+      store_owner_id,
     });
 
     pushHistory(
@@ -567,44 +617,74 @@ const finalizeStripePayment = async (req, res) => {
       "customer",
       "Online payment successful - order placed",
     );
-    const savedOrder = await order.save();
+    const savedOrder = await order.save({ session });
     await OrderItem.insertMany(
       orderItems.map((item) => ({
         ...item,
         order_id: savedOrder._id,
       })),
+      { session }
     );
-    payment.order_id = savedOrder._id;
-    payment.status = "completed";
-    payment.transaction_id = paymentIntent.id;
-    payment.payment_date = new Date();
+
+    currentPayment.order_id = savedOrder._id;
+    currentPayment.status = "completed";
+    currentPayment.transaction_id = paymentIntent.id;
+    currentPayment.payment_date = new Date();
+
+    await currentPayment.save({ session });
+
+    createdOrderId = savedOrder._id;
+  });
+
+    const savedOrder = await Order.findById(createdOrderId).populate(
+      "user_id", "name email"
+    );
+
+    if (!savedOrder) {
+      return sendResponse(res, false, null, "Order was not found after payment finalization");
+    }
+
+    const finalPayment = await Payment.findById(payment._id);
+
     await saveCheckoutTransaction({
-      payment,
+      payment: finalPayment,
       paymentIntent,
       orderId: savedOrder._id,
     });
-    await payment.save();
-    const populatedOrder = await Order.findById(savedOrder._id).populate(
-      "user_id",
-      "name email",
-    );
 
     const { email: placedEmail, name: placedName } =
-      getCustomerInfo(populatedOrder);
-    sendOrderPlaced(populatedOrder, placedEmail, placedName);
-    sendAdminNewOrder(populatedOrder, placedName, placedEmail);
+      getCustomerInfo(savedOrder);
+
+    Promise.resolve()
+      .then(() => sendOrderPlaced(savedOrder, placedEmail, placedName))
+      .catch((emailError) => console.error("Order email error:", emailError)
+      );
+
+    Promise.resolve()
+      .then(() => sendAdminNewOrder(savedOrder, placedName, placedEmail))
+      .catch((emailError) => console.error("Admin email error:", emailError));
+
     return sendResponse(
       res,
       true,
       {
         order: savedOrder,
-        payment,
+        payment: finalPayment,
       },
       "Payment successful and order created",
     );
   } catch (err) {
     console.error("Finalize Stripe payment error:", err);
-    return sendResponse(res, false, null, err.message);
+
+    return sendResponse(res, false, null,
+      process.env.NODE_ENV === "production"
+        ? "Unable to finalize payment. Please check your order status before retrying."
+        : err.message
+    );
+  } finally {
+    if (session) {
+      await session.endSession();
+    }
   }
 };
 

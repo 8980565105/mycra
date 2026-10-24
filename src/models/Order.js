@@ -98,7 +98,8 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-orderSchema.pre("save", async function (next) {
+// orderSchema.pre("save", async function (next) {
+orderSchema.pre("save", function () {
   if (!this.order_number) {
     const randomPart = Math.floor(1000 + Math.random() * 9000);
     const datePart = new Date()

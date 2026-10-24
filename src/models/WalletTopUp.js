@@ -12,7 +12,11 @@ const walletTopUpSchema = new mongoose.Schema(
     amount: {
       type: Number,
       required: true,
-      min: 1,
+      min: 50,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: "Top-up amount must be a whole-rupee amount.",
+      },
     },
     currency: {
       type: String,
@@ -39,6 +43,24 @@ const walletTopUpSchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
+);
+walletTopUpSchema.index(
+  { sessionId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      sessionId: { $type: "string" },
+    },
+  }
+);
+walletTopUpSchema.index(
+  { paymentIntentId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      paymentIntentId: { $type: "string" },
+    },
+  }
 );
 
 module.exports = mongoose.model("WalletTopUp", walletTopUpSchema);

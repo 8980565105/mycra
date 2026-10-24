@@ -476,14 +476,15 @@ const adminUpdateVoucher = async (req, res) => {
 };
 
 const createWalletTopUpSession = async (req, res) => {
+  let topUp;
   try {
     const amount = Number(req.body.amount);
     const userId = req.user._id;
 
-    if (!Number.isSafeInteger(amount) || amount < 1) {
+    if (!Number.isSafeInteger(amount) || amount < 50 || amount > 10000) {
       return res.status(400).json({
         success: false,
-        message: "Enter a valid whole-rupee amount",
+        message: "Wallet recharge amount must be between ₹50 and ₹10,000.",
       });
     }
 
@@ -499,16 +500,7 @@ const createWalletTopUpSession = async (req, res) => {
       });
     }
 
-    const maxAddLimit = 10000;
-
-    if (amount > maxAddLimit) {
-      return res.status(400).json({
-        success: false, message: `Maximum top-up amount is ₹${maxAddLimit}`,
-      });
-    }
-
-    // Create a pending record. Do NOT credit wallet here.
-    const topUp = await WalletTopUp.create({
+    topUp = await WalletTopUp.create({
       user: userId,
       amount,
       currency: "inr",
@@ -566,7 +558,16 @@ const createWalletTopUpSession = async (req, res) => {
     });
   } catch (error) {
     console.error("Wallet checkout error:", error.message);
-
+    if (topUp?._id && !topUp.sessionId) {
+      await WalletTopUp.updateOne(
+        { _id: topUp._id, status: "pending" },
+        { $set: { status: "failed" } }
+      ).catch((updateError) => {
+        console.error(
+          "Unable to update failed top-up:", updateError.message
+        );
+      });
+    }
     return res.status(500).json({
       success: false, message: "Unable to start wallet payment",
     });
@@ -600,9 +601,9 @@ const handleWalletStripeWebhook = async (req, res) => {
   const checkout = event.data.object;
 
   if (checkout.payment_status !== "paid") {
+    console.log("Wallet top-up not credited: payment is not paid yet.");
     return res.status(200).json({ received: true });
   }
-
   const topUpId = checkout.metadata?.topUpId;
 
   if (!topUpId || !mongoose.isValidObjectId(topUpId)) {
@@ -628,10 +629,14 @@ const handleWalletStripeWebhook = async (req, res) => {
       }
 
       if (
+        checkout.mode !== "payment" ||
+        checkout.payment_status !== "paid" ||
         checkout.client_reference_id !== String(topUp._id) ||
+        checkout.metadata?.topUpId !== String(topUp._id) ||
         checkout.metadata?.userId !== String(topUp.user) ||
-        Number(checkout.amount_total) !== topUp.amount * 100 ||
-        String(checkout.currency).toLowerCase() !== "inr"
+        checkout.id !== topUp.sessionId ||
+        Number(checkout.amount_total) !== Math.round(topUp.amount * 100) ||
+        String(checkout.currency).toLowerCase() !== String(topUp.currency).toLowerCase()
       ) {
         throw new Error("Stripe checkout details do not match top-up");
       }
@@ -650,11 +655,19 @@ const handleWalletStripeWebhook = async (req, res) => {
         [
           {
             user: topUp.user,
+            order_id: null,
+            stripe_payment_intent_id:
+              typeof checkout.payment_intent === "string"
+                ? checkout.payment_intent
+                : checkout.payment_intent?.id || null,
+            stripe_charge_id: null,
+            currency: topUp.currency,
             amount: topUp.amount,
             type: "Money received",
             category: "Financial Services",
             paymentMode: "Stripe",
             status: "Success",
+            tab: "All",
             description: "Wallet top-up via Stripe",
             referenceId: `STRIPE-${checkout.id}`,
           },
@@ -676,7 +689,7 @@ const handleWalletStripeWebhook = async (req, res) => {
     return res.status(200).json({ received: true });
   } catch (error) {
     console.error("Wallet Stripe webhook processing error:", error.message);
-
+    console.error("Webhook error stack:", error.stack);
     return res.status(500).json({
       received: false, message: "Wallet payment processing failed",
     });
@@ -685,6 +698,42 @@ const handleWalletStripeWebhook = async (req, res) => {
   }
 };
 
+const getWalletTopUpStatus = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const { sessionId } = req.params;
+
+    if (!userId) {
+      return sendResponse(res, false, null, "Please login first.");
+    }
+
+    if (!sessionId || !sessionId.startsWith("cs_")) {
+      return sendResponse(res, false, null, "Invalid checkout session ID.");
+    }
+
+    const topUp = await WalletTopUp.findOne({
+      user: userId, sessionId,
+    }).select("amount currency status creditedAt sessionId");
+
+    if (!topUp) {
+      return sendResponse(res, false, null, "Wallet top-up not found.");
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        status: topUp.status,
+        amount: topUp.amount,
+        currency: topUp.currency,
+        creditedAt: topUp.creditedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Wallet top-up status error:", error);
+
+    return sendResponse(res, false, null, "Unable to check wallet top-up status.");
+  }
+};
 
 module.exports = {
   getBalance,
@@ -695,5 +744,6 @@ module.exports = {
   adminAddVoucher,
   adminUpdateVoucher,
   createWalletTopUpSession,
-  handleWalletStripeWebhook
+  handleWalletStripeWebhook,
+  getWalletTopUpStatus
 };

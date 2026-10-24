@@ -52,9 +52,9 @@ const {
 } = require("./src/controllers/stripeWebhookController");
 const helmet = require("helmet");
 const { off } = require("pdfkit");
-const { handleWalletStripeWebhook } = require("./src/controllers/walletController");
 connectDB();
 const app = express();
+const { handleWalletStripeWebhook } = require("./src/controllers/walletController");
 const ADMIN_ORIGINS = (process.env.ADMIN_ORIGINS || "http://localhost:8080")
   .split(",")
   .map((o) => o.trim());

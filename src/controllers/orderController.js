@@ -48,7 +48,8 @@ const debitWallet = async (userId, amount, session) => {
       $inc: { balance: -debitAmount },
     },
     {
-      new: true,
+      // new: true,
+      returnDocument: "after",
       session,
       runValidators: true,
     }

@@ -4,7 +4,7 @@ const {
   authMiddleware,
   authorizeMinRole,
 } = require("../middlewares/authMiddleware");
-const{ getBalance, verifyKyc, getAllWallets, adminAdjustBalance, adminVerifyKyc, adminAddVoucher, adminUpdateVoucher, createWalletTopUpSession }
+const{ getBalance, verifyKyc, getAllWallets, adminAdjustBalance, adminVerifyKyc, adminAddVoucher, adminUpdateVoucher, createWalletTopUpSession, getWalletTopUpStatus }
  = require("../controllers/walletController");
 
 router.get("/balance", authMiddleware, getBalance);
@@ -33,4 +33,9 @@ router.put(
 );
 router.post("/voucher", adminAddVoucher);
 router.put("/voucher/:userId", adminUpdateVoucher );
+router.get(
+  "/topup/status/:sessionId",
+  authMiddleware,
+  getWalletTopUpStatus
+);
 module.exports = router;
