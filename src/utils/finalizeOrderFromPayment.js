@@ -5,6 +5,9 @@ const Payment = require("../models/Payment");
 const Order = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const ProductVariant = require("../models/ProductVariant");
+const Cart = require("../models/Cart");
+const Stripe = require("stripe");
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const { sendOrderPlaced, sendAdminNewOrder } = require("./orderEmailService");
 const getCustomerInfo = (order) => {
   const email = order.user_id?.email || null;
@@ -17,26 +20,152 @@ const getCustomerInfo = (order) => {
 const pushHistory = (order, status, changedBy = "admin", note = "") => {
   order.status_history.push({ status, changed_by: changedBy, note });
 };
+
+async function clearPurchasedCart(checkout) {
+  if (!checkout?.cart_id || !checkout?.user_id) {
+    console.warn("[Cart Clear] Missing cart_id or user_id", {
+      hasCartId: Boolean(checkout?.cart_id),
+      hasUserId: Boolean(checkout?.user_id),
+    });
+    return false;
+  }
+
+  const result = await Cart.updateOne(
+    {
+      _id: checkout.cart_id,
+      user_id: checkout.user_id,
+    },
+    {
+      $set: { items: [] },
+    }
+  );
+
+  console.log("[Cart Clear]", {
+    cartId: String(checkout.cart_id),
+    userId: String(checkout.user_id),
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount,
+  });
+
+  if (result.matchedCount === 0) {
+    console.error(
+      "[Cart Clear] No matching cart found. Check cart_id and user_id."
+    );
+    return false;
+  }
+
+  return true;
+}
 async function finalizeOrderFromPaymentIntent(paymentIntentId) {
+  const paymentIntent = await stripe.paymentIntents.retrieve(
+    paymentIntentId
+  );
+
+  if (paymentIntent.status !== "succeeded") {
+    throw new Error(
+      `Cannot create order. Stripe status: ${paymentIntent.status}`
+    );
+  }
+
+
+const existingOrder = await Order.findOne({
+  transaction_id: paymentIntentId,
+});
+
+if (existingOrder) {
+  payment.order_id = existingOrder._id;
+  payment.status = "completed";
+  payment.payment_date =
+    payment.payment_date || new Date();
+  payment._locked = false;
+
+  await payment.save();
+
+  try {
+    await clearPurchasedCart(payment.checkout_data);
+  } catch (error) {
+    console.error(
+      "[Cart Clear] Existing-order cleanup failed:",
+      error.message
+    );
+  }
+
+  return {
+    order: existingOrder,
+    payment,
+    alreadyProcessed: true,
+  };
+}
   const payment = await Payment.findOneAndUpdate(
     {
       stripe_payment_intent_id: paymentIntentId,
+      status: { $in: ["pending", "failed"] },
       order_id: null,
       _locked: { $ne: true },
     },
     { $set: { _locked: true } },
-    { new: true },
+    { returnDocument: "after" }
   );
 
   if (!payment) {
-    const existing = await Payment.findOne({
+    const existingPayment = await Payment.findOne({
       stripe_payment_intent_id: paymentIntentId,
     });
-    if (existing?.order_id) {
-      const order = await Order.findById(existing.order_id);
-      return { order, payment: existing, alreadyProcessed: true };
+
+    if (existingPayment?.order_id) {
+      const existingLinkedOrder = await Order.findById(
+        existingPayment.order_id
+      );
+
+      if (existingLinkedOrder) {
+        try {
+          await clearPurchasedCart(existingPayment.checkout_data);
+        } catch (error) {
+          console.error("[Cart Clear] Existing order cleanup failed:", error.message);
+        }
+
+        return {
+          order: existingLinkedOrder,
+          payment: existingPayment,
+          alreadyProcessed: true,
+        };
+      }
     }
-    return { order: null, payment: existing, processing: true };
+
+    const existingOrder = await Order.findOne({
+      transaction_id: paymentIntentId,
+    });
+
+    if (existingOrder && existingPayment) {
+      existingPayment.order_id = existingOrder._id;
+      existingPayment.status = "completed";
+      existingPayment.payment_date =
+        existingPayment.payment_date || new Date();
+      existingPayment._locked = false;
+
+      await existingPayment.save();
+
+      try {
+        await clearPurchasedCart(existingPayment.checkout_data);
+      } catch (error) {
+        console.error(
+          "[Cart Clear] Recovery cleanup failed:",
+          error.message
+        );
+      }
+
+      return {
+        order: existingOrder,
+        payment: existingPayment,
+        alreadyProcessed: true,
+      };
+    }
+
+    return {
+      order: null,
+      payment: existingPayment,
+      processing: true,
+    };
   }
   try {
     const checkout = payment.checkout_data;
@@ -49,7 +178,7 @@ async function finalizeOrderFromPaymentIntent(paymentIntentId) {
     const orderItems = [];
     // let store_owner_id = null;
     const sellerGroups = new Map();
-    let orderStoreId = null;
+    let store_owner_id = null;
 
     for (const item of items) {
       const variant = await ProductVariant.findById(
@@ -71,6 +200,9 @@ async function finalizeOrderFromPaymentIntent(paymentIntentId) {
         throw new Error(`Valid seller not found for product ${product.name}`);
       }
 
+      if (!store_owner_id) {
+        store_owner_id = sellerId;
+      }
       const quantity = Number(item.quantity);
       const price = Number(item.price);
 
@@ -95,10 +227,6 @@ async function finalizeOrderFromPaymentIntent(paymentIntentId) {
       );
       group.items.push({ product, quantity, lineTotal });
 
-      if (!orderStoreId && product.storeId) {
-        orderStoreId = product.storeId._id || product.storeId;
-      }
-
       variant.stock_quantity -= quantity;
       await variant.save();
 
@@ -109,34 +237,6 @@ async function finalizeOrderFromPaymentIntent(paymentIntentId) {
         price_at_order: price,
       });
     }
-
-    for (const item of items) {
-      const variant = await ProductVariant.findById(item.variant_id).populate(
-        "product_id",
-      );
-      if (!variant) throw new Error("Product variant not found");
-      if (variant.stock_quantity < Number(item.quantity)) {
-        throw new Error(`Not enough stock for ${variant.sku}`);
-      }
-      if (!store_owner_id && variant.product_id) {
-        store_owner_id =
-          variant.product_id.storeId?._id ||
-          variant.product_id.storeId ||
-          variant.product_id.createdBy?._id ||
-          variant.product_id.createdBy;
-      }
-
-      variant.stock_quantity -= Number(item.quantity);
-      await variant.save();
-
-      orderItems.push({
-        product_id: variant.product_id._id,
-        variant_id: variant._id,
-        quantity: Number(item.quantity),
-        price_at_order: item.price,
-      });
-    }
-
     const order = new Order({
       user_id,
       total_price: Number(total_price),
@@ -212,7 +312,8 @@ async function finalizeOrderFromPaymentIntent(paymentIntentId) {
         },
         {
           upsert: true,
-          new: true,
+          // new: true,
+          returnDocument: "after",
           runValidators: true,
           setDefaultsOnInsert: true,
         }
@@ -224,6 +325,25 @@ async function finalizeOrderFromPaymentIntent(paymentIntentId) {
     payment.payment_date = new Date();
     payment._locked = false;
     await payment.save();
+
+    try {
+      const cleared = await clearPurchasedCart(checkout);
+
+      if (!cleared) {
+        console.error(
+          "[Cart Clear] Order is confirmed, but cart cleanup needs retry.",
+          {
+            orderId: String(savedOrder._id),
+            paymentIntentId,
+          }
+        );
+      }
+    } catch (error) {
+      console.error(
+        "[Cart Clear] Cleanup failed:",
+        error.message
+      );
+    }
 
     const populatedOrder = await Order.findById(savedOrder._id).populate(
       "user_id",

@@ -97,6 +97,14 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+orderSchema.index({ transaction_id: 1 }, {
+  unique: true,
+  partialFilterExpression: {
+    transaction_id: {
+      $type: "string", $gt: "",
+    },
+  },
+});
 
 // orderSchema.pre("save", async function (next) {
 orderSchema.pre("save", function () {

@@ -39,6 +39,10 @@ const paymentSchema = new mongoose.Schema(
       enum: ["pending", "completed", "failed"],
       default: "pending",
     },
+    last_payment_error: {
+      type: String,
+      default: null,
+    },
     transaction_id: {
       type: String,
       required: false,

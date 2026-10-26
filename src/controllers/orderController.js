@@ -31,6 +31,7 @@ const {
 } = require("../utils/orderEmailService");
 const Wallet = require("../models/Wallet");
 const transection = require("../models/Transactions");
+const Cart = require("../models/Cart");
 
 const debitWallet = async (userId, amount, session) => {
   const debitAmount = Number(amount);
@@ -653,6 +654,7 @@ const createOrder = async (req, res) => {
   }
 
   const {
+    cart_id,
     coupon_id,
     shippingAddress,
     payment_method = "COD",
@@ -841,6 +843,17 @@ const createOrder = async (req, res) => {
     }));
 
     await OrderItem.insertMany(itemsToSave, { session });
+    if (cart_id) {
+      const cart = await Cart.findOne({
+        _id: cart_id,
+        user_id,
+      }).session(session);
+
+      if (cart) {
+        cart.items = [];
+        await cart.save({ session });
+      }
+    }
   });
 
     const populatedForEmail = await Order.findById(savedOrder._id)

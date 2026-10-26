@@ -402,7 +402,7 @@ const createStripePaymentIntent = async (req, res) => {
       coupon_id: coupon_id || null,
       checkout_data: {
         user_id: userId,
-        cart_id,
+        cart_id: cart._id,
         items: validatedItems,
         subtotal,
         discount,
@@ -493,9 +493,9 @@ const finalizeStripePayment = async (req, res) => {
       return sendResponse(res, false, null, "Payment record not found");
     }
 
-    if (payment.status === "failed") {
-      return sendResponse(res, false, null, "This payment has already been marked failed");
-    }
+    // if (payment.status === "failed") {
+    //   return sendResponse(res, false, null, "This payment has already been marked failed");
+    // }
 
     if (
       String(payment.checkout_data?.user_id) !== String(userId) ||
@@ -576,7 +576,8 @@ const finalizeStripePayment = async (req, res) => {
       const variant = await ProductVariant.findOneAndUpdate(
         { _id: item.variant_id, stock_quantity: { $gte: quantity } },
         { $inc: { stock_quantity: -quantity }},
-        { new: true, session}
+        // { new: true, session}
+        { returnDocument: "after", session }
       ).populate("product_id");
 
       if (!variant || !variant.product_id) {
@@ -625,7 +626,15 @@ const finalizeStripePayment = async (req, res) => {
       })),
       { session }
     );
+    const cart = await Cart.findOne({
+      _id: checkout.cart_id,
+      user_id: userId,
+    }).session(session);
 
+    if (cart) {
+      cart.items = [];
+      await cart.save({ session });
+    }
     currentPayment.order_id = savedOrder._id;
     currentPayment.status = "completed";
     currentPayment.transaction_id = paymentIntent.id;
