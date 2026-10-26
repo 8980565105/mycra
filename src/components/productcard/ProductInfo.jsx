@@ -61,7 +61,7 @@ export default function ProductInfo({
 }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { token } = useSelector((state) => state.auth);
+  const { token, user } = useSelector((state) => state.auth);
   const cart = useSelector((state) => state.cart.cart);
   const [addingToCart, setAddingToCart] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
@@ -364,28 +364,49 @@ export default function ProductInfo({
       setShowLoginPopup(true);
       return;
     }
+
     if (!activeVariant?._id) {
       toast.error("Please select a variant first!");
       return;
     }
-    if (activeVariant?.stock_quantity === 0) {
+
+    if (Number(activeVariant.stock_quantity) <= 0) {
       toast.error("This variant is out of stock!");
       return;
     }
     setAddingToCart(true);
     try {
+      let savedUser = {};
+
+      try {
+        savedUser = JSON.parse(
+          localStorage.getItem("user") || "{}"
+        );
+      } catch {
+        savedUser = {};
+      }
+
+      const userId = user?._id || user?.id || savedUser?._id || savedUser?.id;
+
+      if (!userId) {
+        throw new Error(
+          "User ID not found. Please login again."
+        );
+      }
+
       let cartId = cart?._id || localStorage.getItem("cart_id");
       if (!cartId) {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        if (!user?._id) {
-          toast.error("User session expired. Please login again.");
-          setShowLoginPopup(true);
-          return;
-        }
         const newCart = await dispatch(
-          createCart({ user_id: user._id }),
+          createCart({ user_id: userId })
         ).unwrap();
-        cartId = newCart._id;
+
+        cartId = newCart?._id;
+
+        if (!cartId) {
+          throw new Error("Cart could not be created.");
+        }
+
+        localStorage.setItem("cart_id", cartId);
       }
       await dispatch(
         addToCart({
@@ -393,16 +414,18 @@ export default function ProductInfo({
           product_id: product._id,
           variant_id: activeVariant._id,
           quantity: 1,
-        }),
+        })
       ).unwrap();
-      await dispatch(fetchCart(cartId));
+      await dispatch(fetchCart(cartId)).unwrap();
+
+      toast.success("Product added to cart!");
       navigate("/cart");
     } catch (err) {
       console.error("Add to cart error:", err);
       const msg =
         typeof err === "string"
           ? err
-          : err?.message || "Failed to add item to cart. Please try again.";
+          : err?.msg || err?.data?.msg || "Failed to add item to cart.";
       toast.error(msg);
     } finally {
       setAddingToCart(false);

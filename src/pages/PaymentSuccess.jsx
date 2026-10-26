@@ -19,6 +19,17 @@ export default function PaymentSuccess() {
       .get("payment_intent_client_secret")
       ?.split("_secret_")[0];
 
+    useEffect(() => {
+      if (!paymentIntent) return;
+
+      sessionStorage.setItem(
+        "paymentVerificationPending",
+        paymentIntent
+      );
+
+      sessionStorage.removeItem("checkoutInfo");
+    }, [paymentIntent]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -55,11 +66,12 @@ export default function PaymentSuccess() {
         const data = await response.json();
 
         if (cancelled) return;
+        const resultData = data?.data ?? data;
 
         const isProcessing =
           response.status === 202 ||
-          data?.processing === true ||
-          data?.code === "PAYMENT_PROCESSING";
+          resultData?.processing === true ||
+          resultData?.code === "PAYMENT_PROCESSING";
 
         if (isProcessing) {
           if (attemptRef.current < 5) {
@@ -83,7 +95,10 @@ export default function PaymentSuccess() {
           );
         }
 
-        const confirmedOrder = data?.data?.order;
+        const confirmedOrder =
+          data?.data?.order ||
+          data?.order ||
+          resultData?.order;
 
         if (!confirmedOrder?._id) {
           throw new Error(
@@ -91,14 +106,12 @@ export default function PaymentSuccess() {
           );
         }
 
-        // Clear checkout data only after the backend confirms the order.
         dispatch(clearCart());
-
-        sessionStorage.removeItem("pendingPayment");
         sessionStorage.removeItem("checkoutInfo");
+        sessionStorage.removeItem("pendingPayment");
+        sessionStorage.removeItem("paymentVerificationPending");
         localStorage.removeItem("appliedCoupon");
 
-        // Replace prevents the success page remaining in browser history.
         window.location.replace(
           `/order-success/${confirmedOrder._id}`
         );
@@ -125,20 +138,20 @@ export default function PaymentSuccess() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center px-5">
-        <div className="text-center">
-          <h1 className="text-xl font-semibold">
-            Confirming your payment...
-          </h1>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-5">
+        <div className="w-12 h-12 border-4 border-gray-200 border-t-pink-500 rounded-full animate-spin mb-5" />
 
-          <p className="text-sm text-gray-500 mt-2">
-            Please do not close this page.
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold mb-2">
+          Verifying Your Payment
+        </h1>
+
+        <p className="text-gray-500 text-center">
+          Please wait while we confirm your payment
+          and prepare your order. Do not refresh this page.
+        </p>
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-5">

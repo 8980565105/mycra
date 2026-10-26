@@ -13,7 +13,6 @@ import CartProgress from "../components/cart/CartProgress";
 import { clearCart } from "../features/cart/cartSlice";
 import {
   CreditCard,
-  Landmark,
   Wallet as WalletIcon,
   Banknote,
   QrCode,
@@ -53,28 +52,54 @@ function StripePaymentForm({ paymentData }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // const handlePayment = async (event) => {
+  //   event.preventDefault();
+  //   if (!stripe || !elements) return;
+  //   setLoading(true);
+  //   setError("");
+  //   try {
+  //     const { error } = await stripe.confirmPayment({
+  //       elements,
+  //       confirmParams: {
+  //         return_url: `${window.location.origin}/payment-success`,
+  //       },
+  //     });
+  //     if (error) {
+  //       setError(error.message || "Payment failed.");
+  //       setLoading(false);
+  //     }
+  //   } catch (err) {
+  //     setError("Unable to process payment.");
+  //     setLoading(false);
+  //   }
+  // };
+
   const handlePayment = async (event) => {
     event.preventDefault();
-    if (!stripe || !elements) return;
+
+    if (!stripe || !elements || loading) return;
+
     setLoading(true);
     setError("");
     try {
-      const { error } = await stripe.confirmPayment({
+      const { error: paymentError } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/payment-success`,
         },
+        redirect: "always",
       });
-      if (error) {
-        setError(error.message || "Payment failed.");
+
+      if (paymentError) {
+        setError(paymentError.message || "Payment failed. Please try again.");
         setLoading(false);
       }
     } catch (err) {
-      setError("Unable to process payment.");
+      console.error("Stripe payment confirmation error:", err);
+      setError(err.message || "Unable to process payment.");
       setLoading(false);
     }
   };
-
   return (
     <form onSubmit={handlePayment} className="space-y-6">
       <div className="bg-white p-5 rounded-[4px] border border-gray-200">
@@ -302,14 +327,11 @@ function UpiQrPayment({
 export default function Payment() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { wallet } = useSelector((state) => state.wallet);
-  const walletBalance = Number(wallet?.balance ?? 0);
   const [paymentInitError, setPaymentInitError] = useState("");
   const [checkoutInfo, setCheckoutInfo] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState("wallet");
   const [clientSecret, setClientSecret] = useState("");
   const [paymentIntentId, setPaymentIntentId] = useState("");
-  const [fetchedForMethod, setFetchedForMethod] = useState("");
   const [stripeAmountData, setStripeAmountData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(false);
@@ -325,17 +347,41 @@ export default function Payment() {
   useEffect(() => {
     const stored = sessionStorage.getItem("checkoutInfo");
     if (!stored) {
-      setError("Checkout session not found.");
-      setLoading(false);
+      window.location.replace("/cart");
       return;
     }
     try {
-      setCheckoutInfo(JSON.parse(stored));
-    } catch (err) {
-      setError("Invalid checkout session.");
-    } finally {
+      const parsed = JSON.parse(stored);
+
+      if (!parsed || typeof parsed !== "object") {
+        throw new Error("Invalid checkout session");
+      }
+
+      sessionStorage.removeItem("paymentVerificationPending");
+
+      setCheckoutInfo(parsed);
+      setError("");
       setLoading(false);
+    } catch (err) {
+      console.error("Invalid checkout session:", err);
+      sessionStorage.removeItem("checkoutInfo");
+      window.location.replace("/cart");
     }
+  }, []);
+
+  useEffect(() => {
+    const handlePageShow = () => {
+      const storedCheckout = sessionStorage.getItem("checkoutInfo");
+      if (!storedCheckout) {
+        window.location.replace("/cart");
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+    };
   }, []);
 
 useEffect(() => {
@@ -478,6 +524,7 @@ const handlePlaceOrder = async () => {
 
   try {
     const orderPayload = {
+      cart_id: checkoutInfo.cart_id,
       coupon_id: checkoutInfo.coupon_id,
       shippingAddress: checkoutInfo.shippingAddress,
       payment_method:
@@ -638,32 +685,6 @@ const handlePlaceOrder = async () => {
                   );
                 })}
               </div>
-
-              {/* {selectedMethod === "card" && (
-                <>
-                  {initializing && (
-                    <p className="text-light text-[14px]">
-                      Preparing secure payment...
-                    </p>
-                  )}
-                  {!initializing && clientSecret && (
-                    <Elements
-                      stripe={stripePromise}
-                      options={{
-                        clientSecret,
-                        appearance,
-                        paymentMethodOrder: ["card"],
-                      }}
-                    >
-                      <StripePaymentForm
-                        paymentData={{
-                          amount: stripeAmountData?.amount || displayTotal,
-                        }}
-                      />
-                    </Elements>
-                  )}
-                </>
-              )} */}
               
               {selectedMethod === "card" && (
                 <div className="mt-5 space-y-4">
