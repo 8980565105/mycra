@@ -19,6 +19,26 @@ export default function Checkout() {
       dispatch(fetchPageBySlug("checkout"));
     }, [dispatch]);
 
+  useEffect(() => {
+    const handleCompletedOrderBack = () => {
+      const orderCompleted = sessionStorage.getItem("orderCompleted") === "true";
+      const checkoutInfo = sessionStorage.getItem("checkoutInfo");
+
+      if (orderCompleted && !checkoutInfo) {
+        sessionStorage.removeItem("orderCompleted");
+
+        window.location.replace("/cart");
+      }
+    };
+
+    handleCompletedOrderBack();
+
+    window.addEventListener( "pageshow", handleCompletedOrderBack );
+
+    return () => {
+      window.removeEventListener("pageshow", handleCompletedOrderBack);
+    };
+  }, []);
   const chekoutPage = pages?.find((page) => page.slug === "checkout");
 
   const [appliedCoupon] = useState(() => {

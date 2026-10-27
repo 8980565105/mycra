@@ -44,23 +44,47 @@ export const createOrder = createAsyncThunk(
   }
 );
 
+// export const fetchOrder = createAsyncThunk(
+//   "orders/fetchOrder",
+//   async (orderId, { rejectWithValue }) => {
+//     try {
+//       const res = await api.get(ROUTES.orders.getById(orderId));
+//       // return res.data.data;
+//       const order = res.data?.data?.order ?? res.data?.data;
+
+      // if (!order?._id) {
+      //   return rejectWithValue("Order details not found in API response.");
+      // }
+
+//       return order;
+//     } catch (err) {
+//       return rejectWithValue(err.response?.data?.message || err.message);
+//     }
+//   },
+// );
+
 export const fetchOrder = createAsyncThunk(
   "orders/fetchOrder",
   async (orderId, { rejectWithValue }) => {
     try {
       const res = await api.get(ROUTES.orders.getById(orderId));
-      // return res.data.data;
-      const order = res.data?.data?.order ?? res.data?.data;
+      const data = res.data?.data;
+      const orderData = data?.order ?? data;
 
-      if (!order?._id) {
+      if (!orderData?._id) {
         return rejectWithValue("Order details not found in API response.");
       }
+      const items = Array.isArray(data?.items)
+        ? data.items : Array.isArray(orderData?.items)
+          ? orderData.items : [];
 
-      return order;
+      return { ...orderData, items };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || err.message);
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Failed to fetch order."
+      );
     }
-  },
+  }
 );
 
 export const fetchUserOrders = createAsyncThunk(

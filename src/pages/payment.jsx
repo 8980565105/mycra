@@ -376,7 +376,7 @@ export default function Payment() {
         window.location.replace("/cart");
       }
     };
-
+    handlePageShow();
     window.addEventListener("pageshow", handlePageShow);
 
     return () => {
@@ -519,7 +519,7 @@ useEffect(() => {
 
 const handlePlaceOrder = async () => {
   if (!checkoutInfo || placing) return;
-
+  
   setPlacing(true);
 
   try {
@@ -527,8 +527,14 @@ const handlePlaceOrder = async () => {
       cart_id: checkoutInfo.cart_id,
       coupon_id: checkoutInfo.coupon_id,
       shippingAddress: checkoutInfo.shippingAddress,
-      payment_method:
-        selectedMethod === "wallet" ? "Wallet" : "COD",
+      // payment_method:
+      //   selectedMethod === "wallet" ? "Wallet" : "COD",
+       payment_method:
+        selectedMethod === "wallet"
+          ? "Wallet"
+          : selectedMethod === "cod"
+            ? "COD"
+            : null,
       shipping: checkoutInfo.shipping,
       platform_charge: checkoutInfo.platformCharge,
       items: checkoutInfo.items,
@@ -542,6 +548,10 @@ const handlePlaceOrder = async () => {
         Number(checkoutInfo.giftCardRedeemed) || 0,
     };
 
+    if (!["Wallet", "COD"].includes(orderPayload.payment_method)) {
+      toast.error("Please select a valid payment method.");
+      return;
+    }
     const result = await dispatch(
       createOrder(orderPayload)
     ).unwrap();
@@ -569,18 +579,21 @@ const handlePlaceOrder = async () => {
         console.error("Wallet refresh failed:", walletError);
       }
     }
+    sessionStorage.setItem("orderCompleted", "true");
 
     dispatch(clearCart());
 
     sessionStorage.removeItem("checkoutInfo");
     sessionStorage.removeItem("pendingPayment");
+    sessionStorage.removeItem("paymentVerificationPending");
     localStorage.removeItem("appliedCoupon");
 
     toast.success("Order placed successfully!");
 
-    navigate(`/order-success/${orderId}`, {
-      replace: true,
-    });
+    // navigate(`/order-success/${orderId}`, {
+    //   replace: true,
+    // });
+    window.location.replace(`/order-success/${orderId}`);
 
   } catch (err) {
     console.error("Place order error:", err);
@@ -726,7 +739,8 @@ const handlePlaceOrder = async () => {
                     >
                       <StripePaymentForm
                         paymentData={{
-                          amount: stripeAmountData?.amount ?? displayTotal,
+                          // amount: stripeAmountData?.amount ?? displayTotal,
+                          amount: displayTotal,
                         }}
                       />
                     </Elements>
