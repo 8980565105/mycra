@@ -32,6 +32,7 @@ const {
 const Wallet = require("../models/Wallet");
 const transection = require("../models/Transactions");
 const Cart = require("../models/Cart");
+const Payment = require("../models/Payment");
 
 const debitWallet = async (userId, amount, session) => {
   const debitAmount = Number(amount);
@@ -808,24 +809,31 @@ const createOrder = async (req, res) => {
     pushHistory(order, "pending", "customer", "Order placed");
     savedOrder = await order.save({ session });
 
-    if (payment_method === "Wallet") {
-      const walletReferenceId = `WALLET_ORDER_${savedOrder._id}`;
+    if (["Wallet", "COD"].includes(payment_method)) {
+      const paymentReferenceId =
+        payment_method === "Wallet"
+          ? `WALLET_ORDER_${savedOrder._id}`
+          : `COD_ORDER_${savedOrder._id}`;
 
-      await transection.findOneAndUpdate(
-        { referenceId: walletReferenceId },
+      await Payment.findOneAndUpdate(
+        { order_id: savedOrder._id },
         {
           $setOnInsert: {
-            user: user_id,
+            user_id,
             order_id: savedOrder._id,
-            amount: total_price,
-            currency: "inr",
-            type: "Money sent",
-            category: "Order",
-            paymentMode: "Wallet",
-            status: "Success",
-            tab: "All",
-            description: `Order ${savedOrder._id} paid via Wallet`,
-            referenceId: walletReferenceId,
+            store_owner_id: store_owner_id || null,
+            payment_method,
+            amount_paid: total_price,
+            discount_amount: discountAmount,
+            coupon_id: coupon_id || null,
+            transaction_id: paymentReferenceId,
+            status:
+              payment_method === "Wallet"
+                ? "completed"
+                : "pending",
+            ...(payment_method === "Wallet"
+              ? { payment_date: new Date() }
+              : {}),
           },
         },
         {
@@ -837,7 +845,42 @@ const createOrder = async (req, res) => {
         }
       );
     }
-    // 5. Save order items in the same transaction.
+
+    if (["Wallet", "COD"].includes(payment_method)) {
+      const isWalletPayment = payment_method === "Wallet";
+
+      const transactionReferenceId =
+        `${isWalletPayment ? "WALLET" : "COD"}_ORDER_${savedOrder._id}`;
+
+      await transection.findOneAndUpdate(
+        { referenceId: transactionReferenceId },
+        {
+          $setOnInsert: {
+            user: user_id,
+            order_id: savedOrder._id,
+            amount: total_price,
+            currency: "inr",
+            type: "Money sent",
+            category: "Order",
+            paymentMode: isWalletPayment ? "Wallet" : "Cash on Delivery",
+            status: isWalletPayment ? "Success" : "Pending",
+            tab: "All",
+            description: isWalletPayment
+              ? `Order ${savedOrder._id} paid via Wallet`
+              : `Order ${savedOrder._id} placed with Cash on Delivery`,
+            referenceId: transactionReferenceId,
+          },
+        },
+        {
+          upsert: true,
+          returnDocument: "after",
+          runValidators: true,
+          setDefaultsOnInsert: true,
+          session,
+        }
+      );
+    }
+
     const itemsToSave = orderItems.map((item) => ({
       ...item, order_id: savedOrder._id,
     }));
