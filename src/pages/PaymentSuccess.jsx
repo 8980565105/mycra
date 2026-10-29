@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { clearCart } from "../features/cart/cartSlice";
+import Button from "../components/ui/Button";
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
-
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmedOrder, setConfirmedOrder] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState("Verifying");
 
   const attemptRef = useRef(0);
   const timerRef = useRef(null);
@@ -19,28 +22,19 @@ export default function PaymentSuccess() {
       .get("payment_intent_client_secret")
       ?.split("_secret_")[0];
 
-    useEffect(() => {
-      if (!paymentIntent) return;
-
-      sessionStorage.setItem(
-        "paymentVerificationPending",
-        paymentIntent
-      );
-
-      sessionStorage.removeItem("checkoutInfo");
-    }, [paymentIntent]);
-
   useEffect(() => {
     let cancelled = false;
 
     attemptRef.current = 0;
     setLoading(true);
     setError("");
+    setConfirmedOrder(null);
+    setPaymentStatus("Verifying");
 
     const finalizePayment = async () => {
       if (!paymentIntent) {
         if (!cancelled) {
-          setError("Payment information not found.");
+          setError("Payment reference was not found.");
           setLoading(false);
         }
         return;
@@ -76,11 +70,11 @@ export default function PaymentSuccess() {
         if (isProcessing) {
           if (attemptRef.current < 5) {
             attemptRef.current += 1;
+            setPaymentStatus("Processing");
 
-            timerRef.current = setTimeout(() => {
-              finalizePayment();
-            }, 2000);
-
+            timerRef.current = setTimeout(
+              finalizePayment, 2000
+            );
             return;
           }
 
@@ -89,22 +83,23 @@ export default function PaymentSuccess() {
           );
         }
 
-        if (!response.ok || !data?.success) {
+        if (!response.ok || data?.success !== true) {
           throw new Error(
-            data?.message || "Unable to confirm payment."
+            data?.message || "Payment could not be verified."
           );
         }
 
-        const confirmedOrder =
-          data?.data?.order ||
-          data?.order ||
-          resultData?.order;
+        const order = resultData?.order || data?.order;
+        const orderId = order?._id || order?.id;
 
-        if (!confirmedOrder?._id) {
+        if (!orderId) {
           throw new Error(
-            "Order ID was not returned. Please check My Orders before retrying."
+            "Payment response did not contain an order ID. Check My Orders before retrying."
           );
         }
+        setConfirmedOrder({...order, _id: orderId});
+        setPaymentStatus("Paid");
+        setLoading(false);
 
         dispatch(clearCart());
         sessionStorage.removeItem("checkoutInfo");
@@ -112,9 +107,11 @@ export default function PaymentSuccess() {
         sessionStorage.removeItem("paymentVerificationPending");
         localStorage.removeItem("appliedCoupon");
 
-        window.location.replace(
-          `/order-success/${confirmedOrder._id}`
-        );
+        timerRef.current = setTimeout(() => {
+          if (!cancelled) {
+            navigate(`/order-success/${orderId}`, {replace: true});
+          }
+        }, 5000);
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -134,7 +131,7 @@ export default function PaymentSuccess() {
         clearTimeout(timerRef.current);
       }
     };
-  }, [paymentIntent, dispatch]);
+  }, [paymentIntent, dispatch, navigate]);
 
   if (loading) {
     return (
@@ -145,22 +142,26 @@ export default function PaymentSuccess() {
           Verifying Your Payment
         </h1>
 
-        <p className="text-gray-500 text-center">
-          Please wait while we confirm your payment
-          and prepare your order. Do not refresh this page.
+        <p className="text-gray-500 text-center max-w-md">
+          We are confirming your payment and  your order. Please wait and do not pay again.
+        </p>
+
+        <p className="text-sm text-gray-500 mt-4">
+          Status: {paymentStatus}
         </p>
       </div>
     );
   }
+
   if (error) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-5">
         <div className="text-center max-w-lg">
-          <h1 className="text-2xl font-semibold text-red-500 mb-4">
+          <h1 className="text-2xl font-semibold text-amber-600 mb-4">
             Payment Confirmation Pending
           </h1>
 
-          <p className="text-gray-600 mb-6">
+          <p className="text-[16px] sec-text-color mb-6">
             {error}
           </p>
 
@@ -182,9 +183,126 @@ export default function PaymentSuccess() {
           </div>
 
           <p className="text-xs text-gray-500 mt-4">
-            Do not pay again until you have checked whether your order
-            was created.
+            Do not make another payment until you have checked whether your order already exists.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (confirmedOrder) {
+    const orderId = confirmedOrder._id;
+
+    // const orderTotal =
+    //   confirmedOrder.total_price ??
+    //   confirmedOrder.amount_payable ??
+    //   confirmedOrder.order_total ??
+    //   confirmedOrder.total;
+    const orderTotal = Number(
+      confirmedOrder.order_total ??
+      confirmedOrder.total_price ??
+      0
+    );
+
+    const giftCardRedeemed = Number(
+      confirmedOrder.gift_card_redeemed ?? 0
+    );
+
+    const amountPaid = Number(
+      confirmedOrder.amount_payable ??
+      orderTotal - giftCardRedeemed
+    );
+
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-5 py-10">
+        <div className="w-full max-w-xl bg-white border rounded-xl shadow-sm p-8 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 text-4xl">
+            ✓
+          </div>
+
+          <h1 className="text-[20px] md:text-[30px] font-bold text-gray-900 mb-3">
+            Payment Successful!
+          </h1>
+
+          <p className="text-gray-600 mb-6">
+            Your payment was successful and your order has been placed.
+          </p>
+
+          <div className="rounded-lg bg-gray-50 p-5 text-left space-y-3">
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-500">
+                Payment Status
+              </span>
+              <span className="font-semibold text-green-600">
+                {paymentStatus}
+              </span>
+            </div>
+
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-500">
+                Order ID
+              </span>
+              <span className="font-medium break-all text-right">
+               {confirmedOrder.order_number ||
+                  confirmedOrder.orderNumber ||
+                  confirmedOrder.order_no ||
+                  orderId}
+              </span>
+            </div>
+
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-500">
+                Payment Reference
+              </span>
+              <span className="font-medium break-all text-right">
+                {paymentIntent}
+              </span>
+            </div>
+
+            {/* {orderTotal != null && (
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">
+                  Order Total
+                </span>
+                <span className="font-semibold">
+                  ₹{Number(orderTotal).toLocaleString("en-IN")}
+                </span>
+              </div>
+              
+            )} */}
+            <div className="flex justify-between gap-4">
+                <span className="text-gray-500">Order Total</span>
+                <span className="font-semibold">
+                  ₹{orderTotal.toLocaleString("en-IN")}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">Gift Card Redeemed</span>
+                <span className="font-semibold">
+                  −₹{giftCardRedeemed.toLocaleString("en-IN")}
+                </span>
+              </div>
+
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">Amount Paid</span>
+                <span className="font-semibold">
+                  ₹{amountPaid.toLocaleString("en-IN")}
+                </span>
+              </div>
+          </div>
+
+          <p className="text-sm text-gray-500 mt-5">
+            Redirecting to your Order Success page...
+          </p>
+
+          <Button
+            variant="common"
+            onClick={() => navigate(`/order-success/${orderId}`)}
+            className="mt-5"
+          >
+              VIEW ORDER NOW
+          </Button>
         </div>
       </div>
     );

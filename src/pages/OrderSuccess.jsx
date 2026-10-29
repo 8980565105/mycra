@@ -111,6 +111,9 @@ const total =
 
 const otherCharges = total - itemsSubtotal;
 
+const orderTotal = Number(order?.order_total ?? order?.total_price ?? 0);
+const giftCardRedeemed = Number(order?.gift_card_redeemed ?? 0);
+const amountPaid = Number(order?.amount_payable ?? order?.total_price ?? 0);
 
   return (
     <Section className="!py-8 md:!py-12">
@@ -267,19 +270,19 @@ const otherCharges = total - itemsSubtotal;
               </span>
 
               <span className="shrink-0 text-right text-[14px] md:text-[16px] font-medium tabular-nums">
-                {formatPrice(itemsSubtotal)}
+                {formatPrice(orderTotal)}
               </span>
             </div>
 
             {/* Additional charges or adjustments */}
-            {Math.abs(otherCharges) > 0.009 && (
+            {Math.abs(giftCardRedeemed) > 0.009 && (
               <div className="mt-2 flex w-full min-w-0 items-start justify-between gap-3">
                 <span className="min-w-0 flex-1 break-words text-[14px] md:text-[16px] sec-text-color">
                   Other Shipment charges
                 </span>
 
                 <span className="shrink-0 text-right text-[14px] md:text-[16px]font-medium tabular-nums">
-                  {formatPrice(otherCharges)}
+                  {formatPrice(giftCardRedeemed)}
                 </span>
               </div>
             )}
@@ -291,7 +294,7 @@ const otherCharges = total - itemsSubtotal;
               </span>
 
               <span className="shrink-0 text-right text-base font-semibold tabular-nums sm:text-lg">
-                {formatPrice(total)}
+                {formatPrice(amountPaid)}
               </span>
             </div>
 

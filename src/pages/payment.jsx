@@ -523,6 +523,7 @@ const handlePlaceOrder = async () => {
   setPlacing(true);
 
   try {
+
     const orderPayload = {
       cart_id: checkoutInfo.cart_id,
       coupon_id: checkoutInfo.coupon_id,
@@ -538,7 +539,7 @@ const handlePlaceOrder = async () => {
       shipping: checkoutInfo.shipping,
       platform_charge: checkoutInfo.platformCharge,
       items: checkoutInfo.items,
-
+      
       appliedGiftCardId: checkoutInfo.appliedGiftCardId || null,
       giftCardCode: checkoutInfo.giftCardCode || null,
       useGiftCardBalance: Boolean(
@@ -547,7 +548,13 @@ const handlePlaceOrder = async () => {
       giftCardRedeemed:
         Number(checkoutInfo.giftCardRedeemed) || 0,
     };
-
+    console.log("ORDER GIFT CARD PAYLOAD:", {
+      appliedGiftCardId: orderPayload.appliedGiftCardId,
+      codeProvided: Boolean(orderPayload.giftCardCode),
+      coupon_id: orderPayload.coupon_id,
+      shipping: orderPayload.shipping,
+      platform_charge: orderPayload.platform_charge,
+    });
     if (!["Wallet", "COD"].includes(orderPayload.payment_method)) {
       toast.error("Please select a valid payment method.");
       return;
@@ -739,8 +746,7 @@ const handlePlaceOrder = async () => {
                     >
                       <StripePaymentForm
                         paymentData={{
-                          // amount: stripeAmountData?.amount ?? displayTotal,
-                          amount: displayTotal,
+                          amount: stripeAmountData?.amount ?? displayTotal,
                         }}
                       />
                     </Elements>
