@@ -237,10 +237,74 @@ if (existingOrder) {
         price_at_order: price,
       });
     }
+    // const order = new Order({
+    //   user_id,
+    //   total_price: Number(total_price),
+    //   coupon_id: coupon_id || null,
+    //   shippingAddress,
+    //   payment_method: "Online",
+    //   payment_status: "paid",
+    //   transaction_id: paymentIntentId,
+    //   status: "pending",
+    //   store_owner_id: store_owner_id || null,
+    // });
+    // const checkout = payment.checkout_data || {};
+
+    const orderTotal = Number(
+      checkout.order_total ?? checkout.total_price
+    );
+
+    const giftCardRedeemed = Number(
+      checkout.gift_card_redeemed ?? 0
+    );
+
+    const amountPayable = Number(
+      checkout.amount_payable ?? payment.amount_paid
+    );
+    console.log("========== STRIPE ORDER AMOUNT CHECK ==========");
+    console.log("Checkout subtotal:", checkout.subtotal);
+    console.log("Coupon discount:", checkout.discount);
+    console.log("Shipping:", checkout.shipping);
+    console.log("Platform charge:", checkout.platform_charge);
+    console.log("Order total:", orderTotal);
+    console.log("Gift Card redeemed:", giftCardRedeemed);
+    console.log("Amount payable:", amountPayable);
+    console.log("Payment document amount:", payment.amount_paid);
+    console.log("Gift Card ID:", checkout.gift_card_id);
+    console.log("Gift Card code:", checkout.gift_card_code);
+    console.log(
+      "Expected payable:",
+      Number((orderTotal - giftCardRedeemed).toFixed(2))
+    );
+    if (
+      !Number.isFinite(orderTotal) ||
+      !Number.isFinite(giftCardRedeemed) ||
+      !Number.isFinite(amountPayable) ||
+      orderTotal < 0 ||
+      giftCardRedeemed < 0 ||
+      giftCardRedeemed > orderTotal ||
+      amountPayable < 0
+    ) {
+      throw new Error("Invalid order or Gift Card amount");
+    }
+
+    const expectedPayable = Number(
+      (orderTotal - giftCardRedeemed).toFixed(2)
+    );
+
+    if (Math.abs(expectedPayable - amountPayable) > 0.01) {
+      throw new Error("Gift Card amount calculation mismatch");
+    }
+
     const order = new Order({
       user_id,
-      total_price: Number(total_price),
-      coupon_id: coupon_id || null,
+      total_price: orderTotal,
+      order_total: orderTotal,
+      gift_card_redeemed: giftCardRedeemed,
+      amount_payable: amountPayable,
+      gift_card_id: checkout.gift_card_id || null,
+      gift_card_code: checkout.gift_card_code || "",
+      coupon_id: checkout.coupon_id || null,
       shippingAddress,
       payment_method: "Online",
       payment_status: "paid",
@@ -248,6 +312,7 @@ if (existingOrder) {
       status: "pending",
       store_owner_id: store_owner_id || null,
     });
+
     pushHistory(
       order,
       "pending",
@@ -255,7 +320,19 @@ if (existingOrder) {
       "Online payment successful - order placed",
     );
     const savedOrder = await order.save();
-
+    console.log("========== STRIPE ORDER SAVED ==========");
+    console.log("Order ID:", String(savedOrder._id));
+    console.log("Order number:", savedOrder.order_number);
+    console.log("Saved Order values:", JSON.stringify({
+      total_price: savedOrder.total_price,
+      order_total: savedOrder.order_total,
+      gift_card_redeemed: savedOrder.gift_card_redeemed,
+      amount_payable: savedOrder.amount_payable,
+      gift_card_id: savedOrder.gift_card_id,
+      gift_card_code: savedOrder.gift_card_code,
+      payment_status: savedOrder.payment_status,
+      transaction_id: savedOrder.transaction_id,
+    }, null, 2));
     await OrderItem.insertMany(
       orderItems.map((i) => ({ ...i, order_id: savedOrder._id })),
     );

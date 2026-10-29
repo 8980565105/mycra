@@ -8,6 +8,7 @@ const Product = require("../models/Product");
 const { sendResponse } = require("../utils/response");
 const PDFDocument = require("pdfkit");
 const QRCode = require("qrcode");
+const GiftCard = require("../models/giftCard");
 const bwipjs = require("bwip-js");
 const {
   sendOrderPlaced,
@@ -517,69 +518,103 @@ const getOrderById = async (req, res) => {
   }
 };
 
+
 // const createOrder = async (req, res) => {
+//   const user_id = req.user?._id;
+
+//   if (!user_id) {
+//     return sendResponse(res, false, null, "Unauthorized");
+//   }
+
+//   const {
+//     cart_id,
+//     coupon_id,
+//     shippingAddress,
+//     payment_method = "COD",
+//     transaction_id,
+//     shipping = 0,
+//     platform_charge = 0,
+
+//   } = req.body;
+
+//   const items = safeArray(req.body.items);
+
+//   if (!items.length) {
+//     return sendResponse(res, false, null, "No items provided");
+//   }
+
+//   if (!["COD", "Wallet", "Online"].includes(payment_method)) {
+//     return sendResponse(res, false, null, "Invalid payment method");
+//   }
+
+//   let session;
+//   let savedOrder;
+
 //   try {
-//     const user_id = req.user?._id;
-//     if (!user_id) return sendResponse(res, false, null, "Unauthorized");
-
-//     const {
+//      console.log("\n========== CREATE ORDER START ==========");
+//     console.log("User ID:", String(user_id));
+//     console.log("Request body:", JSON.stringify({
+//       cart_id,
 //       coupon_id,
-//       shippingAddress,
-//       payment_method = "COD",
-//       transaction_id,
-//       shipping = 0,
-//       platform_charge = 0,
-//     } = req.body;
+//       payment_method,
+//       shipping,
+//       platform_charge,
+//       items,
+//     }, null, 2));
+//     session = await mongoose.startSession();
 
-//     const items = safeArray(req.body.items);
-//     if (!items.length) {
-//       return sendResponse(res, false, null, "No items provided");
-//     }
-
-//     let subtotal = 0;
-//     const orderItems = [];
-//     let store_owner_id = null;
+//     await session.withTransaction(async () => {
+//       let subtotal = 0;
+//       const orderItems = [];
+//       let store_owner_id = null;
 
 //     for (const item of items) {
-//       const variant = await ProductVariant.findById(item.variant_id).populate(
-//         "product_id",
-//       );
-//       if (!variant) return sendResponse(res, false, null, "Variant not found");
-//       if (variant.stock_quantity < item.quantity)
-//         return sendResponse(
-//           res,
-//           false,
-//           null,
-//           `Not enough stock for ${variant.sku}`,
-//         );
+//       const quantity = Number(item.quantity);
 
-//       // if (!store_owner_id && variant.product_id) {
-//       //   store_owner_id =
-//       //     variant.product_id.storeId?._id ||
-//       //     variant.product_id.storeId ||
-//       //     variant.product_id.createdBy?._id ||
-//       //     variant.product_id.createdBy;
-//       // }
-//       const product = variant.product_id;
-
-//       if (!product) {
-//         return sendResponse(res, false, null, "Product not found");
+//       if (
+//         !item.variant_id ||
+//         !Number.isInteger(quantity) ||
+//         quantity <= 0
+//       ) {
+//         throw new Error("Invalid product variant or quantity");
 //       }
+
+//       const variant = await ProductVariant.findById(item.variant_id)
+//         .session(session)
+//         .populate("product_id");
+
+//       if (!variant) {throw new Error("Variant not found");}
+
+//       if (!variant.product_id) {
+//         throw new Error("Product not found");
+//       }
+
+//       if (variant.stock_quantity < quantity) {
+//         throw new Error(`Not enough stock for ${variant.sku}`);
+//       }
+
+//       const product = variant.product_id;
 
 //       if (!store_owner_id && product.storeId) {
 //         store_owner_id = product.storeId._id || product.storeId;
 //       }
 
-//       let price = variant.offerprice;
-//       subtotal += price * item.quantity;
-//       variant.stock_quantity -= item.quantity;
-//       await variant.save();
+//       const price = Number(variant.offerprice);
+
+//       if (!Number.isFinite(price) || price < 0) {
+//         throw new Error(`Invalid price for ${variant.sku}`);
+//       }
+
+//       subtotal += price * quantity;
+
+//       variant.stock_quantity -= quantity;
+//       await variant.save({ session });
 
 //       orderItems.push({
 //         order_id: null,
-//         product_id: variant.product_id._id,
+//         product_id: product._id,
 //         variant_id: variant._id,
-//         quantity: item.quantity,
+//         quantity,
 //         price_at_order: price,
 //       });
 //     }
@@ -588,62 +623,237 @@ const getOrderById = async (req, res) => {
 
 //     let discountAmount = 0;
 //     if (coupon_id) {
-//       const coupon = await Coupon.findById(coupon_id);
+//       const coupon = await Coupon.findById(coupon_id).session(session);
+
 //       if (coupon) {
 //         if (coupon.discount_type === "fixed") {
-//           discountAmount = Math.min(coupon.discount_value, safeSubtotal);
+//           discountAmount = Math.min(
+//             Number(coupon.discount_value) || 0,
+//             safeSubtotal
+//           );
 //         } else if (coupon.discount_type === "percentage") {
-//           discountAmount = (safeSubtotal * coupon.discount_value) / 100;
+//           discountAmount = (safeSubtotal * (Number(coupon.discount_value) || 0)) / 100;
 //         }
 //         if (coupon.max_discount_amount) {
-//           discountAmount = Math.min(discountAmount, coupon.max_discount_amount);
+//           discountAmount = Math.min(discountAmount, Number(coupon.max_discount_amount));
 //         }
 //       }
 //     }
-//     discountAmount = Number(discountAmount.toFixed(2));
-//     const safeShipping = Number(shipping) || 0;
-//     const safePlatformCharge = Number(platform_charge) || 0;
+//     discountAmount = Math.min(safeSubtotal, Math.max(0, Number(discountAmount.toFixed(2))));
+
+//     const safeShipping = Number(shipping);
+//     const safePlatformCharge = Number(platform_charge);
+
+//     if (
+//       !Number.isFinite(safeShipping) ||
+//       safeShipping < 0 ||
+//       !Number.isFinite(safePlatformCharge) ||
+//       safePlatformCharge < 0
+//     ) {
+//       throw new Error("Invalid shipping or platform charge");
+//     }
+
 //     const total_price = Number(
 //       (
 //         safeSubtotal -
 //         discountAmount +
 //         safeShipping +
 //         safePlatformCharge
-//       ).toFixed(2),
+//       ).toFixed(2)
 //     );
+//     console.log("========== CREATE ORDER CALCULATION ==========");
+//     console.log("Subtotal:", safeSubtotal);
+//     console.log("Coupon discount:", discountAmount);
+//     console.log("Shipping:", safeShipping);
+//     console.log("Platform charge:", safePlatformCharge);
+//     console.log("Order total:", total_price);
+//     console.log("Payment method:", payment_method);
+//     if (total_price <= 0) {
+//       throw new Error("Invalid order total");
+//     }
+//     if (payment_method === "Wallet") {
+//       await debitWallet(user_id, total_price, session);
+//     }
 
+//     if (payment_method === "Online") {
+//       throw new Error(
+//         "Online orders must be created through verified Stripe payment"
+//       );
+//     }
+
+//     // const order = new Order({
+//     //   user_id,
+//     //   total_price,
+//     //   coupon_id: coupon_id || null,
+//     //   shippingAddress,
+//     //   payment_method,
+//     //   payment_status:
+//     //     payment_method === "Wallet" ? "paid" : "pending",
+//     //   transaction_id: transaction_id || "",
+//     //   status: "pending",
+//     //   store_owner_id: store_owner_id || null,
+//     // });
 //     const order = new Order({
 //       user_id,
 //       total_price,
 //       coupon_id: coupon_id || null,
 //       shippingAddress,
 //       payment_method,
-//       payment_status:
-//         payment_method === "Online" && transaction_id ? "paid" : "pending",
-//       transaction_id: transaction_id || "",
+//       payment_status: payment_method === "Wallet" ? "paid" : "pending",
+//       transaction_id: "",
 //       status: "pending",
 //       store_owner_id: store_owner_id || null,
-//       // store_owner_id: orderStoreId || null,
 //     });
 
-//     pushHistory(order, "pending", "customer", "Order placed");
-//     const savedOrder = await order.save();
-
-//     orderItems.forEach((oi) => (oi.order_id = savedOrder._id));
-//     await OrderItem.insertMany(orderItems);
-
-//     const populatedForEmail = await Order.findById(savedOrder._id).populate(
-//       "user_id",
-//       "name email",
+//     pushHistory(
+//       order,
+//       "pending",
+//       "customer",
+//       payment_method === "Wallet"
+//         ? "Order placed and paid using Wallet"
+//         : "Order placed with Cash on Delivery"
 //     );
+
+//     savedOrder = await order.save({ session });
+//     // pushHistory(order, "pending", "customer", "Order placed");
+   
+//     // savedOrder = await order.save({ session });
+//     savedOrder = await order.save({ session });
+
+//     console.log("========== CREATE ORDER SAVED ==========");
+//     console.log("Order ID:", String(savedOrder._id));
+//     console.log("Saved order:", JSON.stringify({
+//       total_price: savedOrder.total_price,
+//       order_total: savedOrder.order_total,
+//       gift_card_redeemed: savedOrder.gift_card_redeemed,
+//       amount_payable: savedOrder.amount_payable,
+//       gift_card_id: savedOrder.gift_card_id,
+//       gift_card_code: savedOrder.gift_card_code,
+//       payment_method: savedOrder.payment_method,
+//       payment_status: savedOrder.payment_status,
+//     }, null, 2));
+//     if (["Wallet", "COD"].includes(payment_method)) {
+//       const paymentReferenceId =
+//         payment_method === "Wallet"
+//           ? `WALLET_ORDER_${savedOrder._id}`
+//           : `COD_ORDER_${savedOrder._id}`;
+
+//       await Payment.findOneAndUpdate(
+//         { order_id: savedOrder._id },
+//         {
+//           $setOnInsert: {
+//             user_id,
+//             order_id: savedOrder._id,
+//             store_owner_id: store_owner_id || null,
+//             payment_method,
+//             amount_paid: total_price,
+//             discount_amount: discountAmount,
+//             coupon_id: coupon_id || null,
+//             transaction_id: paymentReferenceId,
+//             status:
+//               payment_method === "Wallet"
+//                 ? "completed"
+//                 : "pending",
+//             ...(payment_method === "Wallet"
+//               ? { payment_date: new Date() }
+//               : {}),
+//           },
+//         },
+//         {
+//           upsert: true,
+//           returnDocument: "after",
+//           runValidators: true,
+//           setDefaultsOnInsert: true,
+//           session,
+//         }
+//       );
+//     }
+
+//     if (["Wallet", "COD"].includes(payment_method)) {
+//       const isWalletPayment = payment_method === "Wallet";
+
+//       const transactionReferenceId =
+//         `${isWalletPayment ? "WALLET" : "COD"}_ORDER_${savedOrder._id}`;
+
+//       await transection.findOneAndUpdate(
+//         { referenceId: transactionReferenceId },
+//         {
+//           $setOnInsert: {
+//             user: user_id,
+//             order_id: savedOrder._id,
+//             amount: total_price,
+//             currency: "inr",
+//             type: "Money sent",
+//             category: "Order",
+//             paymentMode: isWalletPayment ? "Wallet" : "Cash on Delivery",
+//             status: isWalletPayment ? "Success" : "Pending",
+//             tab: "All",
+//             description: isWalletPayment
+//               ? `Order ${savedOrder._id} paid via Wallet`
+//               : `Order ${savedOrder._id} placed with Cash on Delivery`,
+//             referenceId: transactionReferenceId,
+//           },
+//         },
+//         {
+//           upsert: true,
+//           returnDocument: "after",
+//           runValidators: true,
+//           setDefaultsOnInsert: true,
+//           session,
+//         }
+//       );
+//     }
+
+//     const itemsToSave = orderItems.map((item) => ({
+//       ...item, order_id: savedOrder._id,
+//     }));
+
+//     await OrderItem.insertMany(itemsToSave, { session });
+//     if (cart_id) {
+//       const cart = await Cart.findOne({
+//         _id: cart_id,
+//         user_id,
+//       }).session(session);
+
+//       if (cart) {
+//         cart.items = [];
+//         await cart.save({ session });
+//       }
+//     }
+//   });
+
+//     const populatedForEmail = await Order.findById(savedOrder._id)
+//       .populate("user_id", "name email");
+
 //     const { email: placedEmail, name: placedName } = getCustomerInfo(
-//       populatedForEmail || savedOrder,
+//       populatedForEmail || savedOrder
 //     );
-//     sendOrderPlaced(populatedForEmail || savedOrder, placedEmail, placedName);
-//     sendAdminNewOrder(populatedForEmail || savedOrder, placedName, placedEmail);
-//     sendResponse(res, true, savedOrder, "Order created successfully");
+
+//   Promise.resolve()
+//     .then(() => sendOrderPlaced(
+//       populatedForEmail || savedOrder,
+//       placedEmail,
+//       placedName
+//     ))
+//     .catch((err) => console.error("Order email failed:", err.message));
+
+//   Promise.resolve()
+//     .then(() => sendAdminNewOrder(
+//       populatedForEmail || savedOrder,
+//       placedName,
+//       placedEmail
+//     ))
+//     .catch((err) =>
+//       console.error("Admin order email failed:", err.message)
+//     );
+
+//   return sendResponse(res, true, savedOrder, "Order created successfully");
 //   } catch (err) {
-//     sendResponse(res, false, null, err.message);
+//     return sendResponse(res, false, null, err.message || "Unable to create order");
+//   } finally {
+//     if (session) {
+//       await session.endSession();
+//     }
 //   }
 // };
 
@@ -662,9 +872,20 @@ const createOrder = async (req, res) => {
     transaction_id,
     shipping = 0,
     platform_charge = 0,
+    appliedGiftCardId,
+    giftCardCode,
   } = req.body;
 
   const items = safeArray(req.body.items);
+
+  console.log("WALLET ORDER REQUEST:", {
+    user_id: String(user_id),
+    cart_id,
+    payment_method,
+    appliedGiftCardId: appliedGiftCardId || null,
+    codeProvided: Boolean(giftCardCode),
+    itemsCount: items.length,
+  });
 
   if (!items.length) {
     return sendResponse(res, false, null, "No items provided");
@@ -700,26 +921,27 @@ const createOrder = async (req, res) => {
         .session(session)
         .populate("product_id");
 
-      if (!variant) {throw new Error("Variant not found");}
+      if (!variant) {
+        throw new Error("Variant not found");
+      }
 
       if (!variant.product_id) {
         throw new Error("Product not found");
       }
 
-      if (variant.stock_quantity < quantity) {
+      if (Number(variant.stock_quantity) < quantity) {
         throw new Error(`Not enough stock for ${variant.sku}`);
       }
 
       const product = variant.product_id;
-
-      if (!store_owner_id && product.storeId) {
-        store_owner_id = product.storeId._id || product.storeId;
-      }
-
       const price = Number(variant.offerprice);
 
       if (!Number.isFinite(price) || price < 0) {
         throw new Error(`Invalid price for ${variant.sku}`);
+      }
+
+      if (!store_owner_id && product.storeId) {
+        store_owner_id = product.storeId._id || product.storeId;
       }
 
       subtotal += price * quantity;
@@ -737,26 +959,44 @@ const createOrder = async (req, res) => {
     }
 
     const safeSubtotal = Number(subtotal.toFixed(2));
-
     let discountAmount = 0;
+
     if (coupon_id) {
       const coupon = await Coupon.findById(coupon_id).session(session);
 
-      if (coupon) {
-        if (coupon.discount_type === "fixed") {
-          discountAmount = Math.min(
-            Number(coupon.discount_value) || 0,
-            safeSubtotal
-          );
-        } else if (coupon.discount_type === "percentage") {
-          discountAmount = (safeSubtotal * (Number(coupon.discount_value) || 0)) / 100;
-        }
-        if (coupon.max_discount_amount) {
-          discountAmount = Math.min(discountAmount, Number(coupon.max_discount_amount));
+      if (!coupon) {
+        throw new Error("Invalid coupon");
+      }
+
+      if (coupon.discount_type === "fixed") {
+        discountAmount = Math.min(
+          Math.max(0, Number(coupon.discount_value) || 0),
+          safeSubtotal
+        );
+      } else if (coupon.discount_type === "percentage") {
+        const percentage = Math.min(
+          100,
+          Math.max(0, Number(coupon.discount_value) || 0)
+        );
+
+        discountAmount = (safeSubtotal * percentage) / 100;
+      }
+
+      if (coupon.max_discount_amount != null) {
+        const maxDiscount = Number(coupon.max_discount_amount);
+
+        if (Number.isFinite(maxDiscount) && maxDiscount >= 0) {
+          discountAmount = Math.min(discountAmount, maxDiscount);
         }
       }
     }
-    discountAmount = Math.min(safeSubtotal, Math.max(0, Number(discountAmount.toFixed(2))));
+
+    discountAmount = Number(
+      Math.min(
+        safeSubtotal,
+        Math.max(0, discountAmount)
+      ).toFixed(2)
+    );
 
     const safeShipping = Number(shipping);
     const safePlatformCharge = Number(platform_charge);
@@ -779,13 +1019,91 @@ const createOrder = async (req, res) => {
       ).toFixed(2)
     );
 
-    if (total_price <= 0) {
+    if (!Number.isFinite(total_price) || total_price < 0) {
       throw new Error("Invalid order total");
     }
 
-    if (payment_method === "Wallet") {
-      await debitWallet(user_id, total_price, session);
+    let giftCardRedeemed = 0;
+    let giftCardId = null;
+    let savedGiftCardCode = null;
+
+    if (appliedGiftCardId || giftCardCode) {
+      const normalizedCode =
+        typeof giftCardCode === "string"
+          ? giftCardCode.trim()
+          : "";
+
+      let giftCard = null;
+
+      if (appliedGiftCardId) {
+        if (!mongoose.isValidObjectId(appliedGiftCardId)) {
+          throw new Error("Invalid Gift Card ID");
+        }
+
+        giftCard = await GiftCard.findById(appliedGiftCardId)
+          .session(session);
+      } else if (normalizedCode) {
+        giftCard = await GiftCard.findOne({
+          cardNumber: normalizedCode,
+        }).session(session);
+      }
+
+      console.log("GIFT CARD LOOKUP:", {
+        found: Boolean(giftCard),
+        giftCardId: giftCard ? String(giftCard._id) : null,
+        assignedTo: giftCard?.assignedTo
+          ? String(giftCard.assignedTo._id ?? giftCard.assignedTo)
+          : null,
+        remainingBalance: giftCard?.remainingBalance ?? null,
+      });
+
+      if (!giftCard) {
+        throw new Error(
+          "Gift Card not found. Please validate it again."
+        );
+      }
+
+      const giftCardOwner = giftCard.assignedTo;
+
+      if (
+        !giftCardOwner ||
+        String(giftCardOwner._id ?? giftCardOwner) !== String(user_id)
+      ) {
+        throw new Error("This Gift Card does not belong to this user");
+      }
+
+      const availableGiftBalance = Number(giftCard.remainingBalance);
+
+      if (
+        !Number.isFinite(availableGiftBalance) ||
+        availableGiftBalance <= 0
+      ) {
+        throw new Error("Gift Card balance is insufficient");
+      }
+
+      // Redeem no more than the order total or card balance.
+      giftCardRedeemed = Number(
+        Math.min(availableGiftBalance, total_price).toFixed(2)
+      );
+
+      giftCardId = giftCard._id;
+      savedGiftCardCode = giftCard.cardNumber || normalizedCode;
     }
+
+    const amountPayable = Number(
+      Math.max(0, total_price - giftCardRedeemed).toFixed(2)
+    );
+
+    console.log("ORDER PAYMENT CALCULATION:", {
+      subtotal: safeSubtotal,
+      couponDiscount: discountAmount,
+      shipping: safeShipping,
+      platformCharge: safePlatformCharge,
+      orderTotal: total_price,
+      giftCardRedeemed,
+      amountPayable,
+      paymentMethod: payment_method,
+    });
 
     if (payment_method === "Online") {
       throw new Error(
@@ -793,27 +1111,68 @@ const createOrder = async (req, res) => {
       );
     }
 
+    if (payment_method === "Wallet" && amountPayable > 0) {
+      await debitWallet(user_id, amountPayable, session);
+    }
+
+    if (giftCardId && giftCardRedeemed > 0) {
+      const updatedGiftCard = await GiftCard.findOneAndUpdate(
+        {
+          _id: giftCardId,
+          assignedTo: user_id,
+          remainingBalance: { $gte: giftCardRedeemed },
+        },
+        {
+          $inc: {
+            remainingBalance: -giftCardRedeemed,
+          },
+        },
+        {
+          new: true,
+          session,
+          runValidators: true,
+        }
+      );
+
+      if (!updatedGiftCard) {
+        throw new Error(
+          "Gift Card balance changed or is insufficient. Please try again."
+        );
+      }
+    }
+
     const order = new Order({
       user_id,
       total_price,
+      order_total: total_price,
+      gift_card_redeemed: giftCardRedeemed,
+      amount_payable: amountPayable,
+      gift_card_id: giftCardId,
+      gift_card_code: savedGiftCardCode,
       coupon_id: coupon_id || null,
       shippingAddress,
       payment_method,
       payment_status:
-        payment_method === "Wallet" ? "paid" : "pending",
+        payment_method === "Wallet" || amountPayable === 0
+          ? "paid"
+          : "pending",
       transaction_id: transaction_id || "",
       status: "pending",
       store_owner_id: store_owner_id || null,
     });
 
-    pushHistory(order, "pending", "customer", "Order placed");
+    pushHistory( order, "pending", "customer",
+      payment_method === "Wallet"
+        ? "Order placed and paid using Wallet"
+        : "Order placed with Cash on Delivery"
+    );
     savedOrder = await order.save({ session });
 
     if (["Wallet", "COD"].includes(payment_method)) {
       const paymentReferenceId =
-        payment_method === "Wallet"
-          ? `WALLET_ORDER_${savedOrder._id}`
-          : `COD_ORDER_${savedOrder._id}`;
+        `${payment_method.toUpperCase()}_ORDER_${savedOrder._id}`;
+
+      const walletPayment = payment_method === "Wallet";
 
       await Payment.findOneAndUpdate(
         { order_id: savedOrder._id },
@@ -823,15 +1182,12 @@ const createOrder = async (req, res) => {
             order_id: savedOrder._id,
             store_owner_id: store_owner_id || null,
             payment_method,
-            amount_paid: total_price,
+            amount_paid: walletPayment ? amountPayable : 0,
             discount_amount: discountAmount,
             coupon_id: coupon_id || null,
             transaction_id: paymentReferenceId,
-            status:
-              payment_method === "Wallet"
-                ? "completed"
-                : "pending",
-            ...(payment_method === "Wallet"
+            status: walletPayment ? "completed" : "pending",
+            ...(walletPayment
               ? { payment_date: new Date() }
               : {}),
           },
@@ -846,6 +1202,7 @@ const createOrder = async (req, res) => {
       );
     }
 
+
     if (["Wallet", "COD"].includes(payment_method)) {
       const isWalletPayment = payment_method === "Wallet";
 
@@ -858,11 +1215,13 @@ const createOrder = async (req, res) => {
           $setOnInsert: {
             user: user_id,
             order_id: savedOrder._id,
-            amount: total_price,
+            amount: isWalletPayment ? amountPayable : 0,
             currency: "inr",
             type: "Money sent",
             category: "Order",
-            paymentMode: isWalletPayment ? "Wallet" : "Cash on Delivery",
+            paymentMode: isWalletPayment
+              ? "Wallet"
+              : "Cash on Delivery",
             status: isWalletPayment ? "Success" : "Pending",
             tab: "All",
             description: isWalletPayment
@@ -880,9 +1239,9 @@ const createOrder = async (req, res) => {
         }
       );
     }
-
     const itemsToSave = orderItems.map((item) => ({
-      ...item, order_id: savedOrder._id,
+      ...item,
+      order_id: savedOrder._id,
     }));
 
     await OrderItem.insertMany(itemsToSave, { session });
@@ -897,7 +1256,17 @@ const createOrder = async (req, res) => {
         await cart.save({ session });
       }
     }
+
+    console.log("ORDER SAVED:", {
+      orderId: String(savedOrder._id),
+      orderTotal: savedOrder.order_total,
+      giftCardRedeemed: savedOrder.gift_card_redeemed,
+      amountPayable: savedOrder.amount_payable,
+      paymentMethod: savedOrder.payment_method,
+      paymentStatus: savedOrder.payment_status,
+    });
   });
+
 
     const populatedForEmail = await Order.findById(savedOrder._id)
       .populate("user_id", "name email");
@@ -924,9 +1293,21 @@ const createOrder = async (req, res) => {
       console.error("Admin order email failed:", err.message)
     );
 
-  return sendResponse(res, true, savedOrder, "Order created successfully");
+    return sendResponse(
+      res,
+      true,
+      savedOrder,
+      "Order created successfully"
+    );
   } catch (err) {
-    return sendResponse(res, false, null, err.message || "Unable to create order");
+    console.error("CREATE ORDER ERROR:", err);
+
+    return sendResponse(
+      res,
+      false,
+      null,
+      err.message || "Unable to create order"
+    );
   } finally {
     if (session) {
       await session.endSession();

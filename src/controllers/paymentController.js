@@ -7,6 +7,7 @@ const transection = require("../models/Transactions")
 const Cart = require("../models/Cart");
 const Stripe = require("stripe");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const GiftCard = require("../models/giftCard");
 const { sendResponse } = require("../utils/response");
 const {
   getPlatformCharge,
@@ -277,7 +278,7 @@ const createStripePaymentIntent = async (req, res) => {
     if (!userId) {
       return sendResponse(res, false, null, "Unauthorized");
     }
-    const { cart_id, coupon_id, shippingAddress, email, method } = req.body;
+    const { cart_id, coupon_id, shippingAddress, email, method, appliedGiftCardId, giftCardCode, useGiftCardBalance, } = req.body;
 
     if (!cart_id) {
       return sendResponse(res, false, null, "Cart ID is required");
@@ -365,12 +366,89 @@ const createStripePaymentIntent = async (req, res) => {
 
     const discountedTotal = subtotal - discount;
     const platformCharge = await getPlatformCharge(discountedTotal);
-    const total = Number(
-      (discountedTotal + shipping + Number(platformCharge || 0)).toFixed(2)
+    // const total = Number(
+    //   (discountedTotal + shipping + Number(platformCharge || 0)).toFixed(2)
+    // );
+    
+    const orderTotal = Number(
+      (
+        discountedTotal +
+        shipping +
+        Number(platformCharge || 0)
+      ).toFixed(2)
     );
-    if (!Number.isFinite(total) || total <= 0) {
-      return sendResponse(res, false, null, "Invalid payment amount");
+
+    let giftCard = null;
+    let giftCardRedeemed = 0;
+
+    if (useGiftCardBalance && (appliedGiftCardId || giftCardCode)) {
+      if (appliedGiftCardId) {
+        giftCard = await GiftCard.findById(appliedGiftCardId);
+      } else {
+        giftCard = await GiftCard.findOne({
+          cardNumber: String(giftCardCode).trim(),
+        });
+      }
+
+      if (!giftCard) {
+        return sendResponse(res, false, null, "Gift Card not found");
+      }
+
+      if (giftCard.status !== "Active") {
+        return sendResponse(res, false, null, "Gift Card is not active");
+      }
+
+      if (giftCard.expiresAt && giftCard.expiresAt < new Date()) {
+        return sendResponse(res, false, null, "Gift Card has expired");
+      }
+
+      if (
+        giftCard.assignedTo &&
+        String(giftCard.assignedTo) !== String(userId)
+      ) {
+        return sendResponse(
+          res,
+          false,
+          null,
+          "Gift Card does not belong to this user"
+        );
+      }
+
+      const balance = Math.max(
+        0,
+        Number(giftCard.remainingBalance) || 0
+      );
+
+      giftCardRedeemed = Number(
+        Math.min(balance, orderTotal).toFixed(2)
+      );
     }
+
+    const amountPayable = Number(
+      Math.max(0, orderTotal - giftCardRedeemed).toFixed(2)
+    );
+
+    if (
+      !Number.isFinite(orderTotal) ||
+      !Number.isFinite(amountPayable) ||
+      orderTotal <= 0
+    ) {
+      return sendResponse(res, false, null, "Invalid order total");
+    }
+
+    // Stripe cannot collect a zero-amount PaymentIntent.
+    if (amountPayable <= 0) {
+      return sendResponse(
+        res,
+        false,
+        null,
+        "Gift Card covers the full order. Use a verified Gift-Card-only checkout flow."
+      );
+    }
+
+    // if (!Number.isFinite(total) || total <= 0) {
+    //   return sendResponse(res, false, null, "Invalid payment amount");
+    // }
     const allowedTypes =
       method === "upi" ? ["upi"] :
       method === "card" ? ["card"] :
@@ -380,7 +458,7 @@ const createStripePaymentIntent = async (req, res) => {
       return sendResponse(res, false, null, "Unsupported Stripe payment method");
     }
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(total * 100),
+      amount: Math.round(amountPayable * 100),
       currency: "inr",
       payment_method_types: allowedTypes,
       receipt_email: email || undefined,
@@ -397,21 +475,35 @@ const createStripePaymentIntent = async (req, res) => {
       status: "pending",
       transaction_id: paymentIntent.id,
       stripe_payment_intent_id: paymentIntent.id,
-      amount_paid: total,
+      amount_paid: amountPayable,
       discount_amount: discount,
       coupon_id: coupon_id || null,
       checkout_data: {
         user_id: userId,
         cart_id: cart._id,
         items: validatedItems,
+       
+        shippingAddress,
+        email,
+
         subtotal,
         discount,
         shipping,
-        platform_charge: platformCharge,
-        total_price: total,
+        platform_charge: Number(platformCharge || 0),
+
+        order_total: orderTotal,
+        total_price: orderTotal,
+        gift_card_redeemed: giftCardRedeemed,
+        amount_payable: amountPayable,
+
+        gift_card_id: giftCard?._id || null,
+
+        // Do not store the PIN or another redeemable secret.
+        gift_card_code: giftCard
+          ? `****${String(giftCard.cardNumber).slice(-4)}`
+          : "",
+
         coupon_id: coupon_id || null,
-        shippingAddress,
-        email,
       },
     });
     await payment.save();
@@ -425,7 +517,7 @@ const createStripePaymentIntent = async (req, res) => {
         discount,
         shipping,
         platformCharge,
-        amount: total,
+        amount: orderTotal,
       },
       "Stripe payment initialized",
     );
@@ -484,6 +576,11 @@ const finalizeStripePayment = async (req, res) => {
       );
     }
 
+    console.log("\n========== STRIPE FINALIZATION START ==========");
+    console.log("PaymentIntent ID:", paymentIntentId);
+
+    
+
     const payment = await Payment.findOne({
       stripe_payment_intent_id: paymentIntent.id,
       user_id: userId,
@@ -493,6 +590,12 @@ const finalizeStripePayment = async (req, res) => {
       return sendResponse(res, false, null, "Payment record not found");
     }
 
+    console.log("Payment record found:", {
+  paymentId: String(payment._id),
+  status: payment.status,
+  amount_paid: payment.amount_paid,
+  order_id: payment.order_id
+});
     // if (payment.status === "failed") {
     //   return sendResponse(res, false, null, "This payment has already been marked failed");
     // }
@@ -509,6 +612,7 @@ const finalizeStripePayment = async (req, res) => {
       !Number.isFinite(expectedAmount) ||
       expectedAmount <= 0 ||
       paymentIntent.amount_received !== expectedAmount ||
+      paymentIntent.amount !== expectedAmount ||
       paymentIntent.currency !== "inr"
     ) {
       return sendResponse(res, false, null, "Stripe payment amount or currency does not match");
@@ -526,9 +630,17 @@ const finalizeStripePayment = async (req, res) => {
       );
     }
 
-    if (payment.status !== "pending") {
-      return sendResponse(res, false, null, "Payment is not in a finalizable state");
-    }
+    // if (payment.status !== "pending") {
+    //   return sendResponse(res, false, null, "Payment is not in a finalizable state");
+    // }
+    if (!["pending", "processing"].includes(payment.status)) {
+  return sendResponse(
+    res,
+    false,
+    null,
+    "Payment is not in a finalizable state"
+  );
+}
     const checkout = payment.checkout_data;
 
     if (!checkout || !Array.isArray(checkout.items) || checkout.items.length === 0) {
@@ -600,16 +712,89 @@ const finalizeStripePayment = async (req, res) => {
       });
       }
 
+    // const order = new Order({
+    //   user_id: userId,
+    //   total_price: Number(checkout.total_price),
+    //   coupon_id: checkout.coupon_id || null,
+    //   shippingAddress: checkout.shippingAddress,
+    //   payment_method: "Online",
+    //   payment_status: "paid",
+    //   transaction_id: paymentIntent.id,
+    //   status: "pending",
+    //   store_owner_id,
+    // });
+    // Payment documentમાંથી સાચી checkout values લો.
+    const checkout = payment.checkout_data;
+
+    if (!checkout) {
+      throw new Error("Checkout data not found in Payment");
+    }
+
+    const orderTotal = Number(
+      checkout.order_total ?? checkout.total_price
+    );
+
+    const giftCardRedeemed = Number(
+      checkout.gift_card_redeemed ?? 0
+    );
+
+    const amountPayable = Number(
+      checkout.amount_payable ?? payment.amount_paid
+    );
+
+    // Order totals વચ્ચે consistency ચકાસો.
+    if (
+      !Number.isFinite(orderTotal) ||
+      !Number.isFinite(giftCardRedeemed) ||
+      !Number.isFinite(amountPayable) ||
+      orderTotal < 0 ||
+      giftCardRedeemed < 0 ||
+      amountPayable < 0 ||
+      giftCardRedeemed > orderTotal
+    ) {
+      throw new Error("Invalid order or Gift Card amounts");
+    }
+
+    const calculatedPayable = Number(
+      (orderTotal - giftCardRedeemed).toFixed(2)
+    );
+
+    if (
+      Math.round(calculatedPayable * 100) !==
+      Math.round(amountPayable * 100)
+    ) {
+      throw new Error("Gift Card calculation does not match payment");
+    }
+
+    // Stripeમાં ખરેખર ચૂકવેલી રકમ સાથે મેળ બેસાડો.
+    if (
+      Math.round(Number(payment.amount_paid) * 100) !==
+      Math.round(amountPayable * 100)
+    ) {
+      throw new Error("Stripe payable amount does not match Payment record");
+    }
+
     const order = new Order({
       user_id: userId,
-      total_price: Number(checkout.total_price),
+
+      // Gift Card પહેલાંની સંપૂર્ણ Order કિંમત
+      total_price: orderTotal,
+      order_total: orderTotal,
+
+      // Gift Cardની વિગતો
+      gift_card_redeemed: giftCardRedeemed,
+      amount_payable: amountPayable,
+      gift_card_id: checkout.gift_card_id || null,
+      gift_card_code: checkout.gift_card_code || "",
+
       coupon_id: checkout.coupon_id || null,
       shippingAddress: checkout.shippingAddress,
+
       payment_method: "Online",
       payment_status: "paid",
       transaction_id: paymentIntent.id,
       status: "pending",
-      store_owner_id,
+      store_owner_id: store_owner_id || null,
     });
 
     pushHistory(
@@ -645,16 +830,44 @@ const finalizeStripePayment = async (req, res) => {
     createdOrderId = savedOrder._id;
   });
 
-    const savedOrder = await Order.findById(createdOrderId).populate(
-      "user_id", "name email"
-    );
+  const result = await finalizeOrderFromPaymentIntent(
+  paymentIntent.id
+);
+
+if (!result || !result.order) {
+  return sendResponse(
+    res,
+    false,
+    { processing: true, code: "PAYMENT_PROCESSING" },
+    "Payment succeeded but order finalization is still processing"
+  );
+}
+    // const savedOrder = await Order.findById(createdOrderId).populate(
+    //   "user_id", "name email"
+    // );
+
+    // if (!savedOrder) {
+    //   return sendResponse(res, false, null, "Order was not found after payment finalization");
+    // }
+
+    // const finalPayment = await Payment.findById(payment._id);
+    const savedOrder = await Order.findById(result.order._id);
 
     if (!savedOrder) {
-      return sendResponse(res, false, null, "Order was not found after payment finalization");
+      throw new Error("Finalized order could not be retrieved");
     }
 
-    const finalPayment = await Payment.findById(payment._id);
+    const finalPayment = result.payment;
 
+    // return sendResponse(
+    //   res,
+    //   true,
+    //   {
+    //     order: savedOrder,
+    //     payment: finalPayment,
+    //   },
+    //   "Payment successful and order created"
+    // );
     await saveCheckoutTransaction({
       payment: finalPayment,
       paymentIntent,

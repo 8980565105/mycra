@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    total_price: { type: Number, required: true },
+    total_price: { type: Number, required: true,min: 0,  },
 
     status: {
       type: String,
@@ -94,6 +94,20 @@ const orderSchema = new mongoose.Schema(
     },
 
     invoice_generated: { type: Boolean, default: false },
+
+    order_total: { type: Number, default: 0, min: 0 },
+
+    gift_card_redeemed: { type: Number, default: 0, min: 0 },
+
+    amount_payable: { type: Number, default: 0, min: 0 },
+
+    gift_card_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "GiftCard",
+      default: null,
+    },
+
+    gift_card_code: { type: String, default: "" },
   },
   { timestamps: true },
 );

@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
-const GiftCard = require("../models/GiftCard");
+const GiftCard = require("../models/giftCard");
 const GiftCardTransaction = require("../models/GiftCardTransaction");
 const Wallet = require("../models/Wallet");
 const User = require("../models/User");
