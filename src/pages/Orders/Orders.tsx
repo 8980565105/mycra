@@ -380,7 +380,9 @@ export default function Orders() {
         Customer: o.user?.name,
         Mobile: o.shippingAddress?.phone,
         Address: `${o.shippingAddress?.address}, ${o.shippingAddress?.city}, ${o.shippingAddress?.state} - ${o.shippingAddress?.pincode}`,
-        "Total Price": o.total_price,
+        "Order Total": o.order_total ?? o.total_price ?? 0,
+        "Gift Card Redeemed": o.gift_card_redeemed ?? 0,
+        "Amount Payable": o.amount_payable ?? o.total_price ?? 0,
         Payment: o.payment_method,
         Status: STATUS_LABEL[o.status] || o.status,
         "Created At": new Date(o.createdAt).toLocaleDateString("en-IN"),
@@ -582,7 +584,9 @@ export default function Orders() {
                   <th className="p-3 text-left">Customer</th>
                   <th className="p-3 text-left">Mobile</th>
                   <th className="p-3 text-left">Address</th>
-                  <th className="p-3 text-left">Amount</th>
+                  <th className="p-3 text-right whitespace-nowrap">Order Total</th>
+                  <th className="p-3 text-right whitespace-nowrap">Gift Card Redeemed</th>
+                  <th className="p-3 text-right whitespace-nowrap">Amount Payable</th>
                   <th className="p-3 text-left">Payment</th>
                   <th className="p-3 text-left">Status</th>
                   <th className="p-3 text-center">Actions</th>
@@ -590,7 +594,7 @@ export default function Orders() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {!tableLoading && orders.length === 0 ? (
-                  <tr><td colSpan={10} className="p-10 text-center text-gray-400">No orders found.</td></tr>
+                  <tr><td colSpan={12} className="p-10 text-center text-gray-400">No orders found.</td></tr>
                 ) : (
                   orders.map((order, index) => {
                     const isExpanded = expandedRows.includes(order._id);
@@ -607,7 +611,25 @@ export default function Orders() {
                           <td className="p-3 text-xs text-gray-500 max-w-[180px] truncate">
                             {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.state} - {order.shippingAddress?.pincode}
                           </td>
-                          <td className="p-3 font-semibold">₹{order.total_price}</td>
+                          <td className="p-3 text-right font-semibold whitespace-nowrap text-blue-600">
+                            ₹{Number(
+                              (order as any).order_total ?? order.total_price ?? 0
+                            )}
+                          </td>
+                          <td className="p-3 text-right whitespace-nowrap">
+                            <span className="font-semibold text-green-600">
+                              - ₹{Number(
+                                (order as any).gift_card_redeemed ?? 0
+                              )}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right font-bold whitespace-nowrap">
+                            <span>
+                              ₹{Number(
+                                (order as any).amount_payable ?? order.total_price ?? 0
+                              )}
+                            </span>
+                          </td>
                           <td className="p-3">
                             <span className={`text-xs px-2 py-1 rounded-full font-medium ${order.payment_status === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
                               {order.payment_method}
@@ -637,7 +659,7 @@ export default function Orders() {
                         </tr>
                         {isExpanded && (
                           <tr className="bg-gray-50">
-                            <td colSpan={10} className="p-0">
+                            <td colSpan={12} className="p-0">
                               <div className="p-4 border-t border-gray-200">
                                 <p className="text-sm font-semibold text-gray-700 mb-3">Order Items</p>
                                 <table className="w-full text-sm">
@@ -765,7 +787,15 @@ export default function Orders() {
           <div className="space-y-3">
             <div className="p-3 bg-gray-50 rounded-lg text-sm">
               <p><strong>Customer:</strong> {targetOrder.user?.name}</p>
-              <p><strong>Amount:</strong> ₹{targetOrder.total_price} · {targetOrder.payment_method}</p>
+              {/* <p><strong>Amount:</strong> ₹{targetOrder.total_price} · {targetOrder.payment_method}</p> */}
+              <p>
+                <strong>Order Total:</strong> ₹
+                {Number(
+                  (targetOrder as any).order_total ?? targetOrder.total_price ?? 0
+                ).toFixed(2)}
+                {" · "}
+                {targetOrder.payment_method}
+              </p>
               <p><strong>Address:</strong> {targetOrder.shippingAddress?.city}, {targetOrder.shippingAddress?.state}</p>
             </div>
             <div>
@@ -931,7 +961,16 @@ export default function Orders() {
         <Modal title={`Mark as Delivered — ${targetOrder.order_number}`} onClose={closeModal}>
           <p className="text-sm text-gray-600 mb-2">Confirm that this order has been delivered to the customer.</p>
           {targetOrder.payment_method === "COD" && (
-            <p className="text-xs text-green-600 mb-3 p-2 bg-green-50 rounded">✓ COD payment of ₹{targetOrder.total_price} will be marked as collected.</p>
+            // <p className="text-xs text-green-600 mb-3 p-2 bg-green-50 rounded">✓ COD payment of ₹{targetOrder.total_price} will be marked as collected.</p>
+            <p className="text-xs text-green-600 mb-3 p-2 bg-green-50 rounded">
+              ✓ COD payment of ₹
+              {Number(
+                (targetOrder as any).amount_payable ??
+                targetOrder.total_price ??
+                0
+              ).toFixed(2)}
+              {" "}will be marked as collected.
+            </p>
           )}
           <div className="flex gap-3">
             <Button disabled={actionLoading} onClick={handleDeliver} className="flex-1 bg-green-600 hover:bg-green-700">

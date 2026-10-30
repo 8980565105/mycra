@@ -61,6 +61,9 @@ export interface Order {
   payment_status: "pending" | "paid" | "failed" | "refunded";
   items: OrderItem[];
   shippingAddress: ShippingAddress;
+  order_total?: number;
+  gift_card_redeemed?: number;
+  amount_payable?: number;
   courier?: {
     partner?: string;
     name?: string;
