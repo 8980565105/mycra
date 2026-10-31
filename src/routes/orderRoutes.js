@@ -19,6 +19,7 @@ const {
   markDelivered,
   markRTO,
   generateInvoice,
+  getCheckoutQuote,
 } = require("../controllers/orderController");
 
 const {
@@ -29,6 +30,7 @@ const {
 
 router.get("/public", authMiddleware, getPublicUserOrders);
 router.use(authMiddleware);
+router.post("/quote", getCheckoutQuote);
 router.get("/", getOrders); 
 router.get("/:id", getOrderById);
 router.post("/", createOrder);

@@ -42,6 +42,31 @@ const orderSchema = new mongoose.Schema(
       ref: "Coupon",
       required: false,
     },
+    subtotal: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    coupon_discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    shipping_charge: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    platform_charge: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    tax: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
     order_number: { type: String, unique: true },
 
