@@ -71,49 +71,23 @@ export default function OrderSuccess() {
     ? orderData.items
     : [];
 
-  const isCOD = ["cod", "cash on delivery"].includes(
-    String(orderData?.payment_method || "").toLowerCase()
-  );
-
-  const isPaid =
-    String(orderData?.payment_status || "").toLowerCase() === "paid";
-
   const orderNumber =
     orderData?.order_number || orderData?._id || id;
 
- 
-const itemsSubtotal = items.reduce((sum, item) => {
-  const variant = item.variant_id || item.variant || {};
 
-  const quantity = Number(item.quantity ?? item.qty ?? 1);
+// const orderTotal = Number(order?.order_total ?? order?.total_price ?? 0);
+// const giftCardRedeemed = Number(order?.gift_card_redeemed ?? 0);
+// const amountPaid = Number(order?.amount_payable ?? order?.total_price ?? 0);
 
-  const unitPrice = Number(
-    item.price_at_order ??
-    item.price ??
-    item.unit_price ??
-    variant.offerprice ??
-    variant.price ??
-    0
+  const couponDiscount = Number(orderData?.coupon_discount ?? 0);
+  const shippingCharge = Number(orderData?.shipping_charge ?? 0);
+  const platformCharge = Number(orderData?.platform_charge ?? 0);
+  const tax = Number(orderData?.tax ?? 0);
+  const orderTotal = Number(orderData?.order_total ?? orderData?.total_price ?? 0);
+  const giftCardRedeemed = Number(orderData?.gift_card_redeemed ?? 0);
+  const amountPaid = Number(
+    orderData?.amount_payable ?? Math.max(0, orderTotal - giftCardRedeemed)
   );
-
-  return sum + unitPrice * quantity;
-}, 0);
-
-const rawApiTotal =
-  orderData?.total_price ??
-  orderData?.total_amount ??
-  orderData?.total;
-
-const total =
-  rawApiTotal != null && Number.isFinite(Number(rawApiTotal))
-    ? Number(rawApiTotal)
-    : itemsSubtotal;
-
-const otherCharges = total - itemsSubtotal;
-
-const orderTotal = Number(order?.order_total ?? order?.total_price ?? 0);
-const giftCardRedeemed = Number(order?.gift_card_redeemed ?? 0);
-const amountPaid = Number(order?.amount_payable ?? order?.total_price ?? 0);
 
   return (
     <Section className="!py-8 md:!py-12">
@@ -261,43 +235,69 @@ const amountPaid = Number(order?.amount_payable ?? order?.total_price ?? 0);
                 </p>
               )}
 
-              
-              {/* Product subtotal */}
-        
-            <div className="mt-2 flex w-full min-w-0 items-start justify-between gap-3 border-t border-gray-200 pt-4">
-              <span className="min-w-0 flex-1 break-words text-[14px] md:text-[16px] sec-text-color">
-                Product subtotal
-              </span>
-
-              <span className="shrink-0 text-right text-[14px] md:text-[16px] font-medium tabular-nums">
+            {/* Product Subtotal */}
+            {orderTotal > 0 && (
+            <div className="mt-3 flex justify-between gap-3 border-t border-gray-200 pt-3">
+              <span className="font-semibold text-black">Order SubTotal</span>
+              <span className="font-semibold">
                 {formatPrice(orderTotal)}
               </span>
             </div>
-
-            {/* Additional charges or adjustments */}
-            {Math.abs(giftCardRedeemed) > 0.009 && (
-              <div className="mt-2 flex w-full min-w-0 items-start justify-between gap-3">
-                <span className="min-w-0 flex-1 break-words text-[14px] md:text-[16px] sec-text-color">
-                  Other Shipment charges
-                </span>
-
-                <span className="shrink-0 text-right text-[14px] md:text-[16px]font-medium tabular-nums">
-                  {formatPrice(giftCardRedeemed)}
+          )}
+            {couponDiscount > 0 && (
+              <div className="mt-2 flex justify-between gap-3">
+                <span className="sec-text-color">Coupon Discount</span>
+                <span className="font-medium text-green-600">
+                  -{formatPrice(couponDiscount)}
                 </span>
               </div>
             )}
 
-            {/* Final order total */}
-            <div className="mt-3 flex w-full min-w-0 items-center justify-between gap-3 border-t border-gray-200 pt-3">
-              <span className="min-w-0 flex-1 break-words font-semibold text-black sm:text-base">
-                Total
-              </span>
+            {shippingCharge > 0 && (
+              <div className="mt-2 flex justify-between gap-3">
+                <span className="sec-text-color">Shipping Charges</span>
+                <span className="font-medium">
+                  {formatPrice(shippingCharge)}
+                </span>
+              </div>
+            )}
 
-              <span className="shrink-0 text-right text-base font-semibold tabular-nums sm:text-lg">
+            {platformCharge > 0 && (
+              <div className="mt-2 flex justify-between gap-3">
+                <span className="sec-text-color">Platform Charges</span>
+                <span className="font-medium">
+                  {formatPrice(platformCharge)}
+                </span>
+              </div>
+            )}
+
+            {tax > 0 && (
+              <div className="mt-2 flex justify-between gap-3">
+                <span className="sec-text-color">Tax</span>
+                <span className="font-medium">
+                  {formatPrice(tax)}
+                </span>
+              </div>
+            )}
+
+          {giftCardRedeemed > 0 && (
+            <div className="mt-2 flex justify-between gap-3">
+              <span className="sec-text-color">Gift Card Redeemed</span>
+              <span className="font-medium text-green-600">
+                -{formatPrice(giftCardRedeemed)}
+              </span>
+            </div>
+          )}
+
+          {amountPaid > 0 && (
+            <div className="mt-3 flex justify-between gap-3 border-t border-gray-200 pt-3">
+              <span className="font-semibold text-black">Amount Paid</span>
+              <span className="font-semibold text-lg">
                 {formatPrice(amountPaid)}
               </span>
             </div>
 
+          )}
   
             </div>
 

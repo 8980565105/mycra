@@ -7,7 +7,7 @@ import {
   useStripe,
 } from "@stripe/react-stripe-js";
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import CartProgress from "../components/cart/CartProgress";
 import { clearCart } from "../features/cart/cartSlice";
@@ -19,8 +19,7 @@ import {
 } from "lucide-react";
 import { fetchWallet } from "../features/wallet/walletThunk";
 import { createOrder } from "../features/orders/orderThunk";
-// const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
-// const stripePromise = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+
 const stripePublishableKey =
   process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 
@@ -38,12 +37,20 @@ const PAYMENT_METHODS = [
     label: "Credit / Debit Card",
     icon: CreditCard,
     type: "stripe",
-    stripeTypes: ["card"],
   },
   { key: "upi", label: "UPI", icon: QrCode, type: "upi_qr" },
   { key: "wallet", label: "Wallet", icon: WalletIcon, type: "direct" },
   { key: "cod", label: "Cash on Delivery", icon: Banknote, type: "direct" },
 ];
+
+const money = (value) =>
+  Number(Number(value || 0).toFixed(2));
+
+const formatPrice = (value) =>
+  `₹${money(value).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
 function StripePaymentForm({ paymentData }) {
   const stripe = useStripe();
@@ -51,28 +58,6 @@ function StripePaymentForm({ paymentData }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // const handlePayment = async (event) => {
-  //   event.preventDefault();
-  //   if (!stripe || !elements) return;
-  //   setLoading(true);
-  //   setError("");
-  //   try {
-  //     const { error } = await stripe.confirmPayment({
-  //       elements,
-  //       confirmParams: {
-  //         return_url: `${window.location.origin}/payment-success`,
-  //       },
-  //     });
-  //     if (error) {
-  //       setError(error.message || "Payment failed.");
-  //       setLoading(false);
-  //     }
-  //   } catch (err) {
-  //     setError("Unable to process payment.");
-  //     setLoading(false);
-  //   }
-  // };
 
   const handlePayment = async (event) => {
     event.preventDefault();
@@ -96,7 +81,7 @@ function StripePaymentForm({ paymentData }) {
       }
     } catch (err) {
       console.error("Stripe payment confirmation error:", err);
-      setError(err.message || "Unable to process payment.");
+      setError(err?.message || "Unable to process payment.");
       setLoading(false);
     }
   };
@@ -117,7 +102,7 @@ function StripePaymentForm({ paymentData }) {
       >
         {loading
           ? "PROCESSING..."
-          : `PAY ₹${Math.round(paymentData.amount).toLocaleString("en-IN")}`}
+          : `PAY ${formatPrice(paymentData.amount)}`}
       </button>
       <button
         type="button"
@@ -146,12 +131,69 @@ function UpiQrPayment({
   const [polling, setPolling] = useState(false);
   const [instructionsUrl, setInstructionsUrl] = useState("");
 
+  const pollPaymentStatus = (secret) => {
+    if (!stripe || !secret) return;
+
+    setPolling(true);
+
+    let attempts = 0;
+    const maxAttempts = 100;
+
+    const interval = window.setInterval(async () => {
+      attempts += 1;
+
+      try {
+        const { paymentIntent, error: retrieveError } =
+          await stripe.retrievePaymentIntent(secret);
+
+        if (retrieveError) {
+          console.error("Retrieve PaymentIntent error:", retrieveError);
+        }
+
+        if (paymentIntent?.status === "succeeded") {
+          window.clearInterval(interval);
+          setPolling(false);
+          navigate(
+            `/payment-success?payment_intent=${paymentIntent.id}`
+          );
+          return;
+        }
+
+        if (
+          paymentIntent?.status === "canceled" ||
+          attempts >= maxAttempts
+        ) {
+          window.clearInterval(interval);
+          setPolling(false);
+
+          if (paymentIntent?.status === "canceled") {
+            setError("This UPI payment was canceled. You can try again.");
+          } else {
+            setError(
+              "Payment confirmation is taking longer than expected. Please verify your payment status before retrying."
+            );
+          }
+        }
+      } catch (err) {
+        console.error("UPI payment polling error:", err);
+      }
+    }, 3000);
+  };
+
+  useEffect(() => {
+    return () => {
+      setPolling(false);
+    };
+  }, []);
+
   const handleShowQr = async () => {
-    if (!stripe || !clientSecret) return;
+    if (!stripe || !clientSecret || loading) return;
+
     setLoading(true);
     setError("");
     try {
-      const { paymentIntent, error } = await stripe.confirmPayment({
+      const { paymentIntent, error: confirmError } =
+      await stripe.confirmPayment({
         clientSecret,
         confirmParams: {
           return_url: `${window.location.origin}/payment-success`,
@@ -176,26 +218,18 @@ function UpiQrPayment({
             },
           },
           payment_method_options: {
-            upi: {
-              flow: "qr",
-            },
+            upi: { flow: "qr" },
           },
         },
         redirect: "if_required",
       });
 
-      console.log("Stripe confirmPayment error:", error);
-      console.log("Stripe paymentIntent:", paymentIntent);
-      console.log(
-        "next_action:",
-        JSON.stringify(paymentIntent?.next_action, null, 2),
-      );
-
-      if (error) {
+      if (confirmError) {
         setError(
-          `${error.message || "Unable to generate QR code."} (${error.code || ""})`,
+          `${confirmError.message || "Unable to generate QR code."}${
+            confirmError.code ? ` (${confirmError.code})` : ""
+          }`
         );
-        setLoading(false);
         return;
       }
 
@@ -216,49 +250,24 @@ function UpiQrPayment({
         upiAction?.hosted_instructions_url ||
         paymentIntent?.next_action?.upi_display_qr_code?.hosted_instructions_url;
 
-      if (qrImageUrl) {
-        setQrImage(qrImageUrl);
+      if (qrImageUrl || hostedInstructionsUrl) {
+        setQrImage(qrImageUrl || "");
+        setInstructionsUrl(hostedInstructionsUrl || "");
         setShowQr(true);
-        pollPaymentStatus(clientSecret);
-      } else if (hostedInstructionsUrl) {
-        setQrImage("");
-        setShowQr(true);
-        setInstructionsUrl(hostedInstructionsUrl);
         pollPaymentStatus(clientSecret);
       } else {
         setError(
           `UPI QR details unavailable. Status: ${
             paymentIntent?.status || "unknown"
-          }; next action: ${
-            paymentIntent?.next_action?.type || "none"
           }`,
         );
       }
     } catch (err) {
-      console.error("UPI QR catch error:", err);
-      setError(err.message || "Unable to process UPI payment.");
+      console.error("UPI QR error:", err);
+      setError(err?.message || "Unable to process UPI payment.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const pollPaymentStatus = (secret) => {
-    setPolling(true);
-    const interval = setInterval(async () => {
-      const { paymentIntent } = await stripe.retrievePaymentIntent(secret);
-      if (paymentIntent?.status === "succeeded") {
-        clearInterval(interval);
-        setPolling(false);
-        navigate(`/payment-success?payment_intent=${paymentIntent.id}`);
-      }
-      if (paymentIntent?.status === "canceled") {
-        clearInterval(interval);
-        setPolling(false);
-        setError("his UPI payment attempt was canceled. You can try again.");
-      }
-    }, 3000);
-
-    setTimeout(() => clearInterval(interval), 5 * 60 * 1000);
   };
 
   return (
@@ -266,12 +275,11 @@ function UpiQrPayment({
       {!showQr && (
         <>
           <p className="text-[14px] text-gray-600">
-            Pay ₹{Math.round(amount).toLocaleString("en-IN")} using any UPI app
-            (GPay, PhonePe, Paytm).
+            Pay {formatPrice(amount)} using a supported UPI app.
           </p>
           <button
             type="button"
-            disabled={loading}
+            disabled={loading || !stripe}
             onClick={handleShowQr}
             className="w-full py-[15px] bg-black text-white uppercase tracking-wide disabled:opacity-50"
           >
@@ -280,12 +288,11 @@ function UpiQrPayment({
         </>
       )}
 
-      {/* {showQr && qrImage && ( */}
       {showQr && (
         <div className="flex flex-col items-center gap-4">
           <h3 className="text-[16px] font-medium">Scan QR and Pay</h3>
           <div className="text-[20px] font-semibold">
-            ₹{Math.round(amount).toLocaleString("en-IN")}
+            {formatPrice(amount)}
           </div>
           {qrImage ? (
               <img
@@ -337,10 +344,11 @@ export default function Payment() {
   const [initializing, setInitializing] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
-  const [giftCardBalance, setGiftCardBalance] = useState(0);
-  const [giftCardLoading, setGiftCardLoading] = useState(false);
-  const [giftCardError, setGiftCardError] = useState("");
-  const currentMethod = PAYMENT_METHODS.find((m) => m.key === selectedMethod);
+
+  const currentMethod = PAYMENT_METHODS.find(
+    (method) => method.key === selectedMethod
+  );
+
   const needsClientSecret =
     currentMethod?.type === "stripe" || currentMethod?.type === "upi_qr";
 
@@ -371,12 +379,10 @@ export default function Payment() {
 
   useEffect(() => {
     const handlePageShow = () => {
-      const storedCheckout = sessionStorage.getItem("checkoutInfo");
-      if (!storedCheckout) {
+      if (!sessionStorage.getItem("checkoutInfo")) {
         window.location.replace("/cart");
       }
     };
-    handlePageShow();
     window.addEventListener("pageshow", handlePageShow);
 
     return () => {
@@ -384,8 +390,30 @@ export default function Payment() {
     };
   }, []);
 
-useEffect(() => {
-  if (!needsClientSecret || !checkoutInfo) return;
+  const orderTotal = money(
+    checkoutInfo?.orderTotal ??
+    checkoutInfo?.total ??
+    0
+  );
+
+  const giftCardRedeemed = money(
+    Math.min(
+      Math.max(0, Number(checkoutInfo?.giftCardRedeemed) || 0),
+      orderTotal
+    )
+  );
+
+  const remainingPayment = money(
+    Math.max(0, orderTotal - giftCardRedeemed)
+  );
+
+  const isGiftCardApplied =
+    Boolean(checkoutInfo?.appliedGiftCardId) &&
+    Boolean(checkoutInfo?.useGiftCardBalance) &&
+    giftCardRedeemed > 0;
+
+  useEffect(() => {
+    if (!needsClientSecret || !checkoutInfo) return;
 
   let cancelled = false;
 
@@ -400,28 +428,58 @@ useEffect(() => {
         ? "/payments/stripe/create-intent"
         : "/payments/stripe/update-intent";
 
-      const payload = isNewIntent
-        ? {
-            cart_id: checkoutInfo.cart_id,
-            coupon_id: checkoutInfo.coupon_id,
-            shippingAddress: checkoutInfo.shippingAddress,
-            email: checkoutInfo.email,
-            method: selectedMethod,
+      const requestedGiftCardAmount = money(
+        checkoutInfo.requestedGiftCardAmount ??
+        checkoutInfo.giftCardRedeemed ??
+        0
+      );
 
-            appliedGiftCardId: checkoutInfo.appliedGiftCardId || null,
-            giftCardCode: checkoutInfo.giftCardCode || null,
-            useGiftCardBalance: Boolean(
-              checkoutInfo.useGiftCardBalance
-            ),
-            giftCardRedeemed: Number(
-              checkoutInfo.giftCardRedeemed
-            ) || 0,
-            expectedPayableAmount: remainingPayment,
-          }
-        : {
-            paymentIntentId,
-            method: selectedMethod,
-          };
+      const effectiveGiftCardId =
+        checkoutInfo.appliedGiftCardId || null;
+
+      const useGiftCardBalance = Boolean(
+        effectiveGiftCardId && requestedGiftCardAmount > 0
+      );
+
+      const expectedPayableAmount = money(
+        Math.max(0, orderTotal - (
+          useGiftCardBalance ? requestedGiftCardAmount : 0
+        ))
+      );
+
+       const payload = {
+        cart_id: checkoutInfo.cart_id,
+        coupon_id: checkoutInfo.coupon_id || null,
+        shippingAddress: checkoutInfo.shippingAddress,
+        email: checkoutInfo.email,
+        method: selectedMethod,
+
+          appliedGiftCardId: useGiftCardBalance ? effectiveGiftCardId : null,
+
+          giftCardCode: useGiftCardBalance
+            ? checkoutInfo.giftCardCode || null
+            : null,
+          requestedGiftCardAmount: checkoutInfo.requestedGiftCardAmount || 0,
+
+          useGiftCardBalance: Boolean(checkoutInfo.useGiftCardBalance),
+
+          giftCardRedeemed: useGiftCardBalance
+            ? requestedGiftCardAmount
+            : 0,
+
+        expectedPayableAmount,
+
+        ...(isNewIntent ? {} : { paymentIntentId }),
+      };
+
+      console.log("FRONTEND STRIPE GIFT CARD PAYLOAD:", {
+        endpoint,
+        appliedGiftCardId: payload.appliedGiftCardId,
+        giftCardCode: payload.giftCardCode,
+        useGiftCardBalance: payload.useGiftCardBalance,
+        requestedGiftCardAmount: payload.requestedGiftCardAmount,
+        expectedPayableAmount: payload.expectedPayableAmount,
+      });
 
       const response = await fetch(
         `${process.env.REACT_APP_API_URL}${endpoint}`,
@@ -443,6 +501,7 @@ useEffect(() => {
         message: data?.message,
         hasClientSecret: Boolean(data?.data?.clientSecret),
         paymentIntentId: data?.data?.paymentIntentId,
+        amount: data?.data?.amount,
       });
 
       if (!response.ok || !data?.success) {
@@ -469,8 +528,8 @@ useEffect(() => {
       setClientSecret(nextClientSecret);
       setPaymentIntentId(nextPaymentIntentId);
 
-      if (data.data.amount != null) {
-        setStripeAmountData({ amount: data.data.amount });
+      if (data?.data?.amount != null) {
+        setStripeAmountData({amount: Number(data.data.amount)});
       }
 
       if (isNewIntent) {
@@ -479,7 +538,7 @@ useEffect(() => {
           JSON.stringify({
             paymentIntentId: nextPaymentIntentId,
             clientSecret: nextClientSecret,
-            amount: data.data.amount,
+            amount: data?.data?.amount,
           })
         );
       }
@@ -489,9 +548,7 @@ useEffect(() => {
       if (!cancelled) {
         setClientSecret("");
         setPaymentInitError(
-          err instanceof Error
-            ? err.message
-            : "Unable to initialize payment."
+          err?.message || "Unable to initialize payment."
         );
       }
     } finally {
@@ -510,55 +567,54 @@ useEffect(() => {
   needsClientSecret,
   checkoutInfo,
   selectedMethod,
-  paymentIntentId,
+  orderTotal,
 ]);
-
-  const isGiftCardApplied =
-  Boolean(checkoutInfo?.useGiftCardBalance) &&
-  Number(checkoutInfo?.giftCardRedeemed || 0) > 0;
 
 const handlePlaceOrder = async () => {
   if (!checkoutInfo || placing) return;
-  
+
+  if (!["wallet", "cod"].includes(selectedMethod)) {
+    toast.error("Please select a valid payment method.");
+    return;
+  }
+
   setPlacing(true);
 
   try {
+    const requestedGiftCardAmount = money(
+      checkoutInfo.requestedGiftCardAmount ??
+      checkoutInfo.giftCardRedeemed ??
+      0
+    );
+
+    const useGiftCardBalance = Boolean(
+      checkoutInfo.appliedGiftCardId &&
+      requestedGiftCardAmount > 0
+    );
+
+    // const payableAmount = money(
+    //   Math.max(
+    //     0, orderTotal - (useGiftCardBalance ? requestedGiftCardAmount : 0)
+    //   )
+    // );
+    const payableAmount = money(
+      checkoutInfo.amount_payable
+    );
 
     const orderPayload = {
       cart_id: checkoutInfo.cart_id,
-      coupon_id: checkoutInfo.coupon_id,
+      coupon_id: checkoutInfo.coupon_id || null,
       shippingAddress: checkoutInfo.shippingAddress,
-      // payment_method:
-      //   selectedMethod === "wallet" ? "Wallet" : "COD",
-       payment_method:
-        selectedMethod === "wallet"
-          ? "Wallet"
-          : selectedMethod === "cod"
-            ? "COD"
-            : null,
-      shipping: checkoutInfo.shipping,
-      platform_charge: checkoutInfo.platformCharge,
+      payment_method: selectedMethod === "wallet" ? "Wallet" : "COD",
       items: checkoutInfo.items,
-      
-      appliedGiftCardId: checkoutInfo.appliedGiftCardId || null,
-      giftCardCode: checkoutInfo.giftCardCode || null,
-      useGiftCardBalance: Boolean(
-        checkoutInfo.useGiftCardBalance
-      ),
-      giftCardRedeemed:
-        Number(checkoutInfo.giftCardRedeemed) || 0,
+      appliedGiftCardId: useGiftCardBalance ? checkoutInfo.appliedGiftCardId : null,
+      giftCardCode: useGiftCardBalance ? checkoutInfo.giftCardCode || null : null,
+      useGiftCardBalance,
+      requestedGiftCardAmount: useGiftCardBalance ? requestedGiftCardAmount : 0,
+      giftCardRedeemed: useGiftCardBalance ? requestedGiftCardAmount : 0,
+      expectedPayableAmount: payableAmount,
     };
-    console.log("ORDER GIFT CARD PAYLOAD:", {
-      appliedGiftCardId: orderPayload.appliedGiftCardId,
-      codeProvided: Boolean(orderPayload.giftCardCode),
-      coupon_id: orderPayload.coupon_id,
-      shipping: orderPayload.shipping,
-      platform_charge: orderPayload.platform_charge,
-    });
-    if (!["Wallet", "COD"].includes(orderPayload.payment_method)) {
-      toast.error("Please select a valid payment method.");
-      return;
-    }
+
     const result = await dispatch(
       createOrder(orderPayload)
     ).unwrap();
@@ -586,6 +642,7 @@ const handlePlaceOrder = async () => {
         console.error("Wallet refresh failed:", walletError);
       }
     }
+
     sessionStorage.setItem("orderCompleted", "true");
 
     dispatch(clearCart());
@@ -597,11 +654,7 @@ const handlePlaceOrder = async () => {
 
     toast.success("Order placed successfully!");
 
-    // navigate(`/order-success/${orderId}`, {
-    //   replace: true,
-    // });
     window.location.replace(`/order-success/${orderId}`);
-
   } catch (err) {
     console.error("Place order error:", err);
 
@@ -614,7 +667,6 @@ const handlePlaceOrder = async () => {
     setPlacing(false);
   }
 };
-
 
   if (loading) {
     return (
@@ -630,29 +682,16 @@ const handlePlaceOrder = async () => {
         <p className="text-red-500 mb-5">
           {error || "Checkout session not found."}
         </p>
-        <Link to="/checkout" className="px-6 py-3 bg-black text-white">
+
+        <Link
+          to="/checkout"
+          className="px-6 py-3 bg-black text-white"
+        >
           BACK TO CHECKOUT
         </Link>
       </div>
     );
   }
-  // const orderTotal = Number(checkoutInfo.orderTotal ?? checkoutInfo.total ?? 0);
-  // const giftCardRedeemed = Number(Math.min(giftCardBalance, orderTotal).toFixed(2));
-  // const remainingPayment = Number(Math.max(0, orderTotal - giftCardRedeemed).toFixed(2));
-  // // const displayTotal = checkoutInfo.total;
-  // const displayTotal = Number(checkoutInfo?.orderTotal ?? checkoutInfo?.total ?? 0 );
-  const orderTotal = Math.max(0, Number(checkoutInfo?.orderTotal ?? checkoutInfo?.total ?? 0) || 0);
-
-  const giftCardRedeemed = Math.min(
-    Math.max(0, Number(checkoutInfo?.giftCardRedeemed) || 0),
-    orderTotal
-  );
-
-  const remainingPayment = Number(
-    Math.max(0, orderTotal - giftCardRedeemed).toFixed(2)
-  );
-
-  const displayTotal = remainingPayment;
   const appearance = {
     theme: "stripe",
     variables: {
@@ -661,6 +700,8 @@ const handlePlaceOrder = async () => {
       borderRadius: "3px",
     },
   };
+
+  const stripeDisplayAmount = stripeAmountData?.amount ?? remainingPayment;
 
   return (
     <>
@@ -674,17 +715,19 @@ const handlePlaceOrder = async () => {
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-[30px] items-start">
             <div className="bg-[#f8f8f8] p-5 md:p-8">
-              <h1 className="text-[24px] text-black mb-6">Payment Method</h1>
+              <h1 className="text-[24px] text-black mb-6">
+                Payment Method
+              </h1>
 
               <div className="bg-white border border-gray-200 rounded-[4px]">
-                {PAYMENT_METHODS.map((method, idx) => {
+                {PAYMENT_METHODS.map((method, index) => {
                   const Icon = method.icon;
                   const isSelected = selectedMethod === method.key;
                   return (
                     <label
                       key={method.key}
                       className={`flex items-center gap-3 px-5 py-4 cursor-pointer ${
-                        idx !== PAYMENT_METHODS.length - 1
+                        index !== PAYMENT_METHODS.length - 1
                           ? "border-b border-gray-200"
                           : ""
                       } ${isSelected ? "bg-pink-50" : ""}`}
@@ -694,7 +737,10 @@ const handlePlaceOrder = async () => {
                         name="paymentMethod"
                         value={method.key}
                         checked={isSelected}
-                        onChange={(e) => setSelectedMethod(e.target.value)}
+                        onChange={(event) => {
+                          setSelectedMethod(event.target.value);
+                          setPaymentInitError("");
+                        }}
                         className="accent-[#F43297] w-[18px] h-[18px] cursor-pointer"
                       />
                       <Icon size={20} className="text-gray-600" />
@@ -705,7 +751,6 @@ const handlePlaceOrder = async () => {
                   );
                 })}
               </div>
-              
               {selectedMethod === "card" && (
                 <div className="mt-5 space-y-4">
                   {initializing && (
@@ -726,6 +771,7 @@ const handlePlaceOrder = async () => {
                           setPaymentInitError("");
                           setPaymentIntentId("");
                           setClientSecret("");
+                          setStripeAmountData(null);
                         }}
                         className="mt-3 border border-red-400 px-4 py-2 text-sm"
                       >
@@ -734,56 +780,85 @@ const handlePlaceOrder = async () => {
                     </div>
                   )}
 
-                  {!initializing && !paymentInitError && clientSecret && (
+                  {!initializing && !paymentInitError &&
+                    clientSecret && (
+                      <Elements
+                        key={clientSecret}
+                        stripe={stripePromise}
+                        options={{
+                          clientSecret,
+                          appearance,
+                          paymentMethodOrder: ["card"],
+                        }}
+                      >
+                        <StripePaymentForm
+                          paymentData={{
+                            amount: stripeDisplayAmount,
+                          }}
+                        />
+                      </Elements>
+                    )}
+                </div>
+              )}
+
+              {selectedMethod === "upi" && (
+                <div className="mt-5 space-y-4">
+                  {initializing && (
+                    <p className="text-light text-[14px]">
+                      Preparing UPI payment...
+                    </p>
+                  )}
+                  {!initializing && paymentInitError && (
+                    <div className="rounded border border-red-200 bg-red-50 p-4">
+                      <p className="text-sm text-red-600">
+                        {paymentInitError}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentInitError("");
+                          setPaymentIntentId("");
+                          setClientSecret("");
+                          setStripeAmountData(null);
+                        }}
+                        className="mt-3 border border-red-400 px-4 py-2 text-sm"
+                      >
+                        Retry Payment
+                      </button>
+                    </div>
+                )}
+
+                  {!initializing && !paymentInitError &&
+                  clientSecret && (
                     <Elements
                       key={clientSecret}
                       stripe={stripePromise}
                       options={{
                         clientSecret,
                         appearance,
-                        paymentMethodOrder: ["card"],
                       }}
-                    >
-                      <StripePaymentForm
-                        paymentData={{
-                          amount: stripeAmountData?.amount ?? displayTotal,
-                        }}
-                      />
-                    </Elements>
-                  )}
-                </div>
-              )}
-
-              {selectedMethod === "upi" && (
-                <>
-                  {initializing && (
-                    <p className="text-light text-[14px]">
-                      Preparing UPI payment...
-                    </p>
-                  )}
-                  {!initializing && clientSecret && (
-                    <Elements
-                      stripe={stripePromise}
-                      options={{ clientSecret, appearance }}
                     >
                       <UpiQrPayment
                         clientSecret={clientSecret}
-                        amount={stripeAmountData?.amount || displayTotal}
+                        amount={stripeDisplayAmount}
                         customerName={
                           checkoutInfo?.shippingAddress?.fullName ||
+                          checkoutInfo?.shippingAddress?.firstName ||
                           checkoutInfo?.shippingAddress?.name ||
                           "Customer"
                         }
                         customerEmail={checkoutInfo?.email}
                         shippingAddress={checkoutInfo?.shippingAddress}
                       />
-                    </Elements>
-                  )}
-                </>
+                      </Elements>
+                    )}
+                </div>
               )}
 
-              {(selectedMethod === "wallet" || selectedMethod === "cod") && (
-                <div className="space-y-4">
+              {(selectedMethod === "wallet" ||
+                selectedMethod === "cod") && (
+                <div className="space-y-4 mt-5">
                   <p className="text-light text-[14px]">
                     {selectedMethod === "wallet"
                       ? "Amount will be deducted from your wallet balance."
@@ -797,7 +872,7 @@ const handlePlaceOrder = async () => {
                   >
                     {placing
                       ? "PLACING ORDER..."
-                      : `PLACE ORDER — ₹${Math.round(displayTotal).toLocaleString("en-IN")}`}
+                      : `PLACE ORDER — ${formatPrice(remainingPayment)}`}
                   </button>
                   <button
                     type="button"
@@ -811,98 +886,78 @@ const handlePlaceOrder = async () => {
             </div>
 
             <div className="bg-[#f8f8f8] p-5 md:p-8">
-              <h2 className="text-[22px] text-black mb-7">Order Summary</h2>
+              <h2 className="text-[22px] text-black mb-7">
+                Order Summary
+              </h2>
+
               <div className="space-y-4 text-[14px]">
                 <div className="flex justify-between">
                   <span className="text-light">Subtotal</span>
-                  <span>
-                    ₹{Math.round(checkoutInfo.subtotal).toLocaleString("en-IN")}
-                  </span>
+                  <span>{formatPrice(checkoutInfo.subtotal)}</span>
                 </div>
-                {checkoutInfo.discountAmount > 0 && (
+
+                {Number(checkoutInfo.discountAmount) > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Discount</span>
+                    <span>Coupon Discount</span>
                     <span>
-                      - ₹
-                      {Math.round(checkoutInfo.discountAmount).toLocaleString(
-                        "en-IN",
-                      )}
+                      -{formatPrice(checkoutInfo.discountAmount)}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-light">Shipping</span>
                   <span>
-                    {checkoutInfo.shipping > 0
-                      ? `₹ ${Math.round(checkoutInfo.shipping).toLocaleString("en-IN")}`
+                    {Number(checkoutInfo.shipping) > 0
+                      ? formatPrice(checkoutInfo.shipping)
                       : "Free"}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-light">Platform Charge</span>
                   <span>
-                    {checkoutInfo.platformCharge > 0
-                      ? `₹ ${Math.round(checkoutInfo.platformCharge).toLocaleString("en-IN")}`
+                    {Number(checkoutInfo.platformCharge) > 0
+                      ? formatPrice(checkoutInfo.platformCharge)
                       : "Free"}
                   </span>
                 </div>
-                
-                {isGiftCardApplied && (
+
+                {Number(checkoutInfo.tax) > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-light">Available Gift Card Balance</span>
-                  <span>
-                    {giftCardLoading
-                      ? "Checking..."
-                      : `₹${Number(giftCardBalance || 0).toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`}
-                  </span>
+                  <span className="text-light">Tax</span>
+                  <span>{formatPrice(checkoutInfo.tax)}</span>
                 </div>
                 )}
 
-                {isGiftCardApplied && (
-                <div className="flex justify-between text-green-600">
-                  <span>Gift Card Redeemed</span>
-                  <span>
-                    - ₹{giftCardRedeemed.toLocaleString("en-IN", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </div>
-              )}
-
                 <div className="flex justify-between">
-                  <span className="text-light">Remaining Payment</span>
-                  <span>
-                    {giftCardLoading
-                      ? "Checking..."
-                      : `₹${remainingPayment.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`}
-                  </span>
+                  <span className="text-light">Total before Gift Card</span>
+                  <span>{formatPrice(orderTotal)}</span>
                 </div>
 
-                {giftCardError && (
-                  <p className="text-sm text-red-600">
-                    {giftCardError}
-                  </p>
+                {isGiftCardApplied && (
+                  <>
+                    <div className="flex justify-between text-green-600">
+                      <span>Gift Card Redeemed</span>
+                      <span>−{formatPrice(giftCardRedeemed)}</span>
+                    </div>
+
+                    <div className="text-xs text-gray-500">
+                      Gift Card: {checkoutInfo.giftCardCode}
+                    </div>
+                  </>
                 )}
 
                 <div className="border-t border-gray-300 pt-4">
                   <div className="flex justify-between text-black text-[18px] font-medium">
-                    <span>Total</span>
-                    <span>
-                      {/* ₹{Math.round(displayTotal).toLocaleString("en-IN")} */}
-                       {/* ₹{Math.round(
-                          Number(checkoutInfo?.orderTotal ?? checkoutInfo?.total ?? 0) || 0
-                        ).toLocaleString("en-IN")} */}
-                        ₹{Math.round(remainingPayment).toLocaleString("en-IN")}
-                    </span>
+                    <span>Payable Amount</span>
+                    <span>{formatPrice(remainingPayment)}</span>
                   </div>
                 </div>
+
+                {needsClientSecret && stripeAmountData && (
+                  <p className="text-xs text-gray-500">
+                    Stripe amount: {formatPrice(stripeAmountData.amount)}
+                  </p>
+                )}
               </div>
             </div>
           </div>

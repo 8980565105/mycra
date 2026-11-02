@@ -1122,6 +1122,7 @@ import Button from "../ui/Button";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import toast from "react-hot-toast";
 
 const giftCardInformation = [
   {
@@ -1196,7 +1197,7 @@ const GiftCardToBalance = () => {
   const giftCards = Array.isArray(giftCardState.giftCards)
     ? giftCardState.giftCards
     : [];
-
+  const [selectedBalanceGiftCard, setSelectedBalanceGiftCard] = useState(null);
   // Gift card product state
   const [purchaseProducts, setPurchaseProducts] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -1426,19 +1427,33 @@ const GiftCardToBalance = () => {
   }, [user]);
 
   const activeGiftCards = useMemo(() => {
+    return giftCards;
+  }, [giftCards]);
+
+  const usableGiftCards = useMemo(() => {
     const now = Date.now();
 
     return giftCards.filter((card) => {
-      const isActive = card?.status?.toLowerCase() === "active";
-      const hasBalance = Number(card?.remainingBalance || 0) > 0;
-      const notExpired =
-        !card?.expiresAt || new Date(card.expiresAt).getTime() > now;
+      const balance = Number(card?.remainingBalance ?? 0);
 
-      return isActive && hasBalance && notExpired;
+      const isExpired =
+        card?.expiresAt != null &&
+        new Date(card.expiresAt).getTime() <= now;
+
+      const status = String(
+        card?.displayStatus || card?.status || ""
+      ).toLowerCase();
+
+      return (
+        balance > 0 &&
+        !isExpired &&
+        status === "active" &&
+        card?.isUsable !== false
+      );
     });
   }, [giftCards]);
 
-  const totalGiftCardBalance = activeGiftCards.reduce(
+  const totalGiftCardBalance = usableGiftCards.reduce(
     (total, card) => total + Number(card.remainingBalance || 0),
     0
   );
@@ -1595,6 +1610,35 @@ const GiftCardToBalance = () => {
     } finally {
       setBuying(false);
     }
+  };
+
+  const handleApplyGiftCard = (card) => {
+    if (!card) return;
+
+    const remainingBalance = Number(card.remainingBalance ?? 0);
+
+    const isExpired =
+      card.expiresAt != null &&
+      new Date(card.expiresAt).getTime() <= Date.now();
+
+    const isUsable =
+      card.isUsable !== undefined
+        ? Boolean(card.isUsable)
+        : String(card.status || "").toLowerCase() === "active" &&
+          remainingBalance > 0 &&
+          !isExpired;
+
+    if (!isUsable || remainingBalance <= 0 || isExpired) {
+      toast.error(
+        isExpired
+          ? "This gift card has expired."
+          : "This gift card is unavailable or has no balance."
+      );
+      return;
+    }
+
+    setSelectedBalanceGiftCard(card);
+    toast.success("Gift card selected.");
   };
 
   const handleCopyCardNumber = async (cardNumber) => {
@@ -2262,7 +2306,7 @@ const GiftCardToBalance = () => {
           <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-bold ">
-                My Active Gift Cards
+                My Gift Cards
               </h2>
               <p className="mt-1 text-14 sec-text-color">
                 View the remaining balance on your active gift cards.
@@ -2313,8 +2357,153 @@ const GiftCardToBalance = () => {
                   ? `•••• •••• ${cardNumber.slice(-4)}`
                   : "Card number unavailable";
 
+                const remainingBalance = Math.max(
+                  0, Number(card.remainingBalance ?? 0)
+                );
+
+                const isExpired =
+                  card.expiresAt != null &&
+                  new Date(card.expiresAt).getTime() <= Date.now();
+
+                const displayStatus =
+                  remainingBalance <= 0
+                    ? "Redeemed" : isExpired
+                    ? "Expired" : card.displayStatus || card.status || "Active";
+
+                const isUsable =
+                  card.isUsable !== undefined
+                    ? Boolean(card.isUsable) &&
+                      remainingBalance > 0 &&
+                      !isExpired
+                    : remainingBalance > 0 &&
+                      !isExpired &&
+                      String(displayStatus).toLowerCase() === "active";
+
+                const statusClass =
+                  displayStatus === "Active" && isUsable
+                    ? "bg-green-100 text-green-700"
+                    : displayStatus === "Expired"
+                    ? "bg-red-100 text-red-700"
+                    : "bg-gray-100 text-gray-700"; 
+
+                // return (
+                //   <div key={card._id} className="overflow-hidden rounded-2xl border border-gray-200 flex h-full flex-col">
+                //     <div className="bg-gradient-to-r from-pink-800 to-pink-500 p-5 text-white">
+                //       <div className="flex items-start justify-between gap-3">
+                //         <div>
+                //           <p className="text-xs font-medium uppercase tracking-wider text-purple-100">
+                //             Gift Card
+                //           </p>
+
+                //           <h3 className="mt-2 text-2xl font-bold">
+                //             {formatCurrency(remainingBalance)}
+                //           </h3>
+
+                //           <p className="mt-1 text-xs text-purple-100">
+                //             Remaining balance
+                //           </p>
+                //         </div>
+
+                //         <Gift size={30} />
+                //       </div>
+
+                //       <div className="mt-6 flex items-center justify-between gap-2">
+                //         <div>
+                //           <p className="text-xs text-purple-100">Card Number</p>
+                //           <p className="mt-1 font-mono text-sm tracking-wider">
+                //             {maskedNumber}
+                //           </p>
+                //         </div>
+
+                //         {cardNumber && (
+                //           <button
+                //             type="button"
+                //             title={
+                //               copiedCardNumber === cardNumber
+                //                 ? "Copied!"
+                //                 : "Copy full card number"
+                //             }
+                //             aria-label={
+                //               copiedCardNumber === cardNumber
+                //                 ? "Gift card number copied"
+                //                 : "Copy gift card number"
+                //             }
+                //             onClick={() => handleCopyCardNumber(cardNumber)}
+                //             className="rounded-lg bg-white/15 p-2 hover:bg-white/25"
+                //           >
+                //             {copiedCardNumber === cardNumber ? (
+                //               <Check size={17} />
+                //             ) : (
+                //               <Copy size={17} />
+                //             )}
+                //           </button>
+                //         )}
+                //       </div>
+                //     </div>
+
+                //     <div className="space-y-3 p-5 h-full">
+                //       <div className="flex items-center justify-between gap-3 text-sm">
+                //         <span className="sec-text-color">Original Value</span>
+                //         <span>{formatCurrency(card.originalAmount)}</span>
+                //       </div>
+
+                //       <div className="flex items-center justify-between gap-3 text-sm">
+                //         <span className="sec-text-color">Remaining Balance</span>
+                //         <span>{formatCurrency(remainingBalance)}</span>
+                //       </div>
+
+                //       <div className="flex items-center justify-between gap-3 text-sm">
+                //         <span className="sec-text-color">Status</span>
+
+                //         <span
+                //           className={`rounded-full px-3 py-1 text-sm ${statusClass}`}
+                //         >
+                //           {displayStatus}
+                //         </span>
+                //       </div>
+
+                //       {card.recipientName && (
+                //         <div className="flex items-center justify-between gap-3 text-sm">
+                //           <span className="sec-text-color">Recipient</span>
+                //           <span>{card.recipientName}</span>
+                //         </div>
+                //       )}
+
+                //       {card.expiresAt && (
+                //         <div className="flex items-center justify-between gap-3 text-sm">
+                //           <span className="sec-text-color">Expires</span>
+                //           <span>
+                //             {new Date(card.expiresAt).toLocaleDateString("en-IN")}
+                //           </span>
+                //         </div>
+                //       )}
+
+                //       {isUsable ? (
+                //         <button
+                //           type="button"
+                //           onClick={() => handleApplyGiftCard(card)}
+                //           className="w-full rounded-xl bg-pink-600 px-4 py-3 font-semibold text-white hover:bg-pink-700"
+                //         >
+                //           Use Gift Card
+                //         </button>
+                //       ) : (
+                //         <button
+                //           type="button"
+                //           disabled
+                //           className="mt-auto w-full cursor-not-allowed rounded-xl bg-gray-200 px-4 py-3 font-semibold text-gray-500"
+                //         >
+                //           {displayStatus === "Expired"
+                //             ? "Gift Card Expired"
+                //             : remainingBalance <= 0
+                //             ? "Balance Unavailable"
+                //             : "Gift Card Unavailable"}
+                //         </button>
+                //       )}
+                //     </div>
+                //   </div>
+                // );
                 return (
-                  <div key={card._id} className="overflow-hidden rounded-2xl border border-gray-200">
+                  <div key={card._id} className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200">
                     <div className="bg-gradient-to-r from-pink-800 to-pink-500 p-5 text-white">
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -2322,7 +2511,7 @@ const GiftCardToBalance = () => {
                             Gift Card
                           </p>
                           <h3 className="mt-2 text-2xl font-bold">
-                            {formatCurrency(card.remainingBalance)}
+                            {formatCurrency(remainingBalance)}
                           </h3>
                           <p className="mt-1 text-xs text-purple-100">
                             Remaining balance
@@ -2364,27 +2553,29 @@ const GiftCardToBalance = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-3 p-5">
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between gap-3 text-sm">
                         <span className="sec-text-color">Original Value</span>
-                        <span >
-                          {formatCurrency(card.originalAmount)}
-                        </span>
+                        <span>{formatCurrency(card.originalAmount)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="sec-text-color">Remaining Balance</span>
+                        <span>{formatCurrency(remainingBalance)}</span>
                       </div>
 
                       <div className="flex items-center justify-between gap-3 text-sm">
                         <span className="sec-text-color">Status</span>
-                        <span className="rounded-full bg-green-100 px-3 py-1 text-14 text-green-700">
-                          {card.status}
+                        <span className={`rounded-full px-3 py-1 text-sm ${statusClass}`}>
+                          {displayStatus}
                         </span>
                       </div>
 
                       {card.recipientName && (
                         <div className="flex items-center justify-between gap-3 text-sm">
                           <span className="sec-text-color">Recipient</span>
-                          <span >
-                            {card.recipientName}
-                          </span>
+                          <span className="text-right">{card.recipientName}</span>
                         </div>
                       )}
 
@@ -2398,6 +2589,31 @@ const GiftCardToBalance = () => {
                       )}
 
                     </div>
+
+                    <div className="mt-auto pt-5">
+                      {isUsable ? (
+                        <button
+                          type="button"
+                          onClick={() => handleApplyGiftCard(card)}
+                          className="w-full rounded-xl bg-pink-600 px-4 py-3 font-semibold text-white hover:bg-pink-700"
+                        >
+                          Use Gift Card
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full cursor-not-allowed rounded-xl bg-gray-200 px-4 py-3 font-semibold text-gray-500"
+                        >
+                          {displayStatus === "Expired"
+                            ? "Gift Card Expired"
+                            : remainingBalance <= 0
+                            ? "Balance Unavailable"
+                            : "Gift Card Unavailable"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   </div>
                 );
               })}

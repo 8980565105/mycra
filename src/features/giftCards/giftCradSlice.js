@@ -37,11 +37,10 @@ const giftCardSlice = createSlice({
       })
       .addCase(getMyGiftCards.fulfilled, (state, action) => {
         state.myGiftCardsLoading = false;
-        state.giftCards = action.payload?.giftCards || [];
+        state.giftCards = Array.isArray(action.payload?.giftCards)
+          ? action.payload.giftCards : [];
         state.giftCardBalance = Number(
-          action.payload?.giftCardBalance ??
-          action.payload?.wallet?.giftCardBalance ??
-          0
+          action.payload?.giftCardBalance || 0
         );
 
         state.myGiftCardsError = null;
@@ -68,7 +67,8 @@ const giftCardSlice = createSlice({
 
         .addCase(validateGiftCard.fulfilled, (state, action) => {
           state.loading = false;
-          state.appliedGiftCard = action.payload?.data?.giftCard || null;
+          const payload = action.payload;
+          state.appliedGiftCard = payload?.data?.giftCard || payload?.giftCard || null;
           state.error = null;
         })
 

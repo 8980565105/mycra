@@ -74,6 +74,7 @@
   orders: {
     getPublic: "/orders/public",
     getAll: "/orders",
+    quote: "/orders/quote",
     getById: (id) => `/orders/${id}`,
     deleteById: (id) => `/orders/${id}`,
     getUserOrders: (userId) => `/orders?user=${userId}`,

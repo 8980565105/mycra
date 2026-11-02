@@ -4,6 +4,13 @@ import { useDispatch } from "react-redux";
 import { clearCart } from "../features/cart/cartSlice";
 import Button from "../components/ui/Button";
 
+const formatPrice = (amount) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(Number(amount) || 0);
+};
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
@@ -193,25 +200,7 @@ export default function PaymentSuccess() {
   if (confirmedOrder) {
     const orderId = confirmedOrder._id;
 
-    // const orderTotal =
-    //   confirmedOrder.total_price ??
-    //   confirmedOrder.amount_payable ??
-    //   confirmedOrder.order_total ??
-    //   confirmedOrder.total;
-    const orderTotal = Number(
-      confirmedOrder.order_total ??
-      confirmedOrder.total_price ??
-      0
-    );
-
-    const giftCardRedeemed = Number(
-      confirmedOrder.gift_card_redeemed ?? 0
-    );
-
-    const amountPaid = Number(
-      confirmedOrder.amount_payable ??
-      orderTotal - giftCardRedeemed
-    );
+    const amountPaid = confirmedOrder?.amount_payable;
 
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-5 py-10">
@@ -259,35 +248,10 @@ export default function PaymentSuccess() {
               </span>
             </div>
 
-            {/* {orderTotal != null && (
-              <div className="flex justify-between gap-4">
-                <span className="text-gray-500">
-                  Order Total
-                </span>
-                <span className="font-semibold">
-                  ₹{Number(orderTotal).toLocaleString("en-IN")}
-                </span>
-              </div>
-              
-            )} */}
-            <div className="flex justify-between gap-4">
-                <span className="text-gray-500">Order Total</span>
-                <span className="font-semibold">
-                  ₹{orderTotal.toLocaleString("en-IN")}
-                </span>
-              </div>
-
-              <div className="flex justify-between gap-4">
-                <span className="text-gray-500">Gift Card Redeemed</span>
-                <span className="font-semibold">
-                  −₹{giftCardRedeemed.toLocaleString("en-IN")}
-                </span>
-              </div>
-
               <div className="flex justify-between gap-4">
                 <span className="text-gray-500">Amount Paid</span>
                 <span className="font-semibold">
-                  ₹{amountPaid.toLocaleString("en-IN")}
+                  {amountPaid != null ? formatPrice(amountPaid) : "N/A"}
                 </span>
               </div>
           </div>
