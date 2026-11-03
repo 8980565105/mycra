@@ -89,4 +89,8 @@ const transectionSchema = new mongoose.Schema(
 
 transectionSchema.index({ description: "text" });
 
+transectionSchema.index(
+  { stripe_payment_intent_id: 1 },
+  { unique: true, sparse: true }
+);
 module.exports = mongoose.model("transection", transectionSchema);

@@ -8,6 +8,8 @@ const User = require("../models/User");
 const Store = require("../models/Store");
 const Type = require("../models/Type");
 const Coupon = require("../models/Coupon");
+const transection = require("../models/Transactions");
+const GiftCard = require("../models/giftCard");
 const { sendResponse } = require("../utils/response");
 
 const getDashboard = async (req, res) => {
@@ -128,6 +130,58 @@ const getDashboard = async (req, res) => {
     const refundOrders = await Order.countDocuments({
       ...orderFilter,
       status: "refunded",
+    });
+    let transactionFilter = {};
+
+    if (!isAdmin) {
+      const ownerOrderIds = await Order.distinct("_id", {
+        store_owner_id: { $in: storeOwnerIds },
+      });
+
+      transactionFilter = {order_id: { $in: ownerOrderIds }};
+    }
+    const totalTransactions = await transection.countDocuments(
+      transactionFilter
+    );
+    const pendingTransactions = await transection.countDocuments({
+      ...transactionFilter,
+      status: "Pending",
+    });
+    const successfulTransactions = await transection.countDocuments({
+      ...transactionFilter,
+      status: "Success",
+    });
+    const failedTransactions = await transection.countDocuments({
+      ...transactionFilter,
+      status: "Failed",
+    });
+    
+    const prevMonthTransactions = await transection.countDocuments({
+      ...transactionFilter,
+      createdAt: { $gte: prevMonthStart, $lte: prevMonthEnd },
+    });
+
+    const currMonthTransactions = await transection.countDocuments({
+      ...transactionFilter,
+      createdAt: {  $gte: currentMonthStart, $lte: currentMonthEnd },
+    });
+
+    const giftCardBaseFilter = {
+      productExpiresAt: { $gt: now },
+    };
+
+    const activeGiftCards = await GiftCard.countDocuments(
+      giftCardBaseFilter
+    );
+
+    const prevMonthGiftCards = await GiftCard.countDocuments({
+      ...giftCardBaseFilter,
+      createdAt: { $gte: prevMonthStart, $lte: prevMonthEnd },
+    });
+
+    const currMonthGiftCards = await GiftCard.countDocuments({
+      ...giftCardBaseFilter,
+      createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd },
     });
     const revenueAgg = await Payment.aggregate([
       { $match: paymentFilter },
@@ -331,6 +385,11 @@ const getDashboard = async (req, res) => {
       totalTypes,
       totalRevenue,
       activeCoupons,
+      totalTransactions,
+      pendingTransactions,
+      successfulTransactions,
+      failedTransactions,
+      activeGiftCards,
       salesOverview,
       ordersByStatus,
       topSellingProducts,
@@ -338,9 +397,11 @@ const getDashboard = async (req, res) => {
       monthlyStats: {
         products: { current: currMonthProducts, previous: prevMonthProducts },
         orders: { current: currMonthOrders, previous: prevMonthOrders },
+        transactions: { current: currMonthTransactions, previous: prevMonthTransactions },
         users: { current: currMonthUsers, previous: prevMonthUsers },
         revenue: { current: currMonthRevenue, previous: prevMonthRevenue },
         coupons: { current: currMonthCoupons, previous: prevMonthCoupons },
+        giftCards: { current: currMonthGiftCards, previous: prevMonthGiftCards  },
       },
     });
   } catch (error) {
