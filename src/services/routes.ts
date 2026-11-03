@@ -293,6 +293,7 @@ export const ROUTES = {
     adminVerifyKyc: (userId: string) => `/wallet/admin/verify-kyc/${userId}`,
     createVoucher: "/wallet/voucher",
     updateVoucher: (userId: string) => `/wallet/voucher/${userId}`,
+    delete: (id: string) => `/wallet/${id}`,
   },
   giftCards: {
     adminget: "/gift-cards/admin/getAll",

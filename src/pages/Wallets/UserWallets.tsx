@@ -931,7 +931,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
 import { GenericTable } from "@/components/ui/adminTable";
-import { adminAdjustBalance, adminVerifyKyc, fetchAllWallets, adminSetKycData, adminAddVoucher, adminUpdateVoucher } from "@/features/wallets/walletsThunk";
+import { adminAdjustBalance, adminVerifyKyc, fetchAllWallets, adminSetKycData, adminAddVoucher, adminUpdateVoucher, deleteWallet } from "@/features/wallets/walletsThunk";
 
 import { adminCreateGiftCard, getAllGiftCardProduct, getGiftCardProducts } from "@/features/giftCards/giftCardThunk";
 import { Switch } from "@/components/ui/switch";
@@ -1229,7 +1229,14 @@ export default function UserWallets() {
                     } catch (err: any) {
                         console.error("fetchData error:", err);
                         throw new Error(err || "Failed to load wallets");
-                    }
+                  }
+                }}
+                deleteItem={async (id) => {
+                  try {
+                      await dispatch(deleteWallet(id)).unwrap();
+                  } catch (err: any) {
+                      throw new Error(err || "Failed to delete wallet");
+                  }
                 }}
             />
 

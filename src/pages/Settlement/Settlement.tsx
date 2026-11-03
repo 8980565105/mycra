@@ -13,6 +13,16 @@ import {
 import { toast } from 'sonner';
 import { bulkDeleteCategories } from '@/features/categories/categoriesThunk';
 
+const formatINR = (value: unknown) => {
+  const amount = Number(value ?? 0);
+
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(Number.isFinite(amount) ? amount : 0);
+};
+
 function Settlement() {
     const dispatch = useDispatch<AppDispatch>();
     const { user } = useSelector((state: RootState) => state.auth);
@@ -73,26 +83,45 @@ function Settlement() {
                 },
             ]
             : []),
+        // {
+        //     key: "product_value",
+        //     label: "Product Value",
+        //     width: "w-32",
+        //     render: (item: any) =>
+        //         `₹${Number(item.product_value || 0).toFixed(2)}`,
+        // },
+        // {
+        //     key: "platform_fee",
+        //     label: "Platform Fee",
+        //     width: "w-32",
+        //     render: (item: any) =>
+        //         `₹${Number(item.platform_fee || 0).toFixed(2)}`,
+        // },
+        // {
+        //     key: "settlement_amount",
+        //     label: "Settlement",
+        //     width: "w-32",
+        //     render: (item: any) =>
+        //         `₹${Number(item.settlement_amount || 0).toFixed(2)}`,
+        // },
         {
-            key: "product_value",
+            key: "gross_amount",
             label: "Product Value",
-            width: "w-32",
-            render: (item: any) =>
-                `₹${Number(item.product_value || 0).toFixed(2)}`,
+            render: (item: any) => formatINR(item.gross_amount),
         },
         {
-            key: "platform_fee",
+            key: "commission_amount",
             label: "Platform Fee",
-            width: "w-32",
-            render: (item: any) =>
-                `₹${Number(item.platform_fee || 0).toFixed(2)}`,
+            render: (item: any) => formatINR(item.commission_amount),
         },
         {
-            key: "settlement_amount",
+            key: "net_amount",
             label: "Settlement",
-            width: "w-32",
-            render: (item: any) =>
-                `₹${Number(item.settlement_amount || 0).toFixed(2)}`,
+            render: (item: any) => (
+                <span className="font-semibold text-green-600">
+                {formatINR(item.net_amount)}
+                </span>
+            ),
         },
         {
             key: "available_at",

@@ -5,6 +5,7 @@ import {
   adminAdjustBalance,
   adminUpdateVoucher,
   adminVerifyKyc,
+  deleteWallet,
   fetchAllWallets,
   fetchWallet,
   verifyKyc,
@@ -129,6 +130,12 @@ const walletSlice = createSlice({
       })
       .addCase(adminUpdateVoucher.rejected, (state, action) => {
         state.adminError = action.payload as string;
+      })
+      .addCase(deleteWallet.fulfilled, (state, action) => {
+        state.adminWallets = state.adminWallets.filter(
+          (c) => c._id !== action.payload,
+        );
+        state.adminTotal -= 1;
       });
   },
 });

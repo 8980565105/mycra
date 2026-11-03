@@ -307,3 +307,16 @@ export const adminUpdateVoucher = createAsyncThunk(
     }
   }
 );
+
+export const deleteWallet = createAsyncThunk(
+  "wallet/deleteWallet",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await api.delete(ROUTES.wallet.delete(id));
+      if (res.data.success) return id;
+      return rejectWithValue(res.data.message || "Failed to delete wallet");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
+    }
+  },
+);
