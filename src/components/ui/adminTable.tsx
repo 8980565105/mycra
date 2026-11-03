@@ -31,6 +31,7 @@ interface GenericTableProps<T> {
   bulkDeleteItems?: (ids: string[]) => Promise<any>;
   columns: Column<T>[];
   rowKey: keyof T;
+  viewItem?: (item: T) => void;
   searchEnabled?: boolean;
   filters?: { label: string; value: string }[];
   filters1?: { label: string; value: string }[];
@@ -55,6 +56,7 @@ export function GenericTable<T extends Record<string, any>>({
   fetchData,
   deleteItem,
   bulkDeleteItems,
+  viewItem,
   columns,
   rowKey,
   searchEnabled = true,
@@ -441,12 +443,23 @@ export function GenericTable<T extends Record<string, any>>({
                             </Link>
                           )}
                           {viewEnabled && (
-                            <Link
-                              to={`${basePath}/${title.toLowerCase().replace(/\s+/g, "-")}/${item[rowKey]}/view`}
-                              className="p-1 rounded hover:bg-gray-100 flex items-center justify-center"
-                            >
-                              <Eye className="w-5 h-5 text-blue-600 hover:text-blue-800" />
-                            </Link>
+                            viewItem ? (
+                              <button
+                                type="button"
+                                onClick={() => viewItem(item)}
+                                className="p-1 rounded hover:bg-gray-100 flex items-center justify-center"
+                                title="View Details"
+                              >
+                                <Eye className="w-5 h-5 text-blue-600 hover:text-blue-800" />
+                              </button>
+                            ) : (
+                              <Link
+                                to={`${basePath}/${title.toLowerCase().replace(/\s+/g, "-")}/${item[rowKey]}/view`}
+                                className="p-1 rounded hover:bg-gray-100 flex items-center justify-center"
+                              >
+                                <Eye className="w-5 h-5 text-blue-600 hover:text-blue-800" />
+                              </Link>
+                            )
                           )}
                           {deleteItem && (
                             <ConfirmDialog

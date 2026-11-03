@@ -38,6 +38,9 @@ import {
   CircleX,
   BadgeDollarSign,
   TicketPercent,
+  ReceiptText,
+  BadgeCheck,
+  Gift,
 } from "lucide-react";
 import { AppDispatch, RootState } from "@/store";
 import { useDispatch, useSelector } from "react-redux";
@@ -191,6 +194,11 @@ export default function VelzonDashboard() {
     totalUsers,
     totalRevenue,
     activeCoupons,
+    totalTransactions,
+    pendingTransactions,
+    successfulTransactions,
+    failedTransactions,
+    activeGiftCards,
     ordersByStatus,
     salesOverview,
     recentOrders,
@@ -224,6 +232,14 @@ export default function VelzonDashboard() {
   const couponsChange = calcMonthlyChange(
     monthlyStats.coupons.current,
     monthlyStats.coupons.previous
+  );
+  const giftCardsChange = calcMonthlyChange(
+    monthlyStats.giftCards.current,
+    monthlyStats.giftCards.previous
+  );
+  const transactionsChange = calcMonthlyChange(
+    monthlyStats.transactions.current,
+    monthlyStats.transactions.previous
   );
   const statsCards = [
     {
@@ -352,6 +368,47 @@ export default function VelzonDashboard() {
       ...couponsChange,
       link: "/coupons"
     },
+    {
+      title: "Active Gift Cards",
+      value: activeGiftCards,
+      icon: Gift,
+      bgClass: "stat-card-success",
+      ...giftCardsChange,
+      link: "/gift-cards",
+    },
+    {
+      title: "Total Transactions",
+      value: totalTransactions,
+      icon: ReceiptText,
+      bgClass: "stat-card-primary",
+      ...transactionsChange,
+      link: "/transactions",
+    },
+    {
+      title: "Pending Transactions",
+      value: pendingTransactions,
+      icon: Clock3,
+      bgClass: "stat-card-warning",
+      ...transactionsChange,
+      link: "/transactions",
+    },
+    {
+      title: "Successful Transactions",
+      value: successfulTransactions,
+      icon: BadgeCheck,
+      bgClass: "stat-card-success",
+      ...transactionsChange,
+      link: "/transactions",
+    },
+    {
+      title: "Failed Transactions",
+      value: failedTransactions,
+      icon: CircleX,
+      bgClass: "stat-card-info",
+      ...transactionsChange,
+      link: "/transactions",
+    },
+
   ];
   const orderStatusData = ordersByStatus.map((status) => {
     let color = "";

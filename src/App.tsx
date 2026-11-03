@@ -69,6 +69,7 @@ import FestivalOffersPage from "./pages/festival-offers/FestivalOffersPage";
 import AdminPurchasedGiftCards from "./pages/GiftCard/AdminPurchasedGiftCards";
 import AdminGiftCardProducts from "./pages/GiftCard/AdminGiftCardProducts";
 import AddGiftcardForm from "./pages/GiftCard/AddGiftcardForm";
+import Transection from "./pages/Transection/Transection";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -129,6 +130,7 @@ const App = () => (
               <Route path="festival-offers/:id/edit" element={<FestivalOfferForm />} />
               <Route path="orders" element={<Orders />} />
               <Route path="payments" element={<Payments />} />
+              <Route path="transactions" element={<Transection />} />
               <Route path="warehouse" element={<Warehouse />} />
               <Route path="warehouse/add" element={<WarehouseFormPage />} />
               <Route path="warehouse/:id/edit" element={<WarehouseFormPage />} />
@@ -203,6 +205,7 @@ const App = () => (
               <Route path="coupons/:id/edit" element={<CouponFormPage />} />
               <Route path="orders" element={<Orders />} />
               <Route path="payments" element={<Payments />} />
+              <Route path="transactions" element={<Transection />} />
               <Route path="warehouse" element={<Warehouse />} />
               <Route path="warehouse/add" element={<WarehouseFormPage />} />
               <Route path="warehouse/:id/edit" element={<WarehouseFormPage />} />

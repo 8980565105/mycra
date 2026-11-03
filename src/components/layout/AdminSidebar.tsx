@@ -26,6 +26,7 @@ import {
   Tag,
   PartyPopper,
   Gift,
+  ArrowLeftRight,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -78,6 +79,7 @@ const adminSections = [
     items: [
       { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
       { title: "Payments", url: "/admin/payments", icon: CreditCard },
+      { title: "Transections", url: "/admin/transactions", icon: ArrowLeftRight },
       { title: "Warehouse", url: "/admin/warehouse", icon: Warehouse },
     ],
   },
@@ -147,6 +149,7 @@ const storeOwnerSections = [
     items: [
       { title: "Orders", url: "/store_owner/orders", icon: ShoppingCart },
       { title: "payment", url: "/store_owner/payments", icon: CreditCard },
+      { title: "Transactions", url: "/store_owner/transactions", icon: Layers },
       { title: "Warehouse", url: "/store_owner/warehouse", icon: Warehouse },
       { title: "Settlement ", url: "/store_owner/settlement", icon: Wallet },
     ],

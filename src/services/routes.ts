@@ -312,6 +312,8 @@ export const ROUTES = {
     getAll: "/transactions",
     getById: (id: string) => `/transactions/${id}`,
     adminAll: "/transactions/admin/all",
+    adminDelete: (id: string) => `/transactions/${id}`,
+    adminBulkDelete: "/transactions/bulk-delete",
     adminUpdateStatus: (id: string) => `/transactions/admin/status/${id}`,
   },
 

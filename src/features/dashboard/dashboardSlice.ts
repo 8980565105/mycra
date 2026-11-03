@@ -39,6 +39,8 @@ export interface MonthlyStats {
   users: MonthlyStatItem;
   revenue: MonthlyStatItem;
   coupons: MonthlyStatItem;
+  transactions: MonthlyStatItem;
+  giftCards: MonthlyStatItem;
 }
 export interface DashboardData {
   totalProducts: number;
@@ -55,6 +57,11 @@ export interface DashboardData {
   returnOrders: number;
   deliveredOrders: number;
   cancelledOrders: number;
+  totalTransactions: number;
+  pendingTransactions: number;
+  successfulTransactions: number;
+  failedTransactions: number;
+  activeGiftCards: number;
   salesOverview: SalesOverviewItem[];
   ordersByStatus: OrdersByStatusItem[];
   topSellingProducts: TopSellingProduct[];
@@ -72,6 +79,8 @@ const defaultMonthlyStats: MonthlyStats = {
   users: { current: 0, previous: 0 },
   revenue: { current: 0, previous: 0 },
   coupons: { current: 0, previous: 0 },
+  transactions: { current: 0, previous: 0 },
+  giftCards: { current: 0, previous: 0 },
 };
 
 const initialState: DashboardState = {
@@ -89,6 +98,11 @@ const initialState: DashboardState = {
   totalUsers: 0,
   totalRevenue: 0,
   activeCoupons: 0,
+  totalTransactions: 0,
+  pendingTransactions: 0,
+  successfulTransactions: 0,
+  failedTransactions: 0,
+  activeGiftCards: 0,
   salesOverview: [],
   ordersByStatus: [],
   topSellingProducts: [],
@@ -123,6 +137,11 @@ const dashboardSlice = createSlice({
         state.totalUsers = action.payload.totalUsers ?? 0;
         state.totalRevenue = action.payload.totalRevenue ?? 0;
         state.activeCoupons = action.payload.activeCoupons ?? 0;
+        state.totalTransactions = action.payload.totalTransactions ?? 0;
+        state.pendingTransactions = action.payload.pendingTransactions ?? 0;
+        state.successfulTransactions = action.payload.successfulTransactions ?? 0;
+        state.failedTransactions = action.payload.failedTransactions ?? 0;
+        state.activeGiftCards = action.payload.activeGiftCards ?? 0;
         state.salesOverview = action.payload.salesOverview ?? [];
         state.ordersByStatus = action.payload.ordersByStatus ?? [];
         state.topSellingProducts = action.payload.topSellingProducts ?? [];
