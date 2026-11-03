@@ -6,9 +6,12 @@ import { AppDispatch, RootState } from '@/store';
 import {
     fetchSettlements,
     withdrawSettlement,
-    markSettlementPaid
+    markSettlementPaid,
+    deleteSettlement,
+    bulkDeleteSettlements
 } from '@/features/settlements/settlementsThunk';
 import { toast } from 'sonner';
+import { bulkDeleteCategories } from '@/features/categories/categoriesThunk';
 
 function Settlement() {
     const dispatch = useDispatch<AppDispatch>();
@@ -182,30 +185,28 @@ function Settlement() {
                     ]
                     : undefined
                 }
-                fetchData={async ({
-                    page,
-                    limit,
-                    search,
-                    status,
-                }) => {
+                fetchData={async ({ page, limit, search, status, role }) => {
                     try {
                         const res = await dispatch(
-                            fetchSettlements({
-                                page,
-                                limit,
-                                search,
-                                status,
-                            }),
+                        fetchSettlements({ page, limit, search, status, role })
                         ).unwrap();
-
-                        return {
-                            data: res.settlements,
-                            total: res.total,
-                        };
-                    } catch (error: any) {
-                        throw new Error(
-                            error || "Failed to load settlements",
-                        );
+                        return { data: res.settlements, total: res.total };
+                    } catch (err: any) {
+                        throw new Error(err || "Failed to load settlements");
+                    }
+                }}
+                deleteItem={async (id) => {
+                    try {
+                        await dispatch(deleteSettlement(id)).unwrap();
+                    } catch (err: any) {
+                        throw new Error(err || "Failed to delete settlement");
+                    }
+                }}
+                bulkDeleteItems={async (ids) => {
+                    try {
+                        await dispatch(bulkDeleteSettlements(ids)).unwrap();
+                    } catch (err: any) {
+                        throw new Error(err || "Failed to delete settlements");
                     }
                 }}
             />

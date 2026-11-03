@@ -6,10 +6,13 @@ import {
   markSettlementProcessing,
   markSettlementPaid,
   markSettlementFailed,
+  deleteSettlement,
+  bulkDeleteSettlements,
 } from "./settlementsThunk";
 
 export interface SettlementState {
   settlements: any[];
+  total: number;
   pagination: any;
   loading: boolean;
   error: string | null;
@@ -18,6 +21,7 @@ export interface SettlementState {
 const initialState: SettlementState = {
   settlements: [],
   pagination: {},
+  total: 0,
   loading: false,
   error: null,
 };
@@ -27,12 +31,18 @@ const settlementsSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(fetchSettlements.fulfilled, (state, action) => {
-      state.settlements = action.payload.data || action.payload;
-      state.pagination = action.payload.pagination || {};
+    builder
+    .addCase(fetchSettlements.pending, (state) => {
+      state.loading = true;
       state.error = null;
-    });
-    builder.addCase(fetchSettlements.rejected, (state, action) => {
+    })
+    .addCase(fetchSettlements.fulfilled, (state, action) => {
+      state.loading = false;
+      state.settlements = action.payload.settlements;
+      state.total = action.payload.total;
+    })
+    .addCase(fetchSettlements.rejected, (state, action) => {
+      state.loading = false;
       state.error = action.payload as string;
     });
 
@@ -107,7 +117,20 @@ const settlementsSlice = createSlice({
     });
     builder.addCase(markSettlementFailed.rejected, (state, action) => {
       state.error = action.payload as string;
-    });
+    })
+    .addCase(deleteSettlement.fulfilled, (state, action) => {
+            state.settlements = state.settlements.filter(
+              (c) => c._id !== action.payload,
+            );
+            state.total -= 1;
+          })
+    
+          .addCase(bulkDeleteSettlements.fulfilled, (state, action) => {
+            state.settlements = state.settlements.filter(
+              (c) => !action.payload.includes(c._id),
+            );
+            state.total -= action.payload.length;
+          });
   },
 });
 

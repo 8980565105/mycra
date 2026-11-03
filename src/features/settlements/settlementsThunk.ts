@@ -5,27 +5,21 @@ import { ROUTES } from "../../services/routes";
 export const fetchSettlements = createAsyncThunk(
   "settlements/fetchSettlements",
   async (
-    {
-      page,
-      limit,
-      search,
-      status,
-    }: {
+    params: {
       page?: number;
       limit?: number;
       search?: string;
+      isDownload?: boolean;
       status?: string;
-    },
+      role?: string;
+      store?: string;
+    } = {},
     { rejectWithValue },
   ) => {
     try {
+      const { isDownload = false, ...query } = params;
       const res = await api.get(ROUTES.settlements.getAll, {
-        params: {
-          page,
-          limit,
-          search,
-          status,
-        },
+        params: { ...query, isDownload },
       });
 
       if (res.data.success) {
@@ -147,6 +141,33 @@ export const markSettlementFailed = createAsyncThunk(
       return rejectWithValue(
         error.response?.data?.message || "Failed to mark settlement failed",
       );
+    }
+  },
+);
+
+
+export const deleteSettlement = createAsyncThunk(
+  "settlements/deleteSettlement",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const res = await api.delete(ROUTES.settlements.delete(id));
+      if (res.data.success) return id;
+      return rejectWithValue(res.data.message || "Failed to delete settlement");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
+    }
+  },
+);
+
+export const bulkDeleteSettlements = createAsyncThunk(
+  "settlements/bulkDeleteSettlements",
+  async (ids: string[], { rejectWithValue }) => {
+    try {
+      const res = await api.post(ROUTES.settlements.bulkDelete, { ids });
+      if (res.data.success) return ids;
+      return rejectWithValue(res.data.message || "Failed to delete settlements");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
     }
   },
 );

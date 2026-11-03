@@ -138,6 +138,8 @@ export const ROUTES = {
     processing: (id: string) => `/settlements/${id}/processing`,
     paid: (id: string) => `/settlements/${id}/paid`,
     failed: (id: string) => `/settlements/${id}/failed`,
+    delete: (id: string) => `/settlements/${id}`,
+    bulkDelete: "/settlements/bulk-delete",
   },
   users: {
     getAll: "/users",
