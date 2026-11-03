@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Settlement = require("../models/Settlement");
-
+const { sendResponse } = require("../utils/response");
 const getActorId = (req) => req.user?._id;
 
 const isAdmin = (req) => req.user?.role === "admin";
@@ -31,51 +31,59 @@ const isValidId = (id) =>
 const escapeRegex = (value) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// GET /api/settlements
 const getSettlements = async (req, res) => {
   try {
     if (!isAdmin(req) && !isStoreOwner(req)) {
       return sendError(res, 403, "Access denied");
     }
+    const {
+      page: pageQuery = 1,
+      limit: limitQuery = 10,
+      search = "",
+      isDownload = "false",
+      status = "",
+      store = "",
+    } = req.query;
 
-    const page = Math.max(
-      1,
-      parseInt(req.query.page, 10) || 1
-    );
+    const download = String(isDownload).toLowerCase() === "true";
+
+    const page = Math.max(1, parseInt(pageQuery, 10) || 1);
 
     const limit = Math.min(
       100,
-      Math.max(1, parseInt(req.query.limit, 10) || 10)
+      Math.max(1, parseInt(limitQuery, 10) || 10)
     );
 
-    const search = String(req.query.search || "").trim();
-    const status = String(req.query.status || "").trim();
+    const safeSearchInput = String(search || "").trim();
+    const selectedStatus = String(status || "").trim();
+    const selectedStore = String(store || "").trim();
 
     const filter = {};
 
-    if (req.query.status) {
-      filter.status = req.query.status;
+    if (selectedStatus) {
+      if (!ALLOWED_STATUSES.includes(selectedStatus)) {
+        return sendError(res, 400, "Invalid settlement status");
+      }
+
+      filter.status = selectedStatus;
     }
 
-    // Sellers can only access their own settlements.
     if (isStoreOwner(req)) {
       filter.store_owner_id = getActorId(req);
     }
 
-    if (status) {
-      if (!ALLOWED_STATUSES.includes(status)) {
-        return sendError(
-          res,
-          400,
-          "Invalid settlement status"
-        );
+    if (isAdmin(req) && selectedStore) {
+      if (!mongoose.isValidObjectId(selectedStore)) {
+        return sendError(res, 400, "Invalid store owner ID");
       }
 
-      filter.status = status;
+      filter.store_owner_id = new mongoose.Types.ObjectId(selectedStore);
     }
 
-    if (search) {
-      const safeSearch = escapeRegex(search.slice(0, 100));
+    if (safeSearchInput) {
+      const safeSearch = escapeRegex(
+        safeSearchInput.slice(0, 100)
+      );
 
       const searchConditions = [
         {
@@ -98,44 +106,75 @@ const getSettlements = async (req, res) => {
         },
       ];
 
-      if (mongoose.isValidObjectId(search)) {
-        searchConditions.push({
-          _id: new mongoose.Types.ObjectId(search),
-        });
-        searchConditions.push({
-          order_id: new mongoose.Types.ObjectId(search),
-        });
+      if (mongoose.isValidObjectId(safeSearchInput)) {
+        const objectId =
+          new mongoose.Types.ObjectId(safeSearchInput);
+
+        searchConditions.push(
+          { _id: objectId },
+          { order_id: objectId },
+          { payment_id: objectId },
+          { store_owner_id: objectId }
+        );
       }
 
       filter.$or = searchConditions;
     }
 
-    const [settlements, total] = await Promise.all([
-      Settlement.find(filter)
+    // 8. Download all records without pagination
+    if (download) {
+      const settlements = await Settlement.find(filter)
         .populate("order_id")
         .populate("payment_id")
         .populate("store_owner_id", "name email")
         .populate("processed_by", "name email")
         .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
+        .lean();
 
-      Settlement.countDocuments(filter),
-    ]);
-    
-    return res.json({
-      success: true,
-      data: {
+      return sendResponse(
+        res,
+        true,
+        { settlements },
+        "All settlements retrieved for download"
+      );
+    }
+
+    // 9. Count total matching records
+    const total = await Settlement.countDocuments(filter);
+
+    const pages = Math.ceil(total / limit);
+
+    // 11. Fetch only current page records
+    const settlements = await Settlement.find(filter)
+      .populate("order_id")
+      .populate("payment_id")
+      .populate("store_owner_id", "name email")
+      .populate("processed_by", "name email")
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    // 12. Final response
+    return sendResponse(
+      res,
+      true,
+      {
         settlements,
+        total,
+        page,
+        limit,
+        pages,
         pagination: {
           page,
           limit,
           total,
-          pages: Math.ceil(total / limit),
+          pages,
         },
       },
-    });
+      "Settlements retrieved successfully"
+    );
+
   } catch (error) {
     console.error("getSettlements:", error);
     return sendError(
@@ -431,6 +470,35 @@ const markSettlementFailed = async (req, res) => {
   }
 };
 
+
+const deleteSettlement = async (req, res) => {
+  try {
+    const deletedSettlement = await Settlement.findByIdAndDelete(req.params.id);
+    if (!deletedSettlement)
+      return sendResponse(res, false, null, "Settlement not found");
+    sendResponse(res, true, null, "Settlement deleted successfully");
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
+const bulkDeleteSettlement = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0)
+      return sendResponse(res, false, null, "No IDs provided");
+
+    const result = await Settlement.deleteMany({ _id: { $in: ids } });
+    sendResponse(
+      res,
+      true,
+      { deletedCount: result.deletedCount },
+      "Settlements deleted successfully",
+    );
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
+
 module.exports = {
   getSettlements,
   withdrawSettlement,
@@ -438,4 +506,6 @@ module.exports = {
   markSettlementProcessing,
   markSettlementPaid,
   markSettlementFailed,
+  deleteSettlement,
+  bulkDeleteSettlement
 };

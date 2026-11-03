@@ -9,6 +9,8 @@ const {
   markSettlementProcessing,
   markSettlementPaid,
   markSettlementFailed,
+  deleteSettlement,
+  bulkDeleteSettlement
 } = require("../controllers/settlementController");
 const { authorizeMinRole, authMiddleware } = require("../middlewares/authMiddleware");
 
@@ -20,5 +22,7 @@ router.post("/process-available", authorizeMinRole("admin"), processAvailableSet
 router.put("/:id/processing", authorizeMinRole("admin"), markSettlementProcessing); 
 router.put("/:id/paid", authorizeMinRole("admin"), markSettlementPaid); 
 router.put("/:id/failed", authorizeMinRole("admin"), markSettlementFailed);
+router.delete("/:id", authorizeMinRole("admin"), deleteSettlement);
+router.post("/bulk-delete", authorizeMinRole("admin"), bulkDeleteSettlement);
 
 module.exports = router;
