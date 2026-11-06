@@ -9,6 +9,7 @@ import {
   adminGetAllGiftCardProducts,
   adminUpdateGiftCardProduct,
   deleteGiftCrads,
+  bulkDeleteGiftcards,
 } from "./giftCardThunk";
 
 export interface GiftCard {
@@ -208,6 +209,13 @@ const giftCardSlice = createSlice({
           state.purchaseProducts.splice(purchaseIndex, 1);
         }
       })
+
+      .addCase(bulkDeleteGiftcards.fulfilled, (state, action) => {
+        state.giftCards = state.giftCards.filter(
+          (c) => !action.payload.includes(c._id),
+        );
+        state.total -= action.payload.length;
+      });
   },
 });
 

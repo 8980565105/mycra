@@ -44,6 +44,7 @@ import { fetchUsers } from "@/features/users/usersThunk";
 import api from "@/services/api";
 import { ROUTES } from "@/services/routes";
 import { Order, OrderStatus } from "@/features/orders/ordersSlice";
+import { fetchAttributes, fetchAttributeValues } from "@/features/attributes/attributesThunk";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "New Order",
@@ -110,42 +111,161 @@ const DEFAULT_ADVANCED: AdvancedFilters = {
   minPrice: undefined, maxPrice: undefined, startDate: "", endDate: "",
 };
 
-function MultiSelectPopover({ label, options, selected, setSelected }: {
-  label: string; options: { value: string; label: string }[];
-  selected: string[]; setSelected: React.Dispatch<React.SetStateAction<string[]>>;
-}) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="w-full text-left text-xs">
-          {selected.length ? selected.map((s) => options.find((o) => o.value === s)?.label).join(", ") : label}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 max-h-64 overflow-y-auto">
-        {options.length === 0 ? <p className="text-sm text-gray-400 p-2">No options available</p> : (
-          options.map((o) => (
-            <div key={o.value} className="flex items-center space-x-2 py-1 px-1">
-              <Checkbox
-                checked={selected.includes(o.value)}
-                onCheckedChange={(checked) => {
-                  if (checked) setSelected((prev) => [...prev, o.value]);
-                  else setSelected((prev) => prev.filter((s) => s !== o.value));
-                }}
-              />
-              <span className="text-sm">{o.label}</span>
-            </div>
-          ))
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}
+// function MultiSelectPopover({ label, options, selected, setSelected }: {
+//   label: string; options: { value: string; label: string }[];
+//   selected: string[]; setSelected: React.Dispatch<React.SetStateAction<string[]>>;
+// }) {
+//   return (
+//     <Popover>
+//       <PopoverTrigger asChild>
+//         <Button variant="outline" className="w-full text-left text-xs">
+//           {selected.length ? selected.map((s) => options.find((o) => o.value === s)?.label).join(", ") : label}
+//         </Button>
+//       </PopoverTrigger>
+//       <PopoverContent className="w-64 max-h-64 overflow-y-auto">
+//         {options.length === 0 ? <p className="text-sm text-gray-400 p-2">No options available</p> : (
+//           options.map((o) => (
+//             <div key={o.value} className="flex items-center space-x-2 py-1 px-1">
+//               <Checkbox
+//                 checked={selected.includes(o.value)}
+//                 onCheckedChange={(checked) => {
+//                   if (checked) setSelected((prev) => [...prev, o.value]);
+//                   else setSelected((prev) => prev.filter((s) => s !== o.value));
+//                 }}
+//               />
+//               <span className="text-sm">{o.label}</span>
+//             </div>
+//           ))
+//         )}
+//       </PopoverContent>
+//     </Popover>
+//   );
+// }
 
 interface Warehouse {
   _id: string;
   name: string;
   status: string;
 }
+
+const getVariantDisplayName = (name: string): string | null => {
+  const normalizedName = name.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+
+  if (
+    normalizedName.includes("color") ||
+    normalizedName.includes("colour")
+  ) {
+    return "Color";
+  }
+
+  if (normalizedName.includes("size")) {
+    return "Size";
+  }
+
+  return null;
+};
+const getId = (value: any): string => {
+  if (!value) return "";
+
+  if (typeof value === "object") {
+    return String(value._id || value.id || "");
+  }
+
+  return String(value);
+};
+const getLabel = (value: any): string => {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+
+  if (typeof value === "object") {
+    return getLabel(
+      value.name ??
+      value.value ??
+      value.attribute_name ??
+      value.attributeName ??
+      value.value_name ??
+      value.attribute_value ??
+      value.label ??
+      value.title
+    );
+  }
+
+  return "";
+};
+
+const getItemVariant = (item: any): any => {
+  const variant = item?.variant || item?.variant_id;
+
+  return typeof variant === "object" && variant !== null
+    ? variant : null;
+};
+
+const getItemSku = (item: any): string => {
+  const variant = getItemVariant(item);
+
+  const sku =
+    variant?.sku ||
+    variant?.SKU ||
+    item?.sku ||
+    item?.SKU ||
+    item?.product?.sku ||
+    item?.product?.SKU;
+
+  return sku ? String(sku) : "-";
+};
+
+const getVariantAttributes = (variant: any, attributeList: any[] = [], attributeValueList: any[] = []): string => {
+  if (!variant?.attributes?.length) {
+    return "-";
+  }
+
+  const details: string[] = [];
+
+  variant.attributes.forEach((attr: any) => {
+    const attributeId = getId(attr.attributeId || attr.attribute);
+    const valueId = getId(attr.valueId || attr.value);
+    const masterAttribute = attributeList.find(
+      (attribute: any) => getId(attribute._id) === attributeId
+    );
+
+    const originalAttributeName = getLabel(
+      masterAttribute?.name ||
+      masterAttribute?.attribute_name ||
+      masterAttribute?.attributeName ||
+      masterAttribute?.title
+    );
+
+    const displayName = getVariantDisplayName(originalAttributeName);
+
+    if (!displayName) {
+      return;
+    }
+
+    const masterValue = attributeValueList.find(
+      (value: any) => getId(value._id) === valueId
+    );
+
+    const valueName =
+      getLabel(attr.customValue) ||
+      getLabel(masterValue?.value) ||
+      getLabel(masterValue?.name);
+
+    if (!valueName) {
+      return;
+    }
+
+    details.push(`${displayName}: ${valueName}`);
+  });
+
+  return details.length > 0
+    ? details.join(" / ")
+    : "-";
+};
 
 export default function Orders() {
   const dispatch = useDispatch<AppDispatch>();
@@ -159,7 +279,7 @@ export default function Orders() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [tableLoading, setTableLoading] = useState(false);
-
+  const {attributes: attributeList, attributeValues: attributeValueList, loading: attributeLoading} = useSelector((state: RootState) => state.attributes);
   const [appliedFilters, setAppliedFilters] = useState({ status: "all", advanced: { ...DEFAULT_ADVANCED } });
 
   type ModalType = "detail" | "confirm" | "cancel" | "pack" | "courier" | "ship" | "tracking" | "deliver" | "rto" | null;
@@ -188,6 +308,8 @@ export default function Orders() {
   useEffect(() => {
     dispatch(fetchProducts({ page: 1, limit: 1000 }));
     dispatch(fetchUsers({ page: 1, limit: 1000 }));
+    dispatch(fetchAttributes({page: 1, limit: 1000, status: "active"}));
+    dispatch(fetchAttributeValues({status: "active"}));
   }, [dispatch]);
 
   useEffect(() => {
@@ -605,7 +727,7 @@ export default function Orders() {
                             <Checkbox checked={selectedIds.includes(order._id)} onCheckedChange={() => setSelectedIds((p) => p.includes(order._id) ? p.filter((i) => i !== order._id) : [...p, order._id])} />
                           </td>
                           <td className="p-3 font-bold text-gray-500">#{(page - 1) * limit + index + 1}</td>
-                          <td className="p-3 font-medium text-blue-600">{order.order_number}</td>
+                          <td className="p-3 font-medium text-blue-600 max-w-[100px] truncate">{order.order_number}</td>
                           <td className="p-3">{order.user?.name || "—"}</td>
                           <td className="p-3">{order.shippingAddress?.phone || "—"}</td>
                           <td className="p-3 text-xs text-gray-500 max-w-[180px] truncate">
@@ -665,7 +787,7 @@ export default function Orders() {
                                 <table className="w-full text-sm">
                                   <thead>
                                     <tr className="text-xs text-gray-500 border-b bg-gray-100">
-                                      <th className="px-3 py-2 text-left">Product</th>
+                                      <th className="w-64 px-3 py-2 text-left">Product</th>
                                       <th className="px-3 py-2 text-left">Sku</th>
                                       <th className="px-3 py-2 text-left">Variant</th>
                                       <th className="px-3 py-2 text-center">Qty</th>
@@ -674,18 +796,20 @@ export default function Orders() {
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-gray-100">
-                                    {order.items?.map((item: any) => (
+                                    {order.items?.map((item: any) => {
+                                    const variant = getItemVariant(item);
+
+                                    return (
                                       <tr key={item._id} className="hover:bg-white">
                                         <td className="px-3 py-2 font-medium">{item.product?.name || "Product"}</td>
-                                        <td className="px-3 py-2">{item.variant?.sku}</td>
-                                        <td className="px-3 py-2 text-gray-500">
-                                          {item.variant ? `${item.variant.color?.[0]?.name || "-"} / ${item.variant.size?.[0]?.name || "-"}` : "-"}
-                                        </td>
+                                        <td className="px-3 py-2">{getItemSku(item)}</td>
+                                        <td className="px-3 py-2 text-gray-600">{getVariantAttributes(variant, attributeList, attributeValueList)}</td>
                                         <td className="px-3 py-2 text-center">{item.quantity}</td>
                                         <td className="px-3 py-2 text-right">₹{item.price_at_order?.toFixed(2)}</td>
                                         <td className="px-3 py-2 text-right font-semibold">₹{(item.price_at_order * item.quantity)?.toFixed(2)}</td>
                                       </tr>
-                                    ))}
+                                    );
+                                    })}
                                   </tbody>
                                 </table>
                                 {order.courier?.awb_number && (

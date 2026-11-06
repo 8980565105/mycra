@@ -229,3 +229,17 @@ export const deleteGiftCrads = createAsyncThunk(
     }
   },
 );
+
+
+export const bulkDeleteGiftcards = createAsyncThunk(
+  "giftCards/bulkDeleteGiftcards",
+  async (ids: string[], { rejectWithValue }) => {
+    try {
+      const res = await api.post(ROUTES.giftCards.bulkDelete, { ids });
+      if (res.data.success) return ids;
+      return rejectWithValue(res.data.message || "Failed to delete giftCards");
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Server Error");
+    }
+  },
+);

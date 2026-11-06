@@ -304,6 +304,7 @@ export const ROUTES = {
     adminUpdateProduct: (id: string) => `/gift-cards/admin/products/${id}`,
     delete: (id: string) => `/gift-cards/${id}`,
     products: "/gift-cards/products",
+    bulkDelete: "/gift-cards/bulk-delete",
   },
   kyc: {
     adminSet: (userId: string) => `/kyc/admin/set/${userId}`,

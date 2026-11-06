@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 
 import type { AppDispatch } from "@/store";
 import { GenericTable } from "@/components/ui/adminTable";
-import { adminGetAllPurchasedGiftCards, deleteGiftCrads } from "@/features/giftCards/giftCardThunk";
+import { adminGetAllPurchasedGiftCards, bulkDeleteGiftcards, deleteGiftCrads } from "@/features/giftCards/giftCardThunk";
 
 interface GiftCardUser {
   _id?: string;
@@ -243,6 +243,13 @@ export default function AdminPurchasedGiftCards() {
             await dispatch(deleteGiftCrads(id)).unwrap();
           } catch (err: any) {
             throw new Error(err || "Failed to delete brand");
+          }
+        }}
+        bulkDeleteItems={async (ids) => {
+          try {
+            await dispatch(bulkDeleteGiftcards(ids)).unwrap();
+          } catch (err: any) {
+            throw new Error(err || "Failed to delete gift cards");
           }
         }}
       />
