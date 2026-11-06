@@ -249,10 +249,10 @@ function Address() {
       <Toaster />
       <h2 className="text-[28px] font-bold text-gray-900 mb-4">Your Addresses</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
         <button
           onClick={openAddForm}
-          className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-48 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition"
+          className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg min-h-48 h-full text-gray-500 hover:border-gray-400 hover:text-gray-700 transition"
         >
           <span className="text-3xl mb-2"><Plus size={18}/></span>
           <span className="font-medium">Add address</span>
@@ -261,7 +261,7 @@ function Address() {
         {addresses?.map((addr) => (
           <div
             key={addr._id}
-            className="border border-gray-200 rounded-lg p-4 shadow-sm relative"
+            className="border border-gray-200 rounded-lg p-4 shadow-sm relative h-full"
           >
             {addr.is_default && (
               <span className="absolute top-2 right-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">

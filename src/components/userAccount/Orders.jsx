@@ -46,6 +46,35 @@ export default function Orders() {
   const [openActionId, setOpenActionId] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailType, setDetailType] = useState("");
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const cancelReasons = [
+    "Ordered by mistake",
+    "Found a better price",
+    "Delivery is taking too long",
+    "Changed my mind",
+    "Ordered wrong product",
+    "Other",
+  ];
+
+  const canCancelOrder = (order) => {
+    // return ["pending", "processing"].includes(
+    //   String(order?.status || "").toLowerCase()
+    // );
+    const status = String(order?.status || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    const allowedStatuses = [
+      "pending",
+      "processing",
+      "confirmed",
+      "placed",
+    ];
+
+    return allowedStatuses.includes(status);
+  };
   const openDetailModal = (order, type) => {
     setSelectedOrder(order);
     setDetailType(type);
@@ -152,12 +181,15 @@ export default function Orders() {
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setIsFilterOpen(false);
       }
-      if (actionRef.current && !actionRef.current.contains(event.target)) {
+      if (!event.target.closest("[data-action-menu]")) {
         setOpenActionId(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const {
@@ -206,27 +238,65 @@ export default function Orders() {
   };
 
   const handleCancelOrder = async () => {
-    if (!selectedOrder) return;
+    if (!selectedOrder?._id) {
+      toast.error("Order not found");
+      return;
+    }
+
+    if (!canCancelOrder(selectedOrder)) {
+      toast.error("This order cannot be cancelled now");
+      return;
+    }
+
+    if (!cancelReason.trim()) {
+      toast.error("Please select a cancellation reason");
+      return;
+    }
+
     try {
-      await dispatch(cancelOrder({ orderId: selectedOrder._id })).unwrap();
-      dispatch(fetchUserOrders({ page, limit }));
-      closeModal();
+      setCancelLoading(true);
+
+      await dispatch(
+        cancelOrder({orderId: selectedOrder._id, reason: cancelReason})
+      ).unwrap();
+
+      toast.success("Order cancelled successfully");
+
+      setIsCancelOpen(false);
+      setSelectedOrder(null);
+      setCancelReason("");
+
+      await dispatch(fetchUserOrders({ page, limit })).unwrap();
     } catch (error) {
-      toast.error("Failed to cancel order: " + error);
+      toast.error(
+        typeof error === "string" ? error : error?.message || "Failed to cancel order"
+      );
+    } finally {
+      setCancelLoading(false);
     }
   };
+
+  const openCancelModal = (order) => {
+    if (!canCancelOrder(order)) {
+      toast.error("This order cannot be cancelled now");
+      return;
+    }
+
+    setSelectedOrder(order);
+    setCancelReason("");
+    setIsCancelOpen(true);
+  };
+
   const openViewModal = (order) => {
     setSelectedOrder(order);
     setIsViewOpen(true);
   };
-  const openCancelModal = (order) => {
-    setSelectedOrder(order);
-    setIsCancelOpen(true);
-  };
+
   const closeModal = () => {
     setSelectedOrder(null);
     setIsViewOpen(false);
     setIsCancelOpen(false);
+    setCancelReason("");
   };
   if (loading) return <p className="text-center py-10">Loading orders...</p>;
 
@@ -445,76 +515,116 @@ export default function Orders() {
                       className="flex h-8 w-8 items-center justify-center rounded-md text-[#999] transition hover:bg-gray-100 hover:text-gray-700">
                       <Eye size={20} />
                     </button>
-                    {order.status !== "cancelled" && (
+                    {canCancelOrder(order) && (
                       <button
+                        type="button"
                         onClick={() => openCancelModal(order)}
+                        title="Cancel Order"
                         className="flex h-8 w-8 items-center text-red-500 justify-center rounded-md text-[#999] transition hover:bg-gray-100 hover:text-gray-700"
                       >
                         <Trash2 size={20} />
                       </button>
                     )}
-                    {/* <MoreVertical size={20} /> */}
-                    <div
-                      ref={actionRef}
-                      className="relative"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* More Action Button */}
+                    <div className="relative" data-action-menu>
                       <button
                         type="button"
-                        onClick={() =>
-                          setOpenActionId(openActionId === order._id
-                              ? null
-                              : order._id
-                          )
-                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenActionId((prev) => prev === order._id ? null : order._id);
+                        }}
                         className="flex h-8 w-8 items-center justify-center rounded-md text-[#999] transition hover:bg-gray-100 hover:text-gray-700"
                         title="More Actions"
                       >
                         <MoreVertical size={20} />
                       </button>
 
-                      {/* More Action Dropdown */}
-                    {openActionId === order._id && (
-                      <div className="absolute right-0 top-[38px] z-10 w-[210px] overflow-hidden rounded-[8px] border border-gray-200 bg-white  shadow-xl" >
+                      {openActionId === order._id && (
+                        <div className="absolute right-0 top-[38px] z-[100] w-[220px] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl">
+                          <button
+                            type="button"
+                            onClick={() => openDetailModal(order, "customer")}
+                            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <User size={17} />
+                            <span>Customer Details</span>
+                          </button>
 
-                        {/* Customer Details */}
-                        <button
-                          type="button"
-                          onClick={() => openDetailModal(order, "customer")}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-p sec-text-color transition hover:bg-gray-50"
-                        >
-                          <User size={17} strokeWidth={1.8} />
-                          <span>Custmer Details</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => openDetailModal(order, "shipping")}
+                            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <MapPin size={17} />
+                            <span>Shipping Details</span>
+                          </button>
 
-                        {/* Shipping Details */}
-                        <button
-                          type="button"
-                          onClick={() => openDetailModal(order, "shipping")}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-p sec-text-color transition hover:bg-gray-50"
-                        >
-                          <MapPin size={17} strokeWidth={1.8} />
-                          <span>Shipping Details</span>
-                        </button>
+                          <div className="border-t border-gray-100">
+                            <button
+                              type="button"
+                              onClick={() => downloadOrderPdf(order)}
+                              className="flex w-full items-center gap-3 px-4 py-3 -left text-sm text-gray-700 hover:bg-gray-50"
+                            >
+                              <Download size={17} />
+                              <span>Download Order PDF</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="8" className="text-center py-6 text-gray-400">No results found.</td>
+            </tr>
+          )}
 
-
-                        {/* download pdf */}
+          {totalPages > 1 && (
+            <tr>
+              <td colSpan="8" className="px-[30px] py-[20px]">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-14 sec-text-color">
+                  <p className="sec-text-color text-p">
+                    Showing <span>{total === 0 ? 0 : start}</span> to{" "}
+                    <span>{end}</span> of <span>{total}</span> entries
+                  </p>
+                  <div className="flex items-center gap-[10px]">
+                    <button
+                      className="flex gap-[8px] items-center text-light text-p mr-[10px]"
+                      onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeftIcon size={16} /> Back
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => (
                       <button
-                          type="button"
-                          onClick={() => downloadOrderPdf(order)}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-p sec-text-color transition hover:bg-gray-50"
-                        >
-                          <Download size={17} strokeWidth={1.8} />
-                          <span>Order PDF</span>
-                        </button>
-                      </div>
-                    )}
+                        key={i}
+                        onClick={() => setPage(i + 1)}
+                        className={`w-[34px] h-[34px] text-light p-1 text-14 rounded-[3px] ${page === i + 1 ? "light-color " : "box-shadow"}`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button
+                      className="flex gap-[8px] items-center text-light text-p ml-[10px]"
+                      onClick={() =>
+                        setPage((p) => Math.min(p + 1, totalPages))
+                      }
+                      disabled={page === totalPages}
+                    >
+                      Next <ChevronRightIcon size={16} />
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
                     {isDetailOpen && selectedOrder && (
                       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity">
                         <div className="w-full max-w-[600px] max-h-[85vh] overflow-hidden rounded-xl bg-white shadow-2xl max-h-[65vh] overflow-y-auto no-scrollbar ">
-
-                          {/* Header */}
                           <div className="flex items-center justify-between border-b p-5">
                             <div>
                               <h3 className="text-20px font-semibold text-black ">
@@ -522,9 +632,6 @@ export default function Orders() {
                                 {detailType === "shipping" && "Shipping Details"}
                               </h3>
 
-                              {/* <p className="mt-1 text-[12px] sec-text-color">
-                                Order #{selectedOrder.order_id || selectedOrder._id}
-                              </p> */}
                             </div>
 
                             <button
@@ -536,10 +643,8 @@ export default function Orders() {
                             </button>
                           </div>
 
-                          {/* Content */}
                           <div className="p-6">
 
-                            {/* CUSTOMER */}
                             {detailType === "customer" && (
                               <div className="gap-4 grid grid-cols-2 text-black">
                                 <div className="rounded-lg bg-gray-50 p-4">
@@ -578,7 +683,6 @@ export default function Orders() {
                               </div>
                             )}
 
-                            {/* SHIPPING */}
                             {detailType === "shipping" && (
                               <div className="space-y-4 text-black">
 
@@ -639,7 +743,6 @@ export default function Orders() {
 
                           </div>
 
-                          {/* Footer */}
                           <div className="flex justify-end border-t p-4">
                             <Button
                               type="button"
@@ -654,61 +757,6 @@ export default function Orders() {
                         </div>
                       </div>
                     )}
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="8" className="text-center py-6 text-gray-400">
-                No results found.
-              </td>
-            </tr>
-          )}
-
-          {totalPages > 1 && (
-            <tr>
-              <td colSpan="8" className="px-[30px] py-[20px]">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-14 sec-text-color">
-                  <p className="sec-text-color text-p">
-                    Showing <span>{total === 0 ? 0 : start}</span> to{" "}
-                    <span>{end}</span> of <span>{total}</span> entries
-                  </p>
-                  <div className="flex items-center gap-[10px]">
-                    <button
-                      className="flex gap-[8px] items-center text-light text-p mr-[10px]"
-                      onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                      disabled={page === 1}
-                    >
-                      <ChevronLeftIcon size={16} /> Back
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setPage(i + 1)}
-                        className={`w-[34px] h-[34px] text-light p-1 text-14 rounded-[3px] ${page === i + 1 ? "light-color " : "box-shadow"}`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
-                    <button
-                      className="flex gap-[8px] items-center text-light text-p ml-[10px]"
-                      onClick={() =>
-                        setPage((p) => Math.min(p + 1, totalPages))
-                      }
-                      disabled={page === totalPages}
-                    >
-                      Next <ChevronRightIcon size={16} />
-                    </button>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
       {isViewOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity">
           <div className="bg-white w-[90%] max-w-[600px] rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in duration-300 overflow-y-auto max-h-[65vh] no-scrollbar">
@@ -792,29 +840,78 @@ export default function Orders() {
       )}
 
       {isCancelOpen && selectedOrder && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
-          <div className="bg-white w-[90%] max-w-[400px] rounded-lg p-8 text-center shadow-2xl scale-in-center">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-4">
+
+          <div className="bg-white w-full max-w-[450px] rounded-xl p-6 shadow-2xl">
+
             <div className="text-red-500 flex justify-center mb-4">
-              <Trash2 size={48} />
+              <Trash2 size={42} />
             </div>
-            <h3 className="text-lg font-bold mb-2 text-dark">Cancel Order?</h3>
-            <p className="text-gray-500 mb-6 text-sm">
-              Are you sure you want to cancel order{" "}
+
+            <h3 className="text-xl font-bold mb-2 text-center text-gray-800">
+              Cancel Order?
+            </h3>
+
+            <p className="text-gray-500 mb-5 text-sm text-center">
+              Are you sure you want to cancel this order?
             </p>
-            <div className="flex gap-4">
-              <button
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                onClick={handleCancelOrder}
+
+            <div className="bg-gray-50 rounded-lg p-3 mb-5 text-left">
+              <p className="text-sm text-gray-500">Order Number</p>
+              <p className="font-semibold text-gray-800">
+                {selectedOrder.order_number || selectedOrder._id}
+              </p>
+
+              <p className="text-sm text-gray-500 mt-2">Payment Method</p>
+              <p className="font-medium text-gray-800">
+                {selectedOrder.payment_method || "N/A"}
+              </p>
+            </div>
+
+            <div className="mb-5 text-left">
+              <label className="block text-sm font-semibold mb-2 text-gray-700">
+                Cancellation Reason *
+              </label>
+
+              <select
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-3 outline-none"
               >
-                Yes, Cancel
-              </button>
+                <option value="">Select cancellation reason</option>
+
+                {cancelReasons.map((reason) => (
+                  <option key={reason} value={reason}>
+                    {reason}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3">
+
               <button
+                type="button"
+                disabled={cancelLoading}
+                onClick={handleCancelOrder}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg
+                hover:bg-red-700 disabled:bg-gray-400"
+              >
+                {cancelLoading ? "Cancelling..." : "Yes, Cancel"}
+              </button>
+
+              <button
+                type="button"
+                disabled={cancelLoading}
                 onClick={closeModal}
-                className="flex-1 px-4 py-2 border rounded text-gray-600 hover:bg-gray-50"
+                className="flex-1 px-4 py-3 border rounded-lg text-gray-600
+                hover:bg-gray-50 disabled:opacity-50"
               >
                 No, Keep it
               </button>
+
             </div>
+
           </div>
         </div>
       )}
@@ -941,6 +1038,8 @@ export default function Orders() {
         limit={limit}
         onPageChange={(newPage) => setPage(newPage)}
         downloadOrderPdf={downloadOrderPdf}
+        onCancelOrder={openCancelModal}
+        canCancelOrder={canCancelOrder}
       />
     </div>
   );

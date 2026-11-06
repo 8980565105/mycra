@@ -7,6 +7,7 @@ import {
   ChevronRightIcon,
   ChevronUp,
   Download,
+  Trash2,
 } from "lucide-react";
 import sortImg from "../../assets/sorting.png";
 import { useSelector } from "react-redux";
@@ -20,7 +21,9 @@ export default function OrderCardMobile({
   limit,
   onPageChange,
   totalPages,
-  downloadOrderPdf
+  downloadOrderPdf,
+  onCancelOrder,
+  canCancelOrder,
 }) {
   const [openRow, setOpenRow] = useState(null);
   const reviews = useSelector((state) => state.reviews.reviews);
@@ -153,6 +156,30 @@ export default function OrderCardMobile({
                   </button>
                 </span>
               </p>
+                            
+              
+              {canCancelOrder && canCancelOrder(order) && (
+                <div className="flex items-center gap-2 mt-3">
+
+                  <span className="text-black w-[80px] inline-block">
+                    Action:
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => onCancelOrder(order)}
+                    className="flex items-center gap-2 px-4 py-2
+                    text-red-600 border border-red-200 rounded-lg
+                    hover:bg-red-50 transition"
+                  >
+                    <Trash2 size={17} />
+                    <span>Cancel Order</span>
+                  </button>
+
+                </div>
+              )}
+
+
             </div>
             </div>
           )}
