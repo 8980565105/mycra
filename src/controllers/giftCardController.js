@@ -435,234 +435,6 @@ const purchaseGiftCard = async (req, res) => {
 
   const session = await mongoose.startSession();
 
-  let result;
-
-  // try {
-  //   await session.withTransaction(async () => {
-  //     // Read the authoritative price from the database.
-  //     // Never trust an amount supplied by the frontend.
-  //     const product = await GiftCard.findOne({
-  //       _id: productId,
-  //       recordType: "Product",
-  //       isPurchaseEnabled: true,
-  //     }).session(session);
-
-  //     if (!product) {
-  //       const error = new Error(
-  //         "Gift Card product was not found or is disabled."
-  //       );
-  //       error.statusCode = 404;
-  //       throw error;
-  //     }
-
-  //     if (
-  //       product.productExpiresAt &&
-  //       product.productExpiresAt <= new Date()
-  //     ) {
-  //       const error = new Error(
-  //         "This Gift Card product has expired and cannot be purchased."
-  //       );
-  //       error.statusCode = 400;
-  //       throw error;
-  //     }
-
-  //     let unitAmount;
-
-  //     if (product.allowCustomAmount === true) {
-  //       unitAmount = Number(customAmount);
-
-  //       const min = Number(product.minAmount);
-  //       const max = Number(product.maxAmount);
-  //       const step = Number(product.amountStep);
-
-  //       if (
-  //         !Number.isInteger(unitAmount) ||
-  //         !Number.isFinite(min) ||
-  //         !Number.isFinite(max) ||
-  //         !Number.isFinite(step) ||
-  //         step <= 0 ||
-  //         unitAmount < min ||
-  //         unitAmount > max ||
-  //         (unitAmount - min) % step !== 0
-  //       ) {
-  //         const error = new Error(
-  //           `Select an amount between ₹${min} and ₹${max} in ₹${step} increments.`
-  //         );
-  //         error.statusCode = 400;
-  //         throw error;
-  //       }
-  //     } else {
-  //       unitAmount = Number(product.originalAmount);
-  //     }
-
-  //     const totalAmount = unitAmount * numericQuantity;
-
-  //     if (
-  //       !Number.isSafeInteger(totalAmount) ||
-  //       !Number.isFinite(unitAmount) ||
-  //       unitAmount <= 0 ||
-  //       totalAmount <= 0
-  //     ) {
-  //       const error = new Error("Invalid Gift Card amount.");
-  //       error.statusCode = 400;
-  //       throw error;
-  //     }
-
-  //     if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
-  //       const error = new Error("Invalid product price.");
-  //       error.statusCode = 400;
-  //       throw error;
-  //     }
-
-  //     // Atomically deduct wallet money inside the transaction.
-  //     const walletBefore = await Wallet.findOne({
-  //       user: userId,
-  //     }).session(session);
-
-  //     if (!walletBefore) {
-  //       const error = new Error("Wallet not found. Please contact support.");
-  //       error.statusCode = 404;
-  //       throw error;
-  //     }
-
-  //     if (Number(walletBefore.balance || 0) < totalAmount) {
-  //       const error = new Error("Insufficient wallet balance.");
-  //       error.statusCode = 400;
-  //       throw error;
-  //     }
-
-  //     const walletAfter = await Wallet.findOneAndUpdate(
-  //       {
-  //         user: userId,
-  //         balance: { $gte: totalAmount },
-  //       },
-  //       {
-  //         $inc: { balance: -totalAmount },
-  //       },
-  //       {
-  //         // new: true,
-  //         returnDocument: "after",
-  //         session,
-  //         runValidators: true,
-  //       }
-  //     );
-
-  //     if (!walletAfter) {
-  //       const error = new Error(
-  //         "Insufficient wallet balance or wallet was updated. Please retry."
-  //       );
-  //       error.statusCode = 400;
-  //       throw error;
-  //     }
-
-  //     const issuedCards = [];
-  //     const transactionDocs = [];
-
-  //     for (let i = 0; i < numericQuantity; i += 1) {
-  //       const cardNumber = await createUniqueGiftCardNumber(session);
-  //       const pin = String(generateGiftCardPin());
-  //       const pinHash = await bcrypt.hash(pin, 10);
-  //       const activatedAt = new Date();
-
-  //       // const expiresAt = new Date(activatedAt);
-  //       // expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-  //       const expiresAt = new Date(
-  //         activatedAt.getTime() + 24 * 60 * 60 * 1000
-  //       );
-  //       const [giftCard] = await GiftCard.create(
-  //         [
-  //           {
-  //             recordType: "Issued",
-  //             cardNumber,
-  //             pinHash,
-  //             originalAmount: unitAmount,
-  //             remainingBalance: unitAmount,
-
-  //             // Existing behavior: card belongs to the logged-in buyer.
-  //             // Recipient fields store the intended recipient details.
-  //             assignedTo: userId,
-  //             recipientName: String(receiverName).trim(),
-  //             recipientEmail: normalizedEmail,
-
-  //             gifterName: String(gifterName).trim(),
-  //             message: String(message).trim(),
-
-  //             status: "Active",
-  //             source: "Purchase",
-  //             createdBy: userId,
-  //             // activatedAt: new Date(),
-  //             // expiresAt: null,
-  //             activatedAt,
-  //             expiresAt,
-  //           },
-  //         ],
-  //         { session }
-  //       );
-
-  //       issuedCards.push({
-  //         _id: giftCard._id,
-  //         cardNumber: giftCard.cardNumber,
-  //         pin,
-  //         originalAmount: giftCard.originalAmount,
-  //         remainingBalance: giftCard.remainingBalance,
-  //         recipientName: giftCard.recipientName,
-  //         recipientEmail: giftCard.recipientEmail,
-  //         status: giftCard.status,
-  //         activatedAt: giftCard.activatedAt,
-  //         expiresAt: giftCard.expiresAt,
-  //       });
-
-  //       transactionDocs.push({
-  //         giftCard: giftCard._id,
-  //         user: userId,
-  //         type: "Issued",
-  //         amount: unitAmount,
-  //         balanceBefore: 0,
-  //         balanceAfter: unitAmount,
-  //         referenceId: createReferenceId(),
-  //         description: `Gift Card purchased: ${product.productName}`,
-  //       });
-  //     }
-
-  //     await GiftCardTransaction.create(transactionDocs, { session });
-
-  //     result = {
-  //       productName: product.productName,
-  //       quantity: numericQuantity,
-  //       unitAmount,
-  //       totalAmount,
-  //       cards: issuedCards,
-  //       walletBalance: walletAfter.balance,
-  //     };
-  //   });
-
-  //   return res.status(201).json({
-  //     success: true,
-  //     message: "Gift Card purchased successfully.",
-  //     purchase: {
-  //       productName: result.productName,
-  //       quantity: result.quantity,
-  //       unitAmount: result.unitAmount,
-  //       totalAmount: result.totalAmount,
-  //     },
-  //     giftCards: result.cards,
-  //     wallet: {
-  //       balance: result.walletBalance,
-  //     },
-  //   });
-  // } catch (error) {
-  //   console.error("purchaseGiftCard error:", error);
-
-  //   return res.status(error.statusCode || 500).json({
-  //     success: false,
-  //     message:
-  //       error.statusCode
-  //         ? error.message
-  //         : "Gift Card purchase failed. Please try again.",
-  //   });
-  // } finally {
-  //   await session.endSession();
-  // }
   try {
   await session.withTransaction(async () => {
     const existing = await GiftCardTransaction.findOne({
@@ -733,30 +505,6 @@ const getMyGiftCards = async (req, res) => {
     }
 
     const now = new Date();
-
-    // await expireUserGiftCards(userId);
-
-    // const giftCards = await GiftCard.find({
-    //   // ...issuedCardFilter,
-    //   recordType: "Issued",
-    //   assignedTo: userId,
-    //   status: "Active",
-    //   remainingBalance: { $gt: 0 },
-    //   $or: [
-    //     { expiresAt: null },
-    //     { expiresAt: { $exists: false } },
-    //     { expiresAt: { $gt: now } },
-    //   ],
-    // })
-    //   // .select("-pinHash")
-    //   .select("_id cardNumber originalAmount remainingBalance status recipientName recipientEmail expiresAt activatedAt")
-    //   .sort({ createdAt: -1 })
-    //   .lean();
-
-    // const giftCardBalance = giftCards.reduce(
-    //   (total, card) => total + Number(card.remainingBalance || 0),
-    //   0
-    // );
 
     await GiftCard.updateMany(
       {
@@ -842,34 +590,22 @@ const getMyGiftCards = async (req, res) => {
       ? Number(wallet.voucherBalance || 0)
       : 0;
 
-    const normalBalance = Number(wallet.balance || 0);
 
     return res.status(200).json({
-      // success: true,
-      // count: giftCards.length,
-      // giftCards,
-      // giftCardBalance,
-      // wallet: {
-      //   balance: normalBalance,
-      //   giftCardBalance,
-      //   voucherBalance,
-      //   voucherStatus: Boolean(isVoucherActive),
-      //   totalBalance: normalBalance + giftCardBalance + voucherBalance,
-      // },
-       success: true,
-  count: giftCardsWithStatus.length,
-  giftCards: giftCardsWithStatus,
-  giftCardBalance,
-  wallet: {
-    balance: Number(wallet.balance || 0),
-    giftCardBalance,
-    voucherBalance,
-    voucherStatus: Boolean(isVoucherActive),
-    totalBalance:
-      Number(wallet.balance || 0) +
-      giftCardBalance +
-      voucherBalance,
-  },
+      success: true,
+      count: giftCardsWithStatus.length,
+      giftCards: giftCardsWithStatus,
+      giftCardBalance,
+      wallet: {
+        balance: Number(wallet.balance || 0),
+        giftCardBalance,
+        voucherBalance,
+        voucherStatus: Boolean(isVoucherActive),
+        totalBalance:
+          Number(wallet.balance || 0) +
+          giftCardBalance +
+          voucherBalance,
+      },
     });
   } catch (error) {
     console.error("getMyGiftCards error:", error);
@@ -1205,6 +941,22 @@ const validateGiftCardForCheckout = async (req, res) => {
   }
 };
 
+const bulkDeleteGiftcard = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0)
+      return sendResponse(res, false, null, "No IDs provided");
+
+    const result = await GiftCard.deleteMany({ _id: { $in: ids } });
+    sendResponse(res, true,
+      { deletedCount: result.deletedCount },
+      "Giftcards deleted successfully",
+    );
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
+
 module.exports = {
   adminCreateGiftCard,
   adminCreateGiftCardProduct,
@@ -1216,5 +968,6 @@ module.exports = {
   getGiftCardProduct,
   updateGiftCardProduct,
   deleteGiftCards,
-  validateGiftCardForCheckout
+  validateGiftCardForCheckout,
+  bulkDeleteGiftcard
 };

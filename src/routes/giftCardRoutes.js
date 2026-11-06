@@ -4,7 +4,8 @@ const router = express.Router();
 
 const { authMiddleware, authorizeMinRole } = require("../middlewares/authMiddleware");
 const { adminCreateGiftCard, adminCreateGiftCardProduct, getGiftCardPurchaseProducts, adminGetAllGiftCards, getMyGiftCards, purchaseGiftCard, getPurchasedGiftCards, updateGiftCardProduct, 
-   deleteGiftCards, getGiftCardProduct, validateGiftCardForCheckout, } = require("../controllers/giftCardController");
+   deleteGiftCards, getGiftCardProduct, validateGiftCardForCheckout,
+   bulkDeleteGiftcard, } = require("../controllers/giftCardController");
 
 router.get( "/products", getGiftCardPurchaseProducts );
 router.use(authMiddleware);
@@ -20,5 +21,6 @@ router.get("/admin/purchased", authorizeMinRole("admin"), getPurchasedGiftCards 
 
 router.put("/admin/products/:id", authorizeMinRole("admin"), updateGiftCardProduct);
 router.delete("/:id", authorizeMinRole("admin"), deleteGiftCards);
+router.post("/bulk-delete", authorizeMinRole("admin"), bulkDeleteGiftcard);
 router.post("/checkout/validate", validateGiftCardForCheckout);
 module.exports = router;

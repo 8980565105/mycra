@@ -6,7 +6,7 @@ const GiftCard = require("../models/giftCard");
 const Transection = require("../models/Transactions");
 const WalletTopUp = require("../models/WalletTopUp");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
+const { sendResponse } = require("../utils/response");
 const getBalance = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -152,13 +152,14 @@ const getAllWallets = async (req, res) => {
         }).lean();
 
         if (!wallet) {
-          const createdWallet = await Wallet.create({
-            user: user._id,
-            balance: 0,
-            voucherBalance: 0,
-          });
+          // const createdWallet = await Wallet.create({
+          //   user: user._id,
+          //   balance: 0,
+          //   voucherBalance: 0,
+          // });
 
-          wallet = createdWallet.toObject();
+          // wallet = createdWallet.toObject();
+          return null;
         }
         await GiftCard.updateMany(
           {
@@ -229,14 +230,14 @@ const getAllWallets = async (req, res) => {
         };
       })
     );
-
+    const filteredWallets = wallets.filter(Boolean);
     return res.status(200).json({
       success: true,
-      wallets,
-      total,
+      wallets: filteredWallets,
+      total: filteredWallets.length,
       page: currentPage,
       limit: perPage,
-      totalPages: Math.ceil(total / perPage),
+      totalPages: Math.ceil(filteredWallets.length / perPage),
     });
   } catch (error) {
     console.error( "getAllWallets error:", error );
@@ -735,6 +736,16 @@ const getWalletTopUpStatus = async (req, res) => {
   }
 };
 
+const deleteWallet = async (req, res) => {
+  try {
+    const deletedWallet = await Wallet.findByIdAndDelete(req.params.id);
+    if (!deletedWallet)
+      return sendResponse(res, false, null, "Wallet not found");
+    sendResponse(res, true, null, "Wallet deleted successfully");
+  } catch (err) {
+    sendResponse(res, false, null, err.message);
+  }
+};
 module.exports = {
   getBalance,
   verifyKyc,
@@ -745,5 +756,6 @@ module.exports = {
   adminUpdateVoucher,
   createWalletTopUpSession,
   handleWalletStripeWebhook,
-  getWalletTopUpStatus
+  getWalletTopUpStatus,
+  deleteWallet
 };

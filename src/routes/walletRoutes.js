@@ -4,7 +4,7 @@ const {
   authMiddleware,
   authorizeMinRole,
 } = require("../middlewares/authMiddleware");
-const{ getBalance, verifyKyc, getAllWallets, adminAdjustBalance, adminVerifyKyc, adminAddVoucher, adminUpdateVoucher, createWalletTopUpSession, getWalletTopUpStatus }
+const{ getBalance, verifyKyc, getAllWallets, adminAdjustBalance, adminVerifyKyc, adminAddVoucher, adminUpdateVoucher, createWalletTopUpSession, getWalletTopUpStatus, deleteWallet }
  = require("../controllers/walletController");
 
 router.get("/balance", authMiddleware, getBalance);
@@ -38,4 +38,5 @@ router.get(
   authMiddleware,
   getWalletTopUpStatus
 );
+router.delete("/:id", authMiddleware, authorizeMinRole("admin"), deleteWallet);
 module.exports = router;
