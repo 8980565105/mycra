@@ -1381,9 +1381,11 @@ const GiftCardToBalance = () => {
         });
 
         // Set the initial denomination for the first custom product.
-        const initialProduct = enabledProducts.find(
-          (product) => product._id === selectedProductId
-        ) || enabledProducts[0];
+        // const initialProduct = enabledProducts.find(
+        //   (product) => product._id === selectedProductId
+        // ) || enabledProducts[0];
+
+        const initialProduct = enabledProducts[0];
 
         if (initialProduct && isCustomProduct(initialProduct)) {
           const settings = getAmountSettings(initialProduct);

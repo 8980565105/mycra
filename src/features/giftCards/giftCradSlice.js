@@ -7,6 +7,7 @@ const initialState = {
   appliedGiftCard: null,
   loading: false,
   error: null,
+  productsLoading: false,
    purchaseLoading: false,
   purchaseError: null,
   purchaseResult: null,
@@ -57,7 +58,7 @@ const giftCardSlice = createSlice({
         })
 
         .addCase(getGiftCardProducts.fulfilled, (state, action) => {
-          state.productsLoading = false;
+          state.loading = false;
           state.purchaseProducts = action.payload;
         })
         .addCase(validateGiftCard.pending, (state) => {
