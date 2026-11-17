@@ -12,6 +12,8 @@ const initialState = {
   total: 0,
   loading: false,
   error: null,
+  statusOptions: [],
+  paymentMethodOptions: [],
 };
 
 const orderSlice = createSlice({
@@ -61,6 +63,8 @@ const orderSlice = createSlice({
         state.loading = false;
         state.orders = action.payload.orders || [];
         state.total = action.payload.total || 0;
+        state.statusOptions = action.payload?.statusOptions || [];
+        state.paymentMethodOptions = action.payload?.paymentMethodOptions || [];
       })
       .addCase(fetchUserOrders.rejected, (state, action) => {
         state.loading = false;

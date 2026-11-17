@@ -196,6 +196,8 @@ export default function Orders() {
     orders = [],
     total = 0,
     loading,
+    statusOptions = [],
+    paymentMethodOptions = [],
   } = useSelector((state) => state.orders);
   const start = (page - 1) * limit + 1;
   const end = Math.min(page * limit, total);
@@ -212,16 +214,16 @@ export default function Orders() {
       statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesPayment && matchesStatus;
   });
-  const statusOptions = [
-    "pending",
-    "completed",
-    "processing",
-    "packed",
-    "ready_to_ship",
-    "shipped",
-    "in_transit",
-    "cancelled",
-  ];
+  // const statusOptions = [
+  //   "pending",
+  //   "completed",
+  //   "processing",
+  //   "packed",
+  //   "ready_to_ship",
+  //   "shipped",
+  //   "in_transit",
+  //   "cancelled",
+  // ];
 
   const totalPages = Math.ceil(total / limit);
 
@@ -369,16 +371,17 @@ export default function Orders() {
                 >
                   All Status
                 </button>
-                {statusOptions.map((status) => (
+                {statusOptions.map((statusValue) => (
                   <button
-                    key={status}
+                    key={statusValue}
                     onClick={() => {
-                      setStatusFilter(status);
+                      setStatusFilter(statusValue);
+                      setPage(1);
                       setIsFilterOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-[var(--primary-color)] capitalize ${statusFilter === status ? "bg-[var(--theme-hover-color)] text-white" : "text-light hover:text-white"}`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-[var(--primary-color)] capitalize ${statusFilter === statusValue ? "bg-[var(--theme-hover-color)] text-white" : "text-light hover:text-white"}`}
                   >
-                    {status.replace("_", " ")}
+                    {statusValue.replace("_", " ")}
                   </button>
                 ))}
               </div>
@@ -402,30 +405,31 @@ export default function Orders() {
                 <button
                   onClick={() => {
                     setPaymentFilter("all");
-                    setIsSortOpen(false);
+                    setPage(1);
+                    setIsFilterOpen(false);
                   }}
                   className={`w-full text-left px-4 py-2 text-sm hover:bg-[var(--theme-hover-color)] ${paymentFilter === "all" ? " bg-[var(--theme-hover-color)] text-white" : "text-light hover:text-white"}`}
                 >
-                  All Orders
+                  All Payment
                 </button>
-                <button
-                  onClick={() => {
-                    setPaymentFilter("Online");
-                    setIsSortOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-[var(--theme-hover-color)] ${paymentFilter === "Online" ? " bg-[var(--theme-hover-color)] text-white" : "text-light hover:text-white"}`}
-                >
-                  Online Payment
-                </button>
-                <button
-                  onClick={() => {
-                    setPaymentFilter("COD");
-                    setIsSortOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-[var(--theme-hover-color)] ${paymentFilter === "COD" ? "bg-[var(--theme-hover-color)] text-white" : "text-light hover:text-white"}`}
-                >
-                  Cash on Delivery
-                </button>
+                {paymentMethodOptions.map((method) => (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => {
+                      setPaymentFilter(method);
+                      setPage(1);
+                      setIsFilterOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-[var(--primary-color)] ${
+                        paymentFilter === method
+                          ? "bg-[var(--theme-hover-color)] text-white"
+                          : "text-light hover:text-white"
+                      }`}
+                  >
+                    {method}
+                  </button>
+                ))}
               </div>
             )}
           </div>
