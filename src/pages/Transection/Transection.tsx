@@ -1030,12 +1030,6 @@ export default function Transection() {
                     </p>
                   </div>
 
-                  <div>
-                    <strong>Phone:</strong>
-                    <p className="text-gray-600">
-                      {selectedTransaction.user?.phone || "—"}
-                    </p>
-                  </div>
                 </div>
               </div>
 
@@ -1077,34 +1071,36 @@ export default function Transection() {
               </div>
 
               {/* STRIPE INFORMATION */}
-
+            {(
+              selectedTransaction?.stripe_payment_intent_id ||
+              selectedTransaction?.stripe_charge_id) && (
               <div>
                 <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                  <CreditCard
-                    size={16}
-                    className="text-blue-600"
-                  />
+                  <CreditCard size={16} className="text-blue-600" />
                   Payment Gateway Details
                 </h4>
 
-                <div className="grid grid-cols-1 gap-3 rounded-lg border bg-slate-50 p-4 text-sm">
+              <div className="grid grid-cols-1 gap-3 rounded-lg border bg-slate-50 p-4 text-sm">
+                {selectedTransaction?.stripe_payment_intent_id && (
                   <div>
                     <strong>Stripe Payment Intent ID:</strong>
                     <p className="break-all text-gray-600">
-                      {selectedTransaction.stripe_payment_intent_id ||
-                        "—"}
+                      {selectedTransaction.stripe_payment_intent_id}
                     </p>
                   </div>
+                )}
 
+                {selectedTransaction?.stripe_charge_id && (
                   <div>
                     <strong>Stripe Charge ID:</strong>
                     <p className="break-all text-gray-600">
-                      {selectedTransaction.stripe_charge_id || "—"}
+                      {selectedTransaction.stripe_charge_id}
                     </p>
                   </div>
+                )}
                 </div>
               </div>
-
+            )}
               {/* STATUS UPDATE */}
 
               <div className="rounded-lg border p-4">
